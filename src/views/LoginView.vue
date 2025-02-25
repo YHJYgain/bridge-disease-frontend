@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const username = ref('')
@@ -123,15 +125,27 @@ onMounted(() => {
   })
 })
 
+const formRef = ref(null)
+const formRules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+}
+
 const handleLogin = async () => {
-  if (!username.value || !password.value) return
+  if (!formRef.value) return
   
-  isLoading.value = true
-  // 模拟登录请求
-  setTimeout(() => {
-    isLoading.value = false
-    router.push('/')
-  }, 1500)
+  try {
+    await formRef.value.validate()
+    isLoading.value = true
+    // 模拟登录请求
+    setTimeout(() => {
+      isLoading.value = false
+      ElMessage.success('登录成功')
+      router.push('/home')
+    }, 1500)
+  } catch (error) {
+    console.error('表单验证失败:', error)
+  }
 }
 </script>
 
@@ -140,36 +154,41 @@ const handleLogin = async () => {
     <canvas ref="canvasRef" class="particles-canvas"></canvas>
     
     <div class="login-card">
-      <h1>登录</h1>
-      <form @submit.prevent="handleLogin" class="login-form">
-        <div class="form-group">
-          <input
+      <h1>桥梁病害检测分割系统</h1>
+      <el-form
+        ref="formRef"
+        :model="{ username, password }"
+        :rules="formRules"
+        class="login-form"
+        @submit.prevent="handleLogin"
+      >
+        <el-form-item prop="username">
+          <el-input
             v-model="username"
-            type="text"
             placeholder="用户名"
-            required
-          >
-          <div class="input-focus-effect"></div>
-        </div>
+            :prefix-icon="User"
+          />
+        </el-form-item>
         
-        <div class="form-group">
-          <input
+        <el-form-item prop="password">
+          <el-input
             v-model="password"
             type="password"
             placeholder="密码"
-            required
-          >
-          <div class="input-focus-effect"></div>
-        </div>
+            :prefix-icon="Lock"
+            show-password
+          />
+        </el-form-item>
 
-        <button
-          type="submit"
-          :class="{ 'loading': isLoading }"
+        <el-button
+          type="primary"
+          :loading="isLoading"
+          class="submit-btn"
+          @click="handleLogin"
         >
-          <span>{{ isLoading ? '登录中...' : '登录' }}</span>
-          <div class="button-effect"></div>
-        </button>
-      </form>
+          {{ isLoading ? '登录中...' : '登录' }}
+        </el-button>
+      </el-form>
     </div>
   </div>
 </template>
@@ -198,7 +217,7 @@ const handleLogin = async () => {
   border-radius: 20px;
   padding: 30px;
   width: 100%;
-  max-width: 400px;
+  max-width: 470px;
   box-sizing: border-box;
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -228,40 +247,37 @@ h1 {
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
   width: 100%;
 }
 
-.form-group {
+:deep(.el-input) {
+  --el-input-bg-color: rgba(255, 255, 255, 0.07);
+  --el-input-border-color: transparent;
+  --el-input-hover-border-color: transparent;
+  --el-input-focus-border-color: transparent;
+  --el-input-text-color: white;
+  --el-input-placeholder-color: rgba(255, 255, 255, 0.5);
   position: relative;
-  width: 100%;
 }
 
-input {
-  width: 100%;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.07);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-size: 16px;
+:deep(.el-input__wrapper) {
+  box-shadow: none !important;
   transition: all 0.3s ease;
-  box-sizing: border-box;
+  position: relative;
+  padding: 4px 11px;
 }
 
-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+:deep(.el-input) input {
+  height: 40px;
+  font-size: 15px;
 }
 
-input:focus {
-  outline: none;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.input-focus-effect {
+:deep(.el-input__wrapper::after) {
+  content: '';
   position: absolute;
-  bottom: 0;
   left: 50%;
+  bottom: 0;
   width: 0;
   height: 2px;
   background: linear-gradient(90deg, #60a5fa, #a78bfa);
@@ -269,50 +285,79 @@ input:focus {
   transform: translateX(-50%);
 }
 
-input:focus + .input-focus-effect {
+:deep(.el-input__wrapper:focus-within::after) {
   width: 100%;
+  left: 0;
+  transform: translateX(0);
 }
 
-button {
-  position: relative;
-  padding: 12px;
+:deep(.el-input__wrapper:hover) {
+  --el-input-bg-color: rgba(255, 255, 255, 0.1);
+}
+
+:deep(.el-input__prefix-icon) {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+:deep(.el-form-item__error) {
+  color: var(--el-color-danger);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 14px;
   background: linear-gradient(90deg, #60a5fa, #a78bfa);
   border: none;
-  border-radius: 8px;
-  color: white;
   font-size: 16px;
-  cursor: pointer;
-  overflow: hidden;
   transition: all 0.3s ease;
-  width: 100%;
-  box-sizing: border-box;
+  margin-top: 10px;
+  height: 48px;
 }
 
-button:hover {
+.submit-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-.button-effect {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: all 0.5s ease;
+.submit-btn:focus,
+.submit-btn:hover {
+  background: linear-gradient(90deg, #60a5fa, #a78bfa);
+  border: none;
 }
 
-button:hover .button-effect {
-  width: 200%;
-  height: 200%;
+:deep(.el-form-item) {
+  margin-bottom: 20px;
 }
 
-.loading {
-  opacity: 0.8;
-  cursor: wait;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:deep(.el-form-item) {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+:deep(.el-form-item:nth-child(1)) {
+  animation-delay: 0.1s;
+}
+
+:deep(.el-form-item:nth-child(2)) {
+  animation-delay: 0.2s;
+}
+
+.submit-btn {
+  animation: fadeIn 0.3s ease forwards;
+  animation-delay: 0.3s;
+  opacity: 0;
 }
 
 @media (max-width: 480px) {
