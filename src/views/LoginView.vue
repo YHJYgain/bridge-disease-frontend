@@ -3,9 +3,10 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
+import request from '../utils/request'
 
 const router = useRouter()
-const username = ref('')
+const username_or_email = ref('')
 const password = ref('')
 const isLoading = ref(false)
 const canvasRef = ref(null)
@@ -49,7 +50,7 @@ const initCanvas = () => {
   window.addEventListener('resize', updateCanvasSize)
 
   // 初始化粒子
-  particles = Array(130).fill().map(() => {
+  particles = Array(125).fill().map(() => {
     return new Particle(
       Math.random() * window.innerWidth,
       Math.random() * window.innerHeight
@@ -78,7 +79,7 @@ const initCanvas = () => {
           ctx.beginPath()
           ctx.moveTo(particle.x, particle.y)
           ctx.lineTo(otherParticle.x, otherParticle.y)
-          ctx.strokeStyle = `rgba(255, 255, 255, ${0.25 - distance/500})`
+          ctx.strokeStyle = `rgba(255, 255, 255, ${0.25 - distance / 500})`
           ctx.stroke()
         }
       })
@@ -92,7 +93,7 @@ const initCanvas = () => {
         ctx.beginPath()
         ctx.moveTo(particle.x, particle.y)
         ctx.lineTo(mouse.x, mouse.y)
-        ctx.strokeStyle = `rgba(255, 255, 255, ${0.25 - distance/500})`
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.35 - distance / 500})`
         ctx.stroke()
       }
     })
@@ -125,26 +126,72 @@ onMounted(() => {
   })
 })
 
-const formRef = ref(null)
+const formRef = ref(null) // 用于访问表单实例
+// 邮箱验证规则
+const validateEmail = (rule, value, callback) => {
+  if (!value) {
+    callback()
+    return
+  }
+  const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/
+  if (value.includes('@') && !emailRegex.test(value)) {
+    callback(new Error('请输入正确的邮箱格式'))
+  } else {
+    callback()
+  }
+}
+// 表单验证规则
 const formRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  username_or_email: [
+    { required: true, message: '请输入用户名或邮箱', trigger: 'blur' },
+    { validator: validateEmail, trigger: ['blur', 'change'] },
+  ],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
+// 登录方法
 const handleLogin = async () => {
-  if (!formRef.value) return
-  
+  if (!formRef.value) {
+    ElMessage.error('表单验证失败')
+    return
+  }
+
   try {
     await formRef.value.validate()
     isLoading.value = true
-    // 模拟登录请求
-    setTimeout(() => {
-      isLoading.value = false
-      ElMessage.success('登录成功')
+
+    const formData = new FormData()
+    formData.append('username_or_email', username_or_email.value)
+    formData.append('password', password.value)
+
+    const data = await request.post('/user/login', formData)
+    console.info('登录响应数据：', data)
+    const operation = data.operation
+    console.info('登录操作记录：', operation)
+
+    // 根据后端操作状态判断登录是否成功
+    if (operation.status === 'SUCCESS') {
+      // 保存 token 到 localStorage
+      localStorage.setItem('access_token', data.access_token)
+      localStorage.setItem('refresh_token', data.refresh_token)
+
+      // 显示登录成功信息，包含操作详情
+      ElMessage.success({
+        message: `【登录成功】\n耗时：${operation.duration.toFixed(3)}秒\n设备：${operation.device_info}`,
+        duration: 3000
+      })
+
       router.push('/home')
-    }, 1500)
+    }
+    // 登录失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
-    console.error('表单验证失败:', error)
+    console.error('【登录错误】', error)
+    ElMessage.error({
+      message: error?.message || '登录错误，请重试',
+      duration: 5000
+    })
+  } finally {
+    isLoading.value = false
   }
 }
 </script>
@@ -152,40 +199,20 @@ const handleLogin = async () => {
 <template>
   <div class="login-container">
     <canvas ref="canvasRef" class="particles-canvas"></canvas>
-    
+
     <div class="login-card">
       <h1>桥梁病害检测分割系统</h1>
-      <el-form
-        ref="formRef"
-        :model="{ username, password }"
-        :rules="formRules"
-        class="login-form"
-        @submit.prevent="handleLogin"
-      >
-        <el-form-item prop="username">
-          <el-input
-            v-model="username"
-            placeholder="用户名"
-            :prefix-icon="User"
-          />
-        </el-form-item>
-        
-        <el-form-item prop="password">
-          <el-input
-            v-model="password"
-            type="password"
-            placeholder="密码"
-            :prefix-icon="Lock"
-            show-password
-          />
+      <el-form ref="formRef" :model="{ username_or_email, password }" :rules="formRules" class="login-form" status-icon
+        @submit.prevent="handleLogin">
+        <el-form-item prop="username_or_email">
+          <el-input v-model="username_or_email" placeholder="用户名或邮箱" :prefix-icon="User" />
         </el-form-item>
 
-        <el-button
-          type="primary"
-          :loading="isLoading"
-          class="submit-btn"
-          @click="handleLogin"
-        >
+        <el-form-item prop="password">
+          <el-input v-model="password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
+        </el-form-item>
+
+        <el-button type="primary" :loading="isLoading" class="submit-btn" @click="handleLogin">
           {{ isLoading ? '登录中...' : '登录' }}
         </el-button>
       </el-form>
@@ -241,7 +268,7 @@ h1 {
   margin-bottom: 30px;
   font-size: 2em;
   font-weight: 300;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .login-form {
@@ -279,7 +306,7 @@ h1 {
   left: 50%;
   bottom: 0;
   width: 0;
-  height: 2px;
+  height: 1.7px;
   background: linear-gradient(90deg, #60a5fa, #a78bfa);
   transition: all 0.3s ease;
   transform: translateX(-50%);
@@ -309,16 +336,44 @@ h1 {
   width: 100%;
   padding: 14px;
   background: linear-gradient(90deg, #60a5fa, #a78bfa);
+  background-size: 200% 100%;
   border: none;
   font-size: 16px;
   transition: all 0.3s ease;
   margin-top: 10px;
-  height: 48px;
+  height: 38px;
+  position: relative;
+  overflow: hidden;
 }
 
 .submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(96, 165, 250, 0.4);
+  background-position: 100% 0;
+}
+
+.submit-btn:focus,
+.submit-btn:hover {
+  background: linear-gradient(90deg, #60a5fa, #a78bfa);
+  background-size: 200% 100%;
+  border: none;
+}
+
+.submit-btn::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+  transform: scale(0);
+  transition: transform 0.5s ease-out;
+  pointer-events: none;
+}
+
+.submit-btn:hover::after {
+  transform: scale(1);
 }
 
 .submit-btn:focus,
@@ -336,6 +391,7 @@ h1 {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
