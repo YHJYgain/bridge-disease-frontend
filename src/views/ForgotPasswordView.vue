@@ -2,25 +2,25 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { Message } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import ParticleBackground from '../components/ParticleBackground.vue'
 import FooterComponent from '../components/FooterComponent.vue'
 
 const router = useRouter()
-const username_or_email = ref('')
-const password = ref('')
-const isLogining = ref(false)
+const email = ref('')
+const isLoading = ref(false)
+const resetSent = ref(false)
 
 const formRef = ref(null) // 用于访问表单实例
 // 邮箱验证规则
 const validateEmail = (rule, value, callback) => {
   if (!value) {
-    callback()
+    callback(new Error('请输入邮箱地址'))
     return
   }
   const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/
-  if (value.includes('@') && !emailRegex.test(value)) {
+  if (!emailRegex.test(value)) {
     callback(new Error('请输入正确的邮箱格式'))
   } else {
     callback()
@@ -28,85 +28,82 @@ const validateEmail = (rule, value, callback) => {
 }
 // 表单验证规则
 const formRules = {
-  username_or_email: [
-    { required: true, message: '请输入用户名或邮箱', trigger: 'blur' },
+  email: [
+    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
     { validator: validateEmail, trigger: ['blur', 'change'] },
-  ],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  ]
 }
 
-// 登录方法
-const handleLogin = async () => {
+// 返回登录页面
+const goToLogin = () => {
+  router.push('/')
+}
+
+// 发送重置密码邮件
+const handleResetPassword = async () => {
   if (!formRef.value) {
-    ElMessage.error('系统错误，表单实例不存在')
+    ElMessage.error('表单验证失败')
     return
   }
 
   try {
     await formRef.value.validate()
-    isLogining.value = true
+    isLoading.value = true
 
     const formData = new FormData()
-    formData.append('username_or_email', username_or_email.value)
-    formData.append('password', password.value)
+    formData.append('email', email.value)
 
-    const data = await request.post('/user/login', formData)
-    console.info('登录响应数据：', data)
-    const operation = data.operation
-    console.info('登录操作记录：', operation)
-
-    // 根据后端操作状态判断登录是否成功
-    if (operation.status === 'SUCCESS') {
-      // 保存 token 到 localStorage
-      localStorage.setItem('access_token', data.access_token)
-      localStorage.setItem('refresh_token', data.refresh_token)
-
-      // 显示登录成功信息，包含操作详情
+    // 这里应该调用后端的重置密码API
+    // const data = await request.post('/user/reset-password', formData)
+    
+    // 模拟API调用成功
+    setTimeout(() => {
+      resetSent.value = true
       ElMessage.success({
-        message: `【登录成功】\n耗时：${operation.duration.toFixed(3)}秒\n设备：${operation.device_info}`,
+        message: '重置密码邮件已发送，请查收邮箱',
         duration: 3000
       })
-
-      router.push('/home')
-    }
-    // 登录失败情况已在响应拦截器中处理，这里不再重复
+    }, 1500)
   } catch (error) {
-    console.error('【登录错误】', error)
+    console.error('【重置密码错误】', error)
     ElMessage.error({
-      message: error?.message || '登录错误，请重试',
+      message: error?.message || '发送重置邮件错误，请重试',
       duration: 5000
     })
   } finally {
-    isLogining.value = false
+    isLoading.value = false
   }
 }
 </script>
 
 <template>
-  <div class="login-container">
+  <div class="forgot-password-container">
     <ParticleBackground />
 
-    <div class="login-card">
-      <h1>桥梁病害检测分割系统</h1>
-      <el-form ref="formRef" :model="{ username_or_email, password }" :rules="formRules" class="login-form" status-icon
-        @submit.prevent="handleLogin">
-        <el-form-item prop="username_or_email">
-          <el-input v-model="username_or_email" placeholder="用户名或邮箱" :prefix-icon="User" />
-        </el-form-item>
+    <div class="forgot-password-card">
+      <h1>找回密码</h1>
+      <div v-if="!resetSent">
+        <el-form ref="formRef" :model="{ email }" :rules="formRules" class="forgot-password-form" status-icon
+          @submit.prevent="handleResetPassword">
+          <el-form-item prop="email">
+            <el-input v-model="email" placeholder="请输入注册邮箱" :prefix-icon="Message" />
+          </el-form-item>
 
-        <el-form-item prop="password">
-          <el-input v-model="password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
-        </el-form-item>
-
-        <el-button type="primary" loading :loading="isLogining" class="submit-btn" @click="handleLogin">
-          {{ isLogining ? '登录中...' : '登录' }}
-        </el-button>
-        
-        <div class="form-footer">
-          <el-button link type="primary" @click="router.push('/register')" class="text-btn">注册账号</el-button>
-          <el-button link type="primary" @click="router.push('/forgot-password')" class="text-btn">找回密码</el-button>
-        </div>
-      </el-form>
+          <el-button type="primary" :loading="isLoading" class="submit-btn" @click="handleResetPassword">
+            {{ isLoading ? '发送中...' : '发送重置邮件' }}
+          </el-button>
+          
+          <div class="form-footer">
+            <el-button link type="primary" @click="goToLogin" class="text-btn">返回登录</el-button>
+          </div>
+        </el-form>
+      </div>
+      <div v-else class="success-message">
+        <el-icon class="success-icon"><i class="el-icon-check"></i></el-icon>
+        <p>重置密码邮件已发送至您的邮箱</p>
+        <p class="sub-text">请查收邮件并按照指引重置密码</p>
+        <el-button type="primary" class="back-btn" @click="goToLogin">返回登录</el-button>
+      </div>
     </div>
     
     <!-- 页脚版权信息 -->
@@ -115,7 +112,7 @@ const handleLogin = async () => {
 </template>
 
 <style scoped>
-.login-container {
+.forgot-password-container {
   min-height: 98.4vh;
   display: flex;
   justify-content: center;
@@ -132,7 +129,7 @@ const handleLogin = async () => {
   pointer-events: none;
 }
 
-.login-card {
+.forgot-password-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 20px;
@@ -160,12 +157,12 @@ h1 {
   color: white;
   text-align: center;
   margin-bottom: 30px;
-  font-size: 2em;
+  font-size: 1.5em;
   font-weight: 300;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.login-form {
+.forgot-password-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -311,7 +308,7 @@ h1 {
 }
 
 @media (max-width: 480px) {
-  .login-card {
+  .forgot-password-card {
     margin: 20px;
     padding: 30px;
   }
@@ -319,7 +316,7 @@ h1 {
   
 .form-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   margin-top: 15px;
 }
 

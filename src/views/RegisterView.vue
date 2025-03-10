@@ -2,111 +2,178 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
+import { User, Lock, Message } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import ParticleBackground from '../components/ParticleBackground.vue'
 import FooterComponent from '../components/FooterComponent.vue'
 
 const router = useRouter()
-const username_or_email = ref('')
+const username = ref('')
+const email = ref('')
 const password = ref('')
-const isLogining = ref(false)
+const confirmPassword = ref('')
+const isLoading = ref(false)
+const registerSuccess = ref(false)
 
 const formRef = ref(null) // 用于访问表单实例
+
+// 用户名验证规则
+const validateUsername = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入用户名'))
+    return
+  }
+  if (value.length < 3) {
+    callback(new Error('用户名长度不能小于3个字符'))
+  } else {
+    callback()
+  }
+}
+
 // 邮箱验证规则
 const validateEmail = (rule, value, callback) => {
   if (!value) {
-    callback()
+    callback(new Error('请输入邮箱地址'))
     return
   }
   const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/
-  if (value.includes('@') && !emailRegex.test(value)) {
+  if (!emailRegex.test(value)) {
     callback(new Error('请输入正确的邮箱格式'))
   } else {
     callback()
   }
 }
-// 表单验证规则
-const formRules = {
-  username_or_email: [
-    { required: true, message: '请输入用户名或邮箱', trigger: 'blur' },
-    { validator: validateEmail, trigger: ['blur', 'change'] },
-  ],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+
+// 密码验证规则
+const validatePassword = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入密码'))
+    return
+  }
+  if (value.length < 6) {
+    callback(new Error('密码长度不能小于6个字符'))
+  } else {
+    callback()
+  }
 }
 
-// 登录方法
-const handleLogin = async () => {
+// 确认密码验证规则
+const validateConfirmPassword = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请再次输入密码'))
+    return
+  }
+  if (value !== password.value) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+// 表单验证规则
+const formRules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { validator: validateUsername, trigger: ['blur', 'change'] },
+  ],
+  email: [
+    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+    { validator: validateEmail, trigger: ['blur', 'change'] },
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { validator: validatePassword, trigger: ['blur', 'change'] },
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    { validator: validateConfirmPassword, trigger: ['blur', 'change'] },
+  ]
+}
+
+// 返回登录页面
+const goToLogin = () => {
+  router.push('/')
+}
+
+// 注册方法
+const handleRegister = async () => {
   if (!formRef.value) {
-    ElMessage.error('系统错误，表单实例不存在')
+    ElMessage.error('表单验证失败')
     return
   }
 
   try {
     await formRef.value.validate()
-    isLogining.value = true
+    isLoading.value = true
 
     const formData = new FormData()
-    formData.append('username_or_email', username_or_email.value)
+    formData.append('username', username.value)
+    formData.append('email', email.value)
     formData.append('password', password.value)
 
-    const data = await request.post('/user/login', formData)
-    console.info('登录响应数据：', data)
-    const operation = data.operation
-    console.info('登录操作记录：', operation)
-
-    // 根据后端操作状态判断登录是否成功
-    if (operation.status === 'SUCCESS') {
-      // 保存 token 到 localStorage
-      localStorage.setItem('access_token', data.access_token)
-      localStorage.setItem('refresh_token', data.refresh_token)
-
-      // 显示登录成功信息，包含操作详情
+    // 这里应该调用后端的注册API
+    // const data = await request.post('/user/register', formData)
+    
+    // 模拟API调用成功
+    setTimeout(() => {
+      registerSuccess.value = true
       ElMessage.success({
-        message: `【登录成功】\n耗时：${operation.duration.toFixed(3)}秒\n设备：${operation.device_info}`,
+        message: '注册成功，请登录',
         duration: 3000
       })
-
-      router.push('/home')
-    }
-    // 登录失败情况已在响应拦截器中处理，这里不再重复
+    }, 1500)
   } catch (error) {
-    console.error('【登录错误】', error)
+    console.error('【注册错误】', error)
     ElMessage.error({
-      message: error?.message || '登录错误，请重试',
+      message: error?.message || '注册错误，请重试',
       duration: 5000
     })
   } finally {
-    isLogining.value = false
+    isLoading.value = false
   }
 }
 </script>
 
 <template>
-  <div class="login-container">
+  <div class="register-container">
     <ParticleBackground />
 
-    <div class="login-card">
-      <h1>桥梁病害检测分割系统</h1>
-      <el-form ref="formRef" :model="{ username_or_email, password }" :rules="formRules" class="login-form" status-icon
-        @submit.prevent="handleLogin">
-        <el-form-item prop="username_or_email">
-          <el-input v-model="username_or_email" placeholder="用户名或邮箱" :prefix-icon="User" />
-        </el-form-item>
+    <div class="register-card">
+      <h1>注册账号</h1>
+      <div v-if="!registerSuccess">
+        <el-form ref="formRef" :model="{ username, email, password, confirmPassword }" :rules="formRules" class="register-form" status-icon
+          @submit.prevent="handleRegister">
+          <el-form-item prop="username">
+            <el-input v-model="username" placeholder="用户名" :prefix-icon="User" />
+          </el-form-item>
 
-        <el-form-item prop="password">
-          <el-input v-model="password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
-        </el-form-item>
+          <el-form-item prop="email">
+            <el-input v-model="email" placeholder="邮箱" :prefix-icon="Message" />
+          </el-form-item>
 
-        <el-button type="primary" loading :loading="isLogining" class="submit-btn" @click="handleLogin">
-          {{ isLogining ? '登录中...' : '登录' }}
-        </el-button>
-        
-        <div class="form-footer">
-          <el-button link type="primary" @click="router.push('/register')" class="text-btn">注册账号</el-button>
-          <el-button link type="primary" @click="router.push('/forgot-password')" class="text-btn">找回密码</el-button>
-        </div>
-      </el-form>
+          <el-form-item prop="password">
+            <el-input v-model="password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
+          </el-form-item>
+
+          <el-form-item prop="confirmPassword">
+            <el-input v-model="confirmPassword" type="password" placeholder="确认密码" :prefix-icon="Lock" show-password />
+          </el-form-item>
+
+          <el-button type="primary" :loading="isLoading" class="submit-btn" @click="handleRegister">
+            {{ isLoading ? '注册中...' : '注册' }}
+          </el-button>
+          
+          <div class="form-footer">
+            <el-button link type="primary" @click="goToLogin" class="text-btn">已有账号？返回登录</el-button>
+          </div>
+        </el-form>
+      </div>
+      <div v-else class="success-message">
+        <el-icon class="success-icon"><i class="el-icon-check"></i></el-icon>
+        <p>注册成功！</p>
+        <p class="sub-text">您可以立即登录使用</p>
+        <el-button type="primary" class="back-btn" @click="goToLogin">前往登录</el-button>
+      </div>
     </div>
     
     <!-- 页脚版权信息 -->
@@ -115,7 +182,7 @@ const handleLogin = async () => {
 </template>
 
 <style scoped>
-.login-container {
+.register-container {
   min-height: 98.4vh;
   display: flex;
   justify-content: center;
@@ -132,7 +199,7 @@ const handleLogin = async () => {
   pointer-events: none;
 }
 
-.login-card {
+.register-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 20px;
@@ -160,12 +227,12 @@ h1 {
   color: white;
   text-align: center;
   margin-bottom: 30px;
-  font-size: 2em;
+  font-size: 1.5em;
   font-weight: 300;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.login-form {
+.register-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -304,22 +371,23 @@ h1 {
   animation-delay: 0.2s;
 }
 
+:deep(.el-form-item:nth-child(3)) {
+  animation-delay: 0.3s;
+}
+
+:deep(.el-form-item:nth-child(4)) {
+  animation-delay: 0.4s;
+}
+
 .submit-btn {
   animation: fadeIn 0.3s ease forwards;
-  animation-delay: 0.3s;
+  animation-delay: 0.5s;
   opacity: 0;
 }
 
-@media (max-width: 480px) {
-  .login-card {
-    margin: 20px;
-    padding: 30px;
-  }
-}
-  
 .form-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   margin-top: 15px;
 }
 
@@ -332,5 +400,49 @@ h1 {
 .text-btn:hover {
   color: white;
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.success-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  padding: 20px 0;
+}
+
+.success-icon {
+  font-size: 48px;
+  color: #67c23a;
+  margin-bottom: 20px;
+}
+
+.success-message p {
+  margin: 5px 0;
+  font-size: 18px;
+}
+
+.sub-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px !important;
+}
+
+.back-btn {
+  margin-top: 20px;
+  background: linear-gradient(90deg, #60a5fa, #a78bfa);
+  border: none;
+  padding: 10px 25px;
+}
+
+@media (max-width: 480px) {
+  .register-card {
+    margin: 20px;
+    padding: 30px;
+  }
+  
+  .footer {
+    padding: 10px 0;
+    font-size: 12px;
+  }
 }
 </style>
