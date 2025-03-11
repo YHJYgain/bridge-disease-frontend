@@ -113,7 +113,7 @@ const handleRegister = async () => {
 
     // 这里应该调用后端的注册API
     // const data = await request.post('/user/register', formData)
-    
+
     // 模拟API调用成功
     setTimeout(() => {
       registerSuccess.value = true
@@ -141,8 +141,8 @@ const handleRegister = async () => {
     <div class="register-card">
       <h1>注册账号</h1>
       <div v-if="!registerSuccess">
-        <el-form ref="formRef" :model="{ username, email, password, confirmPassword }" :rules="formRules" class="register-form" status-icon
-          @submit.prevent="handleRegister">
+        <el-form ref="formRef" :model="{ username, email, password, confirmPassword }" :rules="formRules"
+          class="register-form" status-icon @submit.prevent="handleRegister">
           <el-form-item prop="username">
             <el-input v-model="username" placeholder="用户名" :prefix-icon="User" />
           </el-form-item>
@@ -162,7 +162,7 @@ const handleRegister = async () => {
           <el-button type="primary" :loading="isLoading" class="submit-btn" @click="handleRegister">
             {{ isLoading ? '注册中...' : '注册' }}
           </el-button>
-          
+
           <div class="form-footer">
             <el-button link type="primary" @click="goToLogin" class="text-btn">已有账号？返回登录</el-button>
           </div>
@@ -175,7 +175,7 @@ const handleRegister = async () => {
         <el-button type="primary" class="back-btn" @click="goToLogin">前往登录</el-button>
       </div>
     </div>
-    
+
     <!-- 页脚版权信息 -->
     <FooterComponent />
   </div>
@@ -439,7 +439,7 @@ h1 {
     margin: 20px;
     padding: 30px;
   }
-  
+
   .footer {
     padding: 10px 0;
     font-size: 12px;

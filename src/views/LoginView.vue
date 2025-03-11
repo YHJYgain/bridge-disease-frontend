@@ -19,7 +19,7 @@ const validateEmail = (rule, value, callback) => {
     callback(new Error('请输入用户名或邮箱'))
     return
   }
-  
+
   // 判断是否为邮箱格式（包含@符号）
   if (value.includes('@')) {
     const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/
@@ -34,7 +34,7 @@ const validateEmail = (rule, value, callback) => {
       return
     }
   }
-  
+
   // 验证通过
   callback()
 }

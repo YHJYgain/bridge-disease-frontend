@@ -55,7 +55,7 @@ const handleResetPassword = async () => {
 
     // 这里应该调用后端的重置密码API
     // const data = await request.post('/user/reset-password', formData)
-    
+
     // 模拟API调用成功
     setTimeout(() => {
       resetSent.value = true
@@ -92,7 +92,7 @@ const handleResetPassword = async () => {
           <el-button type="primary" :loading="isLoading" class="submit-btn" @click="handleResetPassword">
             {{ isLoading ? '发送中...' : '发送重置邮件' }}
           </el-button>
-          
+
           <div class="form-footer">
             <el-button link type="primary" @click="goToLogin" class="text-btn">返回登录</el-button>
           </div>
@@ -105,7 +105,7 @@ const handleResetPassword = async () => {
         <el-button type="primary" class="back-btn" @click="goToLogin">返回登录</el-button>
       </div>
     </div>
-    
+
     <!-- 页脚版权信息 -->
     <FooterComponent />
   </div>
@@ -313,7 +313,7 @@ h1 {
     padding: 30px;
   }
 }
-  
+
 .form-footer {
   display: flex;
   justify-content: center;
