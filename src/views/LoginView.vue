@@ -13,19 +13,32 @@ const password = ref('')
 const isLogining = ref(false)
 
 const formRef = ref(null) // 用于访问表单实例
-// 邮箱验证规则
+// 用户名/邮箱验证规则
 const validateEmail = (rule, value, callback) => {
   if (!value) {
-    callback()
+    callback(new Error('请输入用户名或邮箱'))
     return
   }
-  const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/
-  if (value.includes('@') && !emailRegex.test(value)) {
-    callback(new Error('请输入正确的邮箱格式'))
+  
+  // 判断是否为邮箱格式（包含@符号）
+  if (value.includes('@')) {
+    const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/
+    if (!emailRegex.test(value)) {
+      callback(new Error('请输入正确的邮箱格式'))
+      return
+    }
   } else {
-    callback()
+    // 不是邮箱格式，判断用户名长度
+    if (value.length < 3) {
+      callback(new Error('用户名长度不能小于3个字符'))
+      return
+    }
   }
+  
+  // 验证通过
+  callback()
 }
+
 // 表单验证规则
 const formRules = {
   username_or_email: [
@@ -98,17 +111,17 @@ const handleLogin = async () => {
           <el-input v-model="password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
         </el-form-item>
 
-        <el-button type="primary" loading :loading="isLogining" class="submit-btn" @click="handleLogin">
+        <el-button type="primary" :loading="isLogining" class="submit-btn" @click="handleLogin">
           {{ isLogining ? '登录中...' : '登录' }}
         </el-button>
-        
+
         <div class="form-footer">
           <el-button link type="primary" @click="router.push('/register')" class="text-btn">注册账号</el-button>
           <el-button link type="primary" @click="router.push('/forgot-password')" class="text-btn">找回密码</el-button>
         </div>
       </el-form>
     </div>
-    
+
     <!-- 页脚版权信息 -->
     <FooterComponent />
   </div>
@@ -316,7 +329,7 @@ h1 {
     padding: 30px;
   }
 }
-  
+
 .form-footer {
   display: flex;
   justify-content: space-between;
