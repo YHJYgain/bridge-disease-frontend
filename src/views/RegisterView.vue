@@ -174,25 +174,43 @@ const handleRegister = async () => {
       formData.append('phone', phone.value)
     }
 
+    // 打印注册表单数据，过滤敏感信息
+    const safeFormData = {
+      username: username.value,
+      email: email.value,
+      has_password: password.value ? '已设置' : '未设置',
+      has_first_name: first_name.value ? '已设置' : '未设置',
+      has_last_name: last_name.value ? '已设置' : '未设置',
+      has_avatar: avatar_file.value ? '已设置' : '未设置',
+      has_phone: phone.value ? '已设置' : '未设置'
+    }
+    console.info('【注册表单数据】', safeFormData)
+
     const data = await request.post('/user/register', formData)
-    console.info('登录响应数据：', data)
+    console.info('【注册响应数据】', data)
     const operation = data.operation
 
     // 根据后端操作状态判断登录是否成功
     if (operation.status === 'SUCCESS') {
       // 显示注册成功信息，包含操作详情
       ElMessage.success({
-        message: '注册成功，请登录',
-        duration: 3000
+        message: `<div style="line-height: 1.8; font-size: 14px; padding: 10px 0;">
+          <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">【注册成功】</div>
+          <div style="color: #67c23a; margin: 8px 0;">耗时：${operation.duration.toFixed(3)}秒</div>
+          <div style="color: #909399;">设备：${operation.device_info}</div>
+        </div>`,
+        duration: 3000,
+        dangerouslyUseHTMLString: true
       })
 
+      // 注册成功后跳转到登录页面
       router.push('/login')
     }
     // 注册失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
     console.error('【注册错误】', error)
     ElMessage.error({
-      message: error?.message || '注册错误，请重试',
+      message: '【注册错误】' + error?.message || '注册错误，请重试',
       duration: 5000
     })
   } finally {
@@ -214,8 +232,8 @@ const handleRegister = async () => {
           <el-form-item prop="avatar_file" class="avatar-upload">
             <p class="upload-label">头像上传（可选）</p>
             <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
-              accept="image/png, image/jpg, image/jpeg" :show-file-list="false"
-              :on-change="handleAvatarChange" :auto-upload="false">
+              accept="image/png, image/jpg, image/jpeg" :show-file-list="false" :on-change="handleAvatarChange"
+              :auto-upload="false">
               <img v-if="avatarPreviewUrl" :src="avatarPreviewUrl" class="avatar-preview" />
               <div v-else class="avatar-placeholder">
                 <el-icon class="avatar-icon">

@@ -51,7 +51,7 @@ const formRules = {
 // 登录方法
 const handleLogin = async () => {
   if (!formRef.value) {
-    ElMessage.error('系统错误，表单实例不存在')
+    ElMessage.error('【登录错误】表单实例不存在')
     return
   }
 
@@ -63,10 +63,16 @@ const handleLogin = async () => {
     formData.append('username_or_email', username_or_email.value)
     formData.append('password', password.value)
 
+    // 打印登录表单数据，过滤敏感信息
+    const safeFormData = {
+      username_or_email: username_or_email.value,
+      has_password: password.value ? '已设置' : '未设置'
+    }
+    console.info('【登录表单数据】', safeFormData)
+
     const data = await request.post('/user/login', formData)
-    console.info('登录响应数据：', data)
+    console.info('【登录响应数据】', data)
     const operation = data.operation
-    console.info('登录操作记录：', operation)
 
     // 根据后端操作状态判断登录是否成功
     if (operation.status === 'SUCCESS') {
@@ -76,17 +82,23 @@ const handleLogin = async () => {
 
       // 显示登录成功信息，包含操作详情
       ElMessage.success({
-        message: `【登录成功】\n耗时：${operation.duration.toFixed(3)}秒\n设备：${operation.device_info}`,
-        duration: 3000
+        message: `<div style="line-height: 1.8; font-size: 14px; padding: 10px 0;">
+          <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">【登录成功】</div>
+          <div style="color: #67c23a; margin: 8px 0;">耗时：${operation.duration.toFixed(3)}秒</div>
+          <div style="color: #909399;">设备：${operation.device_info}</div>
+        </div>`,
+        duration: 3000,
+        dangerouslyUseHTMLString: true
       })
 
+      // 登录成功后跳转到首页
       router.push('/home')
     }
     // 登录失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
     console.error('【登录错误】', error)
     ElMessage.error({
-      message: error?.message || '登录错误，请重试',
+      message: '【登录错误】' + error?.message || '登录错误，请重试',
       duration: 5000
     })
   } finally {
