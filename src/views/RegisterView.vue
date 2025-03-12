@@ -174,17 +174,21 @@ const handleRegister = async () => {
       formData.append('phone', phone.value)
     }
 
-    // 这里应该调用后端的注册API
-    // const data = await request.post('/user/register', formData)
+    const data = await request.post('/user/register', formData)
+    console.info('登录响应数据：', data)
+    const operation = data.operation
 
-    // 模拟API调用成功
-    setTimeout(() => {
-      registerSuccess.value = true
+    // 根据后端操作状态判断登录是否成功
+    if (operation.status === 'SUCCESS') {
+      // 显示注册成功信息，包含操作详情
       ElMessage.success({
         message: '注册成功，请登录',
         duration: 3000
       })
-    }, 1500)
+
+      router.push('/login')
+    }
+    // 注册失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
     console.error('【注册错误】', error)
     ElMessage.error({
