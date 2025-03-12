@@ -177,7 +177,7 @@ h1 {
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
   width: 100%;
 }
 
@@ -316,7 +316,6 @@ h1 {
 .submit-btn {
   animation: fadeIn 0.3s ease forwards;
   animation-delay: 0.3s;
-  opacity: 0;
 }
 
 @media (max-width: 480px) {
