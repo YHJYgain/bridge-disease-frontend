@@ -1,8 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Message } from '@element-plus/icons-vue'
+import { User, Lock, Message, Phone, Avatar } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import ParticleBackground from '../components/ParticleBackground.vue'
 import FooterComponent from '../components/FooterComponent.vue'
@@ -12,30 +12,25 @@ const username = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const isLoading = ref(false)
+const first_name = ref('')
+const last_name = ref('')
+const avatar_file = ref(null)
+const phone = ref('')
+const isRegistering = ref(false)
 const registerSuccess = ref(false)
 
 const formRef = ref(null) // 用于访问表单实例
 
-// 用户名验证规则
-const validateUsername = (rule, value, callback) => {
-  if (!value) {
-    callback(new Error('请输入用户名'))
-    return
+// 创建头像预览 URL 的计算属性
+const avatarPreviewUrl = computed(() => {
+  if (avatar_file.value) {
+    return URL.createObjectURL(avatar_file.value)
   }
-  if (value.length < 3) {
-    callback(new Error('用户名长度不能小于3个字符'))
-  } else {
-    callback()
-  }
-}
+  return ''
+})
 
 // 邮箱验证规则
 const validateEmail = (rule, value, callback) => {
-  if (!value) {
-    callback(new Error('请输入邮箱地址'))
-    return
-  }
   const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/
   if (!emailRegex.test(value)) {
     callback(new Error('请输入正确的邮箱格式'))
@@ -44,27 +39,72 @@ const validateEmail = (rule, value, callback) => {
   }
 }
 
-// 密码验证规则
-const validatePassword = (rule, value, callback) => {
-  if (!value) {
-    callback(new Error('请输入密码'))
-    return
-  }
-  if (value.length < 6) {
-    callback(new Error('密码长度不能小于6个字符'))
+// 确认密码验证规则
+const validateConfirmPassword = (rule, value, callback) => {
+  if (value !== password.value) {
+    callback(new Error('两次输入的密码不一致'))
   } else {
     callback()
   }
 }
 
-// 确认密码验证规则
-const validateConfirmPassword = (rule, value, callback) => {
+// 姓氏验证规则
+const validateFirstName = (rule, value, callback) => {
   if (!value) {
-    callback(new Error('请再次输入密码'))
+    callback() // 姓氏可以为空
     return
   }
-  if (value !== password.value) {
-    callback(new Error('两次输入的密码不一致'))
+  callback()
+}
+
+// 名字验证规则
+const validateLastName = (rule, value, callback) => {
+  if (!value) {
+    callback() // 名字可以为空
+    return
+  }
+  callback()
+}
+
+// 头像文件验证规则
+const validateAvatar = (rule, value, callback) => {
+  if (!value) {
+    callback() // 头像可以为空
+    return
+  }
+  callback()
+}
+
+// 头像上传处理函数
+const handleAvatarChange = (file) => {
+  // 检查文件类型
+  const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg']
+  if (!allowedTypes.includes(file.raw.type)) {
+    ElMessage.error('请上传 JPG/PNG/JEPG 格式的图片')
+    return false
+  }
+
+  // 检查文件大小（限制为 5MB）
+  const isLt5M = file.raw.size / 1024 / 1024 < 5
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB')
+    return false
+  }
+
+  // 验证通过，更新头像文件
+  avatar_file.value = file.raw
+  return true
+}
+
+// 手机号验证规则
+const validatePhone = (rule, value, callback) => {
+  if (!value) {
+    callback() // 手机号可以为空
+    return
+  }
+  const phoneRegex = /^1[3-9]\d{9}$/
+  if (!phoneRegex.test(value)) {
+    callback(new Error('请输入正确的手机号格式'))
   } else {
     callback()
   }
@@ -74,7 +114,6 @@ const validateConfirmPassword = (rule, value, callback) => {
 const formRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { validator: validateUsername, trigger: ['blur', 'change'] },
   ],
   email: [
     { required: true, message: '请输入邮箱地址', trigger: 'blur' },
@@ -82,11 +121,22 @@ const formRules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { validator: validatePassword, trigger: ['blur', 'change'] },
   ],
   confirmPassword: [
     { required: true, message: '请再次输入密码', trigger: 'blur' },
     { validator: validateConfirmPassword, trigger: ['blur', 'change'] },
+  ],
+  first_name: [
+    { validator: validateFirstName, trigger: ['blur', 'change'] },
+  ],
+  last_name: [
+    { validator: validateLastName, trigger: ['blur', 'change'] },
+  ],
+  avatar_file: [
+    { validator: validateAvatar, trigger: ['blur', 'change'] },
+  ],
+  phone: [
+    { validator: validatePhone, trigger: ['blur', 'change'] },
   ]
 }
 
@@ -98,18 +148,31 @@ const goToLogin = () => {
 // 注册方法
 const handleRegister = async () => {
   if (!formRef.value) {
-    ElMessage.error('表单验证失败')
+    ElMessage.error('【注册错误】表单实例不存在')
     return
   }
 
   try {
     await formRef.value.validate()
-    isLoading.value = true
+    isRegistering.value = true
 
     const formData = new FormData()
     formData.append('username', username.value)
     formData.append('email', email.value)
     formData.append('password', password.value)
+    // 只有当这些选填字段有值时才添加到表单数据中
+    if (first_name.value) {
+      formData.append('first_name', first_name.value)
+    }
+    if (last_name.value) {
+      formData.append('last_name', last_name.value)
+    }
+    if (avatar_file.value) {
+      formData.append('avatar_file', avatar_file.value)
+    }
+    if (phone.value) {
+      formData.append('phone', phone.value)
+    }
 
     // 这里应该调用后端的注册API
     // const data = await request.post('/user/register', formData)
@@ -129,7 +192,7 @@ const handleRegister = async () => {
       duration: 5000
     })
   } finally {
-    isLoading.value = false
+    isRegistering.value = false
   }
 }
 </script>
@@ -141,8 +204,24 @@ const handleRegister = async () => {
     <div class="register-card">
       <h1>注册账号</h1>
       <div v-if="!registerSuccess">
-        <el-form ref="formRef" :model="{ username, email, password, confirmPassword }" :rules="formRules"
-          class="register-form" status-icon @submit.prevent="handleRegister">
+        <el-form ref="formRef"
+          :model="{ username, email, password, confirmPassword, first_name, last_name, phone, avatar_file }"
+          :rules="formRules" class="register-form" status-icon @submit.prevent="handleRegister">
+          <el-form-item prop="avatar_file" class="avatar-upload">
+            <p class="upload-label">头像上传（可选）</p>
+            <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
+              accept="image/png, image/jpg, image/jpeg" :show-file-list="false"
+              :on-change="handleAvatarChange" :auto-upload="false">
+              <img v-if="avatarPreviewUrl" :src="avatarPreviewUrl" class="avatar-preview" />
+              <div v-else class="avatar-placeholder">
+                <el-icon class="avatar-icon">
+                  <Avatar />
+                </el-icon>
+                <span>点击上传</span>
+              </div>
+            </el-upload>
+          </el-form-item>
+
           <el-form-item prop="username">
             <el-input v-model="username" placeholder="用户名" :prefix-icon="User" />
           </el-form-item>
@@ -159,8 +238,22 @@ const handleRegister = async () => {
             <el-input v-model="confirmPassword" type="password" placeholder="确认密码" :prefix-icon="Lock" show-password />
           </el-form-item>
 
-          <el-button type="primary" :loading="isLoading" class="submit-btn" @click="handleRegister">
-            {{ isLoading ? '注册中...' : '注册' }}
+          <div class="name-group">
+            <el-form-item prop="first_name" class="name-item">
+              <el-input v-model="first_name" placeholder="姓氏（可选）" :prefix-icon="User" />
+            </el-form-item>
+
+            <el-form-item prop="last_name" class="name-item">
+              <el-input v-model="last_name" placeholder="名字（可选）" :prefix-icon="User" />
+            </el-form-item>
+          </div>
+
+          <el-form-item prop="phone">
+            <el-input v-model="phone" placeholder="手机号（可选）" :prefix-icon="Phone" />
+          </el-form-item>
+
+          <el-button type="primary" :loading="isRegistering" class="submit-btn" @click="handleRegister">
+            {{ isRegistering ? '注册中...' : '注册' }}
           </el-button>
 
           <div class="form-footer">
@@ -235,7 +328,7 @@ h1 {
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
   width: 100%;
 }
 
@@ -301,7 +394,6 @@ h1 {
   border: none;
   font-size: 16px;
   transition: all 0.3s ease;
-  margin-top: 10px;
   height: 38px;
   position: relative;
   overflow: hidden;
@@ -379,10 +471,25 @@ h1 {
   animation-delay: 0.4s;
 }
 
+:deep(.el-form-item:nth-child(5)) {
+  animation-delay: 0.5s;
+}
+
+:deep(.el-form-item:nth-child(6)) {
+  animation-delay: 0.6s;
+}
+
+:deep(.el-form-item:nth-child(7)) {
+  animation-delay: 0.7s;
+}
+
+:deep(.el-form-item:nth-child(8)) {
+  animation-delay: 0.8s;
+}
+
 .submit-btn {
   animation: fadeIn 0.3s ease forwards;
-  animation-delay: 0.5s;
-  opacity: 0;
+  animation-delay: 0.9s;
 }
 
 .form-footer {
@@ -434,6 +541,65 @@ h1 {
   padding: 10px 25px;
 }
 
+.name-group {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.name-item {
+  flex: 1;
+}
+
+.avatar-upload {
+  margin-top: 10px;
+}
+
+.upload-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.avatar-uploader {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.avatar-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+}
+
+.avatar-placeholder:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.avatar-icon {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 5px;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
 @media (max-width: 480px) {
   .register-card {
     margin: 20px;
@@ -443,6 +609,11 @@ h1 {
   .footer {
     padding: 10px 0;
     font-size: 12px;
+  }
+
+  .name-group {
+    flex-direction: column;
+    gap: 0;
   }
 }
 </style>
