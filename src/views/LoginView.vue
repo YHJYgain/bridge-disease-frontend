@@ -15,28 +15,12 @@ const isLogining = ref(false)
 const formRef = ref(null) // 用于访问表单实例
 // 用户名/邮箱验证规则
 const validateEmail = (rule, value, callback) => {
-  if (!value) {
-    callback(new Error('请输入用户名或邮箱'))
-    return
-  }
-
-  // 判断是否为邮箱格式（包含@符号）
-  if (value.includes('@')) {
-    const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/
-    if (!emailRegex.test(value)) {
-      callback(new Error('请输入正确的邮箱格式'))
-      return
-    }
+  const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/
+  if (value.includes('@') && !emailRegex.test(value)) {
+    callback(new Error('请输入正确的邮箱格式'))
   } else {
-    // 不是邮箱格式，判断用户名长度
-    if (value.length < 3) {
-      callback(new Error('用户名长度不能小于3个字符'))
-      return
-    }
+    callback()
   }
-
-  // 验证通过
-  callback()
 }
 
 // 表单验证规则
