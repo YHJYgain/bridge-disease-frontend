@@ -65,7 +65,7 @@ onMounted(() => {
     <!-- 顶部导航栏 -->
     <header class="header">
       <div class="logo">
-        <h1>桥梁病害检测分割系统</h1>
+        <h1>桥梁病害检测与分割系统</h1>
       </div>
       
       <div class="user-info" v-if="userInfo && !loading">

@@ -96,7 +96,7 @@ const handleLogin = async () => {
     <ParticleBackground />
 
     <div class="login-card">
-      <h1>桥梁病害检测分割系统</h1>
+      <h1>桥梁病害检测与分割系统</h1>
       <el-form ref="formRef" :model="{ username_or_email, password }" :rules="formRules" class="login-form" status-icon
         @submit.prevent="handleLogin">
         <el-form-item prop="username_or_email">

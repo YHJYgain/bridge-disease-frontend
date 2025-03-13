@@ -1,6 +1,6 @@
 <template>
   <div class="footer">
-    <p>© {{ currentYear }} 桥梁病害检测分割系统 版权所有</p>
+    <p>© {{ currentYear }} 桥梁病害检测与分割系统 版权所有</p>
   </div>
 </template>
 
