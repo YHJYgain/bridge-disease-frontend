@@ -44,16 +44,24 @@ const initCanvas = () => {
     canvas.style.width = `${window.innerWidth}px`
     canvas.style.height = `${window.innerHeight}px`
   }
+  
+  // 初始化或重新初始化粒子
+  const initParticles = () => {
+    particles = Array(props.particleCount).fill().map(() => {
+      return new Particle(
+        Math.random() * window.innerWidth,
+        Math.random() * window.innerHeight
+      )
+    })
+  }
 
   updateCanvasSize()
-  window.addEventListener('resize', updateCanvasSize)
-
-  // 初始化粒子
-  particles = Array(props.particleCount).fill().map(() => {
-    return new Particle(
-      Math.random() * window.innerWidth,
-      Math.random() * window.innerHeight
-    )
+  initParticles()
+  
+  // 监听窗口大小变化，更新画布尺寸并重新初始化粒子
+  window.addEventListener('resize', () => {
+    updateCanvasSize()
+    initParticles()
   })
 
   const animate = () => {
