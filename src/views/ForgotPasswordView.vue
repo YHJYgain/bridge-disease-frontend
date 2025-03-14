@@ -2,7 +2,6 @@
 import { useRouter } from 'vue-router'
 import { Message, Phone, ChatLineRound } from '@element-plus/icons-vue'
 import ParticleBackground from '../components/ParticleBackground.vue'
-import FooterComponent from '../components/FooterComponent.vue'
 
 const router = useRouter()
 
@@ -40,15 +39,12 @@ const goToLogin = () => {
         <el-button type="primary" class="back-btn" @click="goToLogin">返回登录</el-button>
       </div>
     </div>
-
-    <!-- 页脚版权信息 -->
-    <FooterComponent />
   </div>
 </template>
 
 <style scoped>
 .forgot-password-container {
-  min-height: 98.4vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;

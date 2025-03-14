@@ -5,7 +5,6 @@ import { ElMessage } from 'element-plus'
 import { User, Lock, Message, Phone, Avatar } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import ParticleBackground from '../components/ParticleBackground.vue'
-import FooterComponent from '../components/FooterComponent.vue'
 
 const router = useRouter()
 const username = ref('')
@@ -290,15 +289,12 @@ const handleRegister = async () => {
         <el-button type="primary" class="back-btn" @click="goToLogin">前往登录</el-button>
       </div>
     </div>
-
-    <!-- 页脚版权信息 -->
-    <FooterComponent />
   </div>
 </template>
 
 <style scoped>
 .register-container {
-  min-height: 98.4vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;

@@ -1,12 +1,16 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterView } from 'vue-router'
+import FooterComponent from './components/FooterComponent.vue'
 </script>
 
 <template>
-  <RouterView />
+  <div class="app-container">
+    <RouterView />
+    <FooterComponent />
+  </div>
 </template>
 
-<style scoped>
+<style>
 :root,
 body,
 #app {
@@ -14,5 +18,13 @@ body,
   padding: 0;
   width: 100%;
   height: 100%;
+  overflow-x: hidden;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 </style>
