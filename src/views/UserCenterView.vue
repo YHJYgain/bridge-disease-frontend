@@ -29,7 +29,7 @@ const getUserInfo = async () => {
     
     if (operation.status === 'SUCCESS') {
       userInfo.value = data.current_user
-      console.info('【头像文件绝对路径】', requestBaseURL + '/' + userInfo.avatar_path)
+      console.info('【头像文件 URL】', requestBaseURL + '/' + userInfo.avatar_path)
     }
     // 获取用户信息失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {

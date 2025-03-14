@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
@@ -89,6 +89,16 @@ const handleLogin = async () => {
     isLogining.value = false
   }
 }
+
+// 在页面加载时检查用户是否已登录
+onMounted(() => {
+  // 检查是否有 token
+  const token = localStorage.getItem('access_token')
+  if (token) {
+    ElMessage.success('您已登录，正在跳转到首页...')
+    router.push('/home')
+  }
+})
 </script>
 
 <template>
