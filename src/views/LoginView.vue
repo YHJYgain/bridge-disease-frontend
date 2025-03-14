@@ -68,8 +68,8 @@ const handleLogin = async () => {
       ElMessage.success({
         message: `<div style="line-height: 1.8; font-size: 14px; padding: 10px 0;">
           <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">【登录成功】</div>
-          <div style="color: #67c23a; margin: 8px 0;">耗时：${operation.duration.toFixed(3)}秒</div>
-          <div style="color: #909399;">设备：${operation.device_info}</div>
+          <div">耗时：${operation.duration.toFixed(3)}秒</div>
+          <div">设备：${operation.device_info}</div>
         </div>`,
         duration: 3000,
         dangerouslyUseHTMLString: true
