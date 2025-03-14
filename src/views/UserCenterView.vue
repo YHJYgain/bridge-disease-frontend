@@ -69,7 +69,6 @@ const statusInfo = computed(() => {
 })
 
 // 格式化时间显示
-// 格式化时间显示
 const formatDateTime = (dateTimeStr) => {
   if (!dateTimeStr) return '暂无数据'
   // 创建一个 UTC 日期对象，然后使用 toLocaleString 转换为中国时区

@@ -50,11 +50,23 @@ const goToUserCenter = () => {
 }
 
 // 退出登录
-const handleLogout = () => {
-  localStorage.removeItem('access_token')
-  localStorage.removeItem('refresh_token')
-  ElMessage.success('退出登录成功')
-  router.push('/login')
+const handleLogout = async () => {
+  try {
+    // 调用后端退出接口
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      await request.post('/user/logout')
+      ElMessage.success('退出登录成功')
+    }
+  } catch (error) {
+    console.error('【退出登录错误】', error)
+    ElMessage.warning('退出登录可能未完全成功，但您已在本地退出')
+  } finally {
+    // 无论后端请求成功与否，都清除本地 token 并跳转到登录页
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    router.push('/login')
+  }
 }
 
 onMounted(() => {
