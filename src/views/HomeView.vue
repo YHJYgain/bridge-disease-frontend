@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { User, Setting } from '@element-plus/icons-vue'
 import request from '../utils/request'
 
+const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(true)
@@ -25,9 +26,10 @@ const getUserInfo = async () => {
     const data = await request.get('/user/profile')
     console.info('【用户信息】', data)
     const operation = data.operation
-    
+
     if (operation.status === 'SUCCESS') {
       userInfo.value = data.current_user
+      console.info('【头像文件绝对路径】', requestBaseURL + '/' + userInfo.avatar_path)
     }
     // 获取用户信息失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
@@ -67,21 +69,26 @@ onMounted(() => {
       <div class="logo">
         <h1>桥梁病害检测与分割系统</h1>
       </div>
-      
+
       <div class="user-info" v-if="userInfo && !loading">
         <el-dropdown trigger="click">
           <div class="user-avatar-container">
-            <el-avatar :size="40" :src="userInfo.avatar_url || ''">
-              <el-icon><User /></el-icon>
+            <el-avatar :size="40"
+              :src="userInfo.avatar_path ? `${requestBaseURL}/${userInfo.avatar_path}` : ''">
+              <el-icon>
+                <User />
+              </el-icon>
             </el-avatar>
             <span class="username">{{ userInfo.username }}</span>
             <i class="el-icon-arrow-down el-icon--right"></i>
           </div>
-          
+
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item @click="goToUserCenter">
-                <el-icon><Setting /></el-icon>
+                <el-icon>
+                  <Setting />
+                </el-icon>
                 <span>个人中心</span>
               </el-dropdown-item>
               <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
@@ -89,7 +96,7 @@ onMounted(() => {
           </template>
         </el-dropdown>
       </div>
-      
+
       <div v-else-if="loading" class="user-info-loading">
         <el-skeleton style="width: 150px" :rows="1" animated />
       </div>
@@ -101,7 +108,7 @@ onMounted(() => {
         <h2>欢迎回来，{{ userInfo.username }}！</h2>
         <p>今天是美好的一天，开始您的桥梁检测工作吧。</p>
       </div>
-      
+
       <!-- 这里可以添加系统的主要功能区域 -->
       <div class="feature-area">
         <h3>系统功能区域</h3>
@@ -203,6 +210,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -214,11 +222,11 @@ onMounted(() => {
     flex-direction: column;
     padding: 15px;
   }
-  
+
   .logo {
     margin-bottom: 10px;
   }
-  
+
   .user-info {
     width: 100%;
     justify-content: flex-end;

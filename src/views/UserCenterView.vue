@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { Check, Close, Warning, InfoFilled } from '@element-plus/icons-vue'
 import request from '../utils/request'
 
+const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(true)
@@ -28,6 +29,7 @@ const getUserInfo = async () => {
     
     if (operation.status === 'SUCCESS') {
       userInfo.value = data.current_user
+      console.info('【头像文件绝对路径】', requestBaseURL + '/' + userInfo.avatar_path)
     }
     // 获取用户信息失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
@@ -101,7 +103,7 @@ onMounted(() => {
       <div v-else-if="userInfo" class="user-profile">
         <div class="profile-header">
           <div class="avatar-container">
-            <el-avatar :size="100" :src="userInfo.avatar_url || ''">
+            <el-avatar :size="100" :src="userInfo.avatar_path ? `${requestBaseURL}/${userInfo.avatar_path}` : ''">
               <el-icon :size="40">U</el-icon>
             </el-avatar>
             <!-- 用户状态图标 -->
