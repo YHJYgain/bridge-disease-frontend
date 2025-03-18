@@ -92,7 +92,7 @@ const handleAvatarChange = (file) => {
 
   // 验证通过，更新头像文件
   avatar_file.value = file.raw
-  return true
+  return false // 阻止自动上传
 }
 
 // 手机号验证规则
@@ -189,17 +189,11 @@ const handleRegister = async () => {
     console.info('【注册响应数据】', data)
     const operation = data.operation
 
-    // 根据后端操作状态判断登录是否成功
+    // 根据后端操作状态判断注册是否成功
     if (operation.status === 'SUCCESS') {
-      // 显示注册成功信息，包含操作详情
       ElMessage.success({
-        message: `<div style="line-height: 1.8; font-size: 14px; padding: 10px 0;">
-          <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">【注册成功】</div>
-          <div>耗时：${operation.duration.toFixed(3)}秒</div>
-          <div>设备：${operation.device_info}</div>
-        </div>`,
-        duration: 3000,
-        dangerouslyUseHTMLString: true
+        message: '【注册成功】',
+        duration: 3000
       })
 
       // 注册成功后跳转到登录页面
@@ -209,7 +203,7 @@ const handleRegister = async () => {
   } catch (error) {
     console.error('【注册错误】', error)
     ElMessage.error({
-      message: '【注册错误】' + error?.message || '注册错误，请重试',
+      message: '【注册错误】' + (error?.message || '请重试'),
       duration: 5000
     })
   } finally {

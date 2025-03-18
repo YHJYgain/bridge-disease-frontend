@@ -15,7 +15,6 @@ const currentYear = computed(() => new Date().getFullYear())
 .footer {
   width: 100%;
   text-align: center;
-  padding: 15px 0;
   color: rgba(0, 0, 0, 0.5);
   font-size: 14px;
   z-index: 1000;

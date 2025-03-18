@@ -29,13 +29,13 @@ const getUserInfo = async () => {
 
     if (operation.status === 'SUCCESS') {
       userInfo.value = data.current_user
-      console.info('【头像文件 URL】', requestBaseURL + '/' + userInfo.avatar_path)
+      console.info('【头像文件 URL】', requestBaseURL + '/' + userInfo.value.avatar_path)
     }
     // 获取用户信息失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
     console.error('【获取用户信息错误】', error)
     ElMessage.error({
-      message: '【获取用户信息错误】' + error?.message || '获取用户信息错误，请重试',
+      message: '【获取用户信息错误】' + (error?.message || '请重试'),
       duration: 5000
     })
     router.push('/login')
@@ -55,12 +55,24 @@ const handleLogout = async () => {
     // 调用后端退出接口
     const token = localStorage.getItem('access_token')
     if (token) {
-      await request.post('/user/logout')
-      ElMessage.success('退出登录成功')
+      const data = await request.post('/user/logout')
+      console.info('【登出响应数据】', data)
+      const operation = data.operation
+
+      if (operation.status === 'SUCCESS') {
+        ElMessage.success({
+          message: '【登出成功】',
+          duration: 3000
+        })
+      }
+      // 登出失败情况已在响应拦截器中处理，这里不再重复
     }
   } catch (error) {
-    console.error('【退出登录错误】', error)
-    ElMessage.warning('退出登录可能未完全成功，但您已在本地退出')
+    console.warning('【登出警告】', error)
+    ElMessage.warning({
+      message: '【登出警告】登出可能未完全成功，但您已在本地退出',
+      duration: 4000
+    })
   } finally {
     // 无论后端请求成功与否，都清除本地 token 并跳转到登录页
     localStorage.removeItem('access_token')
@@ -85,8 +97,7 @@ onMounted(() => {
       <div class="user-info" v-if="userInfo && !loading">
         <el-dropdown trigger="click">
           <div class="user-avatar-container">
-            <el-avatar :size="40"
-              :src="userInfo.avatar_path ? `${requestBaseURL}/${userInfo.avatar_path}` : ''">
+            <el-avatar :size="40" :src="userInfo.avatar_path ? `${requestBaseURL}/${userInfo.avatar_path}` : ''">
               <el-icon>
                 <User />
               </el-icon>
