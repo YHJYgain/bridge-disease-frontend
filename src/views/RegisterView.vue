@@ -18,7 +18,8 @@ const phone = ref('')
 const isRegistering = ref(false)
 const registerSuccess = ref(false)
 
-const formRef = ref(null) // 用于访问表单实例
+// 表单引用
+const formRef = ref(null)
 
 // 创建头像预览 URL 的计算属性
 const avatarPreviewUrl = computed(() => {

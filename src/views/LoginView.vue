@@ -11,7 +11,8 @@ const username_or_email = ref('')
 const password = ref('')
 const isLogining = ref(false)
 
-const formRef = ref(null) // 用于访问表单实例
+// 表单引用
+const formRef = ref(null)
 // 用户名/邮箱验证规则
 const validateEmail = (rule, value, callback) => {
   const emailRegex = /^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/

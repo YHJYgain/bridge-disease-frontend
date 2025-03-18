@@ -43,6 +43,15 @@ const updateRules = {
   ]
 }
 
+// 新密码验证规则
+const validateNewPassword = (rule, value, callback) => {
+  if (value === passwordForm.value.current_password) {
+    callback(new Error('新密码不能与当前密码相同'))
+  } else {
+    callback()
+  }
+}
+
 // 确认密码验证规则
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== passwordForm.value.new_password) {
@@ -58,7 +67,8 @@ const passwordRules = {
     { required: true, message: '请输入当前密码', trigger: 'blur' }
   ],
   new_password: [
-    { required: true, message: '请输入新密码', trigger: 'blur' }
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { validator: validateNewPassword, trigger: ['blur', 'change'] }
   ],
   confirm_password: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
@@ -69,9 +79,6 @@ const passwordRules = {
 // 表单引用
 const updateFormRef = ref(null)
 const passwordFormRef = ref(null)
-
-// 文件上传相关
-const avatarRef = ref(null)
 
 // 创建头像预览 URL 的计算属性
 const avatarPreviewUrl = computed(() => {
@@ -406,9 +413,9 @@ onMounted(() => {
         <el-dialog v-model="dialogVisible.updateProfile" title="修改个人信息" width="500px" :close-on-click-modal="false">
           <el-form ref="updateFormRef" :model="updateForm" :rules="updateRules" label-width="100px" status-icon>
             <el-form-item label="头像">
-              <el-upload ref="avatarRef" class="avatar-uploader"
-                action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15" :auto-upload="false"
-                :show-file-list="false" :on-change="handleAvatarChange" accept="image/png, image/jpg, image/jpeg">
+              <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
+                :auto-upload="false" :show-file-list="false" :on-change="handleAvatarChange"
+                accept="image/png, image/jpg, image/jpeg">
                 <img v-if="avatarPreviewUrl" :src="avatarPreviewUrl" class="avatar-preview" />
                 <el-icon v-else class="avatar-uploader-icon">
                   <Plus />
