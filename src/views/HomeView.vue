@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Setting } from '@element-plus/icons-vue'
+import { User, Setting, SwitchButton } from '@element-plus/icons-vue'
 import request from '../utils/request'
 
 const requestBaseURL = request.defaults.baseURL
@@ -114,7 +114,12 @@ onMounted(() => {
                 </el-icon>
                 <span>个人中心</span>
               </el-dropdown-item>
-              <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+              <el-dropdown-item divided @click="handleLogout">
+                <el-icon>
+                  <SwitchButton />
+                </el-icon>
+                <span>退出登录</span>
+              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
