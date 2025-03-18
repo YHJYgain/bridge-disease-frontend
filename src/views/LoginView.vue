@@ -107,7 +107,7 @@ onMounted(() => {
     <div class="login-card">
       <h1>桥梁病害检测与分割系统</h1>
       <el-form ref="formRef" :model="{ username_or_email, password }" :rules="formRules" class="login-form" status-icon
-        @submit.prevent="handleLogin">
+        @submit.prevent="handleLogin" @keyup.enter="handleLogin">
         <el-form-item prop="username_or_email">
           <el-input v-model="username_or_email" placeholder="用户名或邮箱" :prefix-icon="User" />
         </el-form-item>
