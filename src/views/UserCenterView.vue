@@ -8,7 +8,7 @@ import request from '../utils/request'
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
 const userInfo = ref(null)
-const loading = ref(true)
+const loading = ref(false)
 
 // 对话框显示状态
 const dialogVisible = reactive({
@@ -114,26 +114,20 @@ const getUserInfo = async () => {
       return
     }
 
-    // 请求用户信息
-    const data = await request.get('/user/profile')
-    console.info('【用户信息】', data)
-    const operation = data.operation
+    /// 从 localStorage 中获取用户信息
+    const storedUser = localStorage.getItem('login_user')
+    userInfo.value = JSON.parse(storedUser);
+    console.info('【用户信息】', userInfo.value)
 
-    if (operation.status === 'SUCCESS') {
-      userInfo.value = data.current_user
-      console.info('【头像文件 URL】', requestBaseURL + '/' + userInfo.value.avatar_path)
-
-      // 初始化修改个人信息表单
-      updateForm.value = {
-        username: userInfo.value.username,
-        email: userInfo.value.email,
-        first_name: userInfo.value.first_name || '',
-        last_name: userInfo.value.last_name || '',
-        phone: userInfo.value.phone || '',
-        avatar_file: null
-      }
+    // 初始化修改个人信息表单
+    updateForm.value = {
+      username: userInfo.value.username,
+      email: userInfo.value.email,
+      first_name: userInfo.value.first_name || '',
+      last_name: userInfo.value.last_name || '',
+      phone: userInfo.value.phone || '',
+      avatar_file: null
     }
-    // 获取用户信息失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
     console.error('【获取用户信息错误】', error)
     ElMessage.error({
@@ -237,6 +231,7 @@ const submitUpdateProfile = async () => {
         duration: 3000
       })
       dialogVisible.updateProfile = false
+      localStorage.setItem('login_user', JSON.stringify(data.updated_user))
       getUserInfo() // 重新获取用户信息
     }
     // 修改个人信息失败情况已在响应拦截器中处理，这里不再重复
@@ -272,13 +267,14 @@ const submitChangePassword = async () => {
 
     if (operation.status === 'SUCCESS') {
       ElMessage.success({
-          message: '【修改密码成功】请重新登录',
-          duration: 3000
-        })
+        message: '【修改密码成功】请重新登录',
+        duration: 3000
+      })
       dialogVisible.changePassword = false
-      // 清除 token 并跳转到登录页
+      // 清除信息并跳转到登录页
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
+      localStorage.removeItem('login_user')
       router.push('/login')
     }
   } catch (error) {
@@ -303,13 +299,14 @@ const submitDeleteAccount = async () => {
 
     if (operation.status === 'SUCCESS') {
       ElMessage.success({
-          message: '【账户已注销】',
-          duration: 3000
-        })
+        message: '【账户已注销】',
+        duration: 3000
+      })
       dialogVisible.deleteAccount = false
-      // 清除 token 并跳转到登录页
+      // 清除信息并跳转到登录页
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
+      localStorage.removeItem('login_user')
       router.push('/login')
     }
   } catch (error) {

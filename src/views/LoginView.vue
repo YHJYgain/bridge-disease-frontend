@@ -28,7 +28,9 @@ const formRules = {
     { required: true, message: '请输入用户名或邮箱', trigger: 'blur' },
     { validator: validateEmail, trigger: ['blur', 'change'] },
   ],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [
+    { required: true, message: '请输入密码', trigger: ['blur', 'change'] }
+  ]
 }
 
 // 登录方法
@@ -59,9 +61,11 @@ const handleLogin = async () => {
 
     // 根据后端操作状态判断登录是否成功
     if (operation.status === 'SUCCESS') {
-      // 保存 token 到 localStorage
+      // 保存信息到 localStorage
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('refresh_token', data.refresh_token)
+      localStorage.setItem('login_user', JSON.stringify(data.login_user))
+      console.info('【登录用户】', data.login_user)
 
       ElMessage.success({
         message: '【登录成功】',

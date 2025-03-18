@@ -8,7 +8,7 @@ import request from '../utils/request'
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
 const userInfo = ref(null)
-const loading = ref(true)
+const loading = ref(false)
 
 // 获取用户信息
 const getUserInfo = async () => {
@@ -22,16 +22,10 @@ const getUserInfo = async () => {
       return
     }
 
-    // 请求用户信息
-    const data = await request.get('/user/profile')
-    console.info('【用户信息】', data)
-    const operation = data.operation
-
-    if (operation.status === 'SUCCESS') {
-      userInfo.value = data.current_user
-      console.info('【头像文件 URL】', requestBaseURL + '/' + userInfo.value.avatar_path)
-    }
-    // 获取用户信息失败情况已在响应拦截器中处理，这里不再重复
+    // 从 localStorage 中获取用户信息
+    const storedUser = localStorage.getItem('login_user')
+    userInfo.value = JSON.parse(storedUser);
+    console.info('【用户信息】', userInfo.value)
   } catch (error) {
     console.error('【获取用户信息错误】', error)
     ElMessage.error({
@@ -77,6 +71,7 @@ const handleLogout = async () => {
     // 无论后端请求成功与否，都清除本地 token 并跳转到登录页
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    localStorage.removeItem('login_user')
     router.push('/login')
   }
 }
