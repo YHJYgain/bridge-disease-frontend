@@ -352,7 +352,9 @@ onMounted(() => {
         <div class="profile-header">
           <div class="avatar-container">
             <el-avatar :size="100" :src="userInfo.avatar_path ? `${requestBaseURL}/${userInfo.avatar_path}` : ''">
-              <el-icon :size="40">U</el-icon>
+              <el-icon :size="40">
+                <User />
+              </el-icon>
             </el-avatar>
             <!-- 用户状态图标 -->
             <div v-if="statusInfo.icon" class="status-icon" :style="{ backgroundColor: statusInfo.color }">
@@ -361,12 +363,14 @@ onMounted(() => {
               </el-icon>
             </div>
           </div>
-          <h2 class="username">{{ userInfo.username }}</h2>
-          <el-tag
-            :type="userInfo.status === 'ACTIVE' ? 'success' : userInfo.status === 'INACTIVE' ? 'info' : userInfo.status === 'BANNED' ? 'danger' : 'warning'">
-            {{ userInfo.status === 'ACTIVE' ? '在线' : userInfo.status === 'INACTIVE' ? '离线' : userInfo.status ===
-        'BANNED' ? '封禁' : '已注销' }}
-          </el-tag>
+          <div class="username-status-container">
+            <h2 class="username">{{ userInfo.username }}</h2>
+            <el-tag class="status-tag"
+              :type="userInfo.status === 'ACTIVE' ? 'success' : userInfo.status === 'INACTIVE' ? 'info' : userInfo.status === 'BANNED' ? 'danger' : 'warning'">
+              {{ userInfo.status === 'ACTIVE' ? '在线' : userInfo.status === 'INACTIVE' ? '离线' : userInfo.status ===
+          'BANNED' ? '封禁' : '已注销' }}
+            </el-tag>
+          </div>
         </div>
 
         <div class="profile-info">
@@ -421,7 +425,7 @@ onMounted(() => {
                   <Plus />
                 </el-icon>
               </el-upload>
-              <div class="upload-tip">点击上传头像（可选）</div>
+              <div class="upload-tip">点击上传头像</div>
             </el-form-item>
             <el-form-item label="用户名" prop="username">
               <el-input v-model="updateForm.username" />
@@ -575,10 +579,21 @@ onMounted(() => {
   border: 2px solid white;
 }
 
+.username-status-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
 .username {
-  margin: 10px 0 5px;
+  margin: 0;
   color: #4a5568;
   font-size: 1.8rem;
+}
+
+.status-tag {
+  margin-top: 4px;
 }
 
 .profile-info {
@@ -606,6 +621,15 @@ onMounted(() => {
   display: flex;
   gap: 15px;
   flex-wrap: wrap;
+}
+
+.action-buttons .el-button .el-icon {
+  vertical-align: middle;
+  margin-right: 5px;
+  margin-bottom: 1.8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @keyframes fadeIn {
