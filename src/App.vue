@@ -1,12 +1,22 @@
 <script setup>
-import { RouterView } from 'vue-router'
+import HeaderComponent from './components/HeaderComponent.vue'
+import { RouterView, useRoute } from 'vue-router'
 import FooterComponent from './components/FooterComponent.vue'
+import { computed } from 'vue'
+
+// 获取当前路由，判断是否为登录相关页面
+const route = useRoute()
+const isAuthPage = computed(() => {
+  const path = route.path
+  return path === '/login' || path === '/register' || path === '/forgot-password'
+})
 </script>
 
 <template>
   <div class="app-container">
+    <HeaderComponent v-if="!isAuthPage" />
     <RouterView />
-    <FooterComponent />
+    <FooterComponent/>
   </div>
 </template>
 

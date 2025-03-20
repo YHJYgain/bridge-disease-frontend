@@ -5,6 +5,12 @@ import AboutView from '../views/AboutView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import ForgotPasswordView from '../views/ForgotPasswordView.vue'
 import UserCenterView from '../views/UserCenterView.vue'
+import DiseaseDetectionView from '../views/DiseaseDetectionView.vue'
+import DetectionRecordsView from '../views/DetectionRecordsView.vue'
+import MediaLibraryView from '../views/MediaLibraryView.vue'
+import ModelLibraryView from '../views/ModelLibraryView.vue'
+import UserManagementView from '../views/UserManagementView.vue'
+import OperationLogsView from '../views/OperationLogsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -42,6 +48,36 @@ const router = createRouter({
       path: '/user-center',
       name: 'user-center',
       component: UserCenterView,
+    },
+    {
+      path: '/disease-detection',
+      name: 'disease-detection',
+      component: DiseaseDetectionView,
+    },
+    {
+      path: '/detection-records',
+      name: 'detection-records',
+      component: DetectionRecordsView,
+    },
+    {
+      path: '/media-library',
+      name: 'media-library',
+      component: MediaLibraryView,
+    },
+    {
+      path: '/model-library',
+      name: 'model-library',
+      component: ModelLibraryView,
+    },
+    {
+      path: '/user-management',
+      name: 'user-management',
+      component: UserManagementView,
+    },
+    {
+      path: '/operation-logs',
+      name: 'operation-logs',
+      component: OperationLogsView,
     },
   ],
 })

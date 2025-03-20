@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Check, Close, Warning, InfoFilled, User, Lock, Delete, Plus } from '@element-plus/icons-vue'
+import { Check, Close, Warning, InfoFilled, User, Lock, Delete, Plus, ArrowLeft } from '@element-plus/icons-vue'
 import request from '../utils/request'
 
 const requestBaseURL = request.defaults.baseURL
@@ -334,16 +334,16 @@ onMounted(() => {
 
 <template>
   <div class="user-center-container">
-    <!-- 顶部导航栏 -->
-    <header class="header">
-      <div class="logo">
-        <h1>个人中心</h1>
-      </div>
-      <el-button type="primary" @click="goToHome" class="back-btn">返回首页</el-button>
-    </header>
-
     <!-- 主要内容区域 -->
     <main class="main-content">
+      <div class="page-header">
+        <el-button type="primary" @click="goToHome" class="back-btn">
+          <el-icon>
+            <ArrowLeft />
+          </el-icon>返回首页
+        </el-button>
+      </div>
+
       <div v-if="loading" class="loading-container">
         <el-skeleton :rows="10" animated />
       </div>
@@ -381,13 +381,13 @@ onMounted(() => {
             <el-descriptions-item label="名字" v-if="userInfo.first_name">{{ userInfo.first_name }}</el-descriptions-item>
             <el-descriptions-item label="电话" v-if="userInfo.phone">{{ userInfo.phone }}</el-descriptions-item>
             <el-descriptions-item label="角色">{{ userInfo.role === 'ADMIN' ? '管理员' : userInfo.role === 'DEVELOPER' ?
-        '开发者' : '普通用户' }}</el-descriptions-item>
+          '开发者' : '普通用户' }}</el-descriptions-item>
             <el-descriptions-item label="最后登录时间" v-if="userInfo.last_login">{{ formatDateTime(userInfo.last_login)
               }}</el-descriptions-item>
             <el-descriptions-item label="注册时间">{{ formatDateTime(userInfo.created_at) }}</el-descriptions-item>
             <el-descriptions-item label="更新时间">{{ formatDateTime(userInfo.updated_at) }}</el-descriptions-item>
             <el-descriptions-item label="注销时间" v-if="userInfo.status === 'deleted' && userInfo.deleted_at">{{
-        formatDateTime(userInfo.deleted_at) }}</el-descriptions-item>
+          formatDateTime(userInfo.deleted_at) }}</el-descriptions-item>
           </el-descriptions>
         </div>
 
@@ -499,8 +499,11 @@ onMounted(() => {
 
 <style scoped>
 .user-center-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 60px);
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  margin-top: 0;
+  padding-top: 0;
+  overflow-y: auto;
 }
 
 .header {
@@ -520,10 +523,19 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.page-header {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
 .back-btn {
   background: linear-gradient(90deg, #60a5fa, #a78bfa);
   border: none;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .back-btn:hover {
@@ -532,9 +544,11 @@ onMounted(() => {
 }
 
 .main-content {
-  padding: 30px;
+  padding: 20px 30px;
   max-width: 800px;
   margin: 0 auto;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .loading-container {

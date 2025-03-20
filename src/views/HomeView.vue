@@ -2,10 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { User, Setting, SwitchButton } from '@element-plus/icons-vue'
-import request from '../utils/request'
+import SidebarMenu from '../components/SidebarMenu.vue'
+import BreadcrumbNav from '../components/BreadcrumbNav.vue'
+import StatisticsCharts from '../components/StatisticsCharts.vue'
 
-const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(false)
@@ -38,44 +38,6 @@ const getUserInfo = async () => {
   }
 }
 
-// 进入个人中心
-const goToUserCenter = () => {
-  router.push('/user-center')
-}
-
-// 退出登录
-const handleLogout = async () => {
-  try {
-    // 调用后端退出接口
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      const data = await request.post('/user/logout')
-      console.info('【登出响应数据】', data)
-      const operation = data.operation
-
-      if (operation.status === 'SUCCESS') {
-        ElMessage.success({
-          message: '【登出成功】',
-          duration: 3000
-        })
-      }
-      // 登出失败情况已在响应拦截器中处理，这里不再重复
-    }
-  } catch (error) {
-    console.warning('【登出警告】', error)
-    ElMessage.warning({
-      message: '【登出警告】登出可能未完全成功，但您已在本地退出',
-      duration: 4000
-    })
-  } finally {
-    // 无论后端请求成功与否，都清除本地 token 并跳转到登录页
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('login_user')
-    router.push('/login')
-  }
-}
-
 onMounted(() => {
   getUserInfo()
 })
@@ -83,78 +45,44 @@ onMounted(() => {
 
 <template>
   <div class="home-container">
-    <!-- 顶部导航栏 -->
-    <header class="header">
-      <div class="logo">
-        <h1>桥梁病害检测与分割系统</h1>
-      </div>
-
-      <div class="user-info" v-if="userInfo && !loading">
-        <el-dropdown trigger="click">
-          <div class="user-avatar-container">
-            <el-avatar :size="40" :src="userInfo.avatar_path ? `${requestBaseURL}/${userInfo.avatar_path}` : ''">
-              <el-icon>
-                <User />
-              </el-icon>
-            </el-avatar>
-            <span class="username">{{ userInfo.username }}</span>
-            <i class="el-icon-arrow-down el-icon--right"></i>
-          </div>
-
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="goToUserCenter">
-                <el-icon>
-                  <Setting />
-                </el-icon>
-                <span>个人中心</span>
-              </el-dropdown-item>
-              <el-dropdown-item divided @click="handleLogout">
-                <el-icon>
-                  <SwitchButton />
-                </el-icon>
-                <span>退出登录</span>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-
-      <div v-else-if="loading" class="user-info-loading">
-        <el-skeleton style="width: 150px" :rows="1" animated />
-      </div>
-    </header>
-
     <!-- 主要内容区域 -->
-    <main class="main-content">
-      <div class="welcome-message" v-if="userInfo">
-        <h2>欢迎回来，{{ userInfo.username }}！</h2>
-        <p>今天是美好的一天，开始您的桥梁检测工作吧。</p>
+    <div class="main-container">
+      <!-- 侧边栏导航 -->
+      <div class="sidebar">
+        <SidebarMenu />
       </div>
 
-      <!-- 这里可以添加系统的主要功能区域 -->
-      <div class="feature-area">
-        <h3>系统功能区域</h3>
-        <p>这里将展示系统的主要功能模块</p>
+      <!-- 内容区域 -->
+      <div class="content-area">
+        <!-- 面包屑导航 -->
+        <BreadcrumbNav />
+
+        <!-- 统计图表 -->
+        <div class="statistics-area">
+          <StatisticsCharts :userInfo="userInfo" />
+        </div>
       </div>
-    </main>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .home-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  display: flex;
+  flex-direction: column;
+  background-color: #f0f2f5;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 30px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 0 20px;
+  height: 60px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  z-index: 10;
 }
 
 .logo h1 {
@@ -192,67 +120,28 @@ onMounted(() => {
   width: 150px;
 }
 
-.main-content {
-  padding: 30px;
-  max-width: 1200px;
-  margin: 0 auto;
+.main-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
-.welcome-message {
-  background: white;
-  border-radius: 10px;
+.sidebar {
+  width: 220px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  background-color: #304156;
+  transition: width 0.3s;
+}
+
+.content-area {
+  flex: 1;
   padding: 20px;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  animation: fadeIn 0.5s ease;
+  overflow-y: auto;
+  background-color: #f0f2f5;
 }
 
-.welcome-message h2 {
-  color: #4a5568;
-  margin-top: 0;
-}
-
-.welcome-message p {
-  color: #718096;
-}
-
-.feature-area {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  min-height: 300px;
-  animation: fadeIn 0.5s ease;
-  animation-delay: 0.2s;
-  opacity: 0;
-  animation-fill-mode: forwards;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    padding: 15px;
-  }
-
-  .logo {
-    margin-bottom: 10px;
-  }
-
-  .user-info {
-    width: 100%;
-    justify-content: flex-end;
-  }
+.statistics-area {
+  margin-top: 15px;
 }
 </style>
