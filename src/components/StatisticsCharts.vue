@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import request from '../utils/request'
 
@@ -114,7 +114,37 @@ const fetchModelStatistics = async () => {
 const fetchStatistics = async () => {
   try {
     loading.value = true
-    // 并行调用四个统计接口
+    // 注释掉后端接口请求，使用模拟数据
+    // 模拟用户数据
+    statistics.value.users = {
+      total: 10,
+      admin: 2,
+      developer: 3,
+      user: 5
+    }
+    
+    // 模拟检测数据
+    statistics.value.detections = {
+      total: 100,
+      pending: 20,
+      in_progress: 15,
+      completed: 60,
+      failed: 5
+    }
+    
+    // 模拟媒体数据
+    statistics.value.medias = {
+      total: 50,
+      image: 35,
+      video: 15
+    }
+    
+    // 模拟模型数据
+    statistics.value.models = {
+      total: 5
+    }
+    
+    // 并行调用四个统计接口（已注释）
     // await Promise.all([
     //   fetchUserStatistics(),
     //   fetchDetectionStatistics(),
@@ -125,14 +155,18 @@ const fetchStatistics = async () => {
     console.error('获取统计数据失败', error)
   } finally {
     loading.value = false
+    // 确保数据更新后重新渲染图表
+    await nextTick()
+    initCharts()
   }
 }
 
 // 初始化用户统计图表
 const initUserChart = () => {
   if (!userChartRef.value) return
-
-  userChart = echarts.init(userChartRef.value)
+  
+  try {
+    userChart = echarts.init(userChartRef.value)
 
   const option = {
     title: {
@@ -182,14 +216,18 @@ const initUserChart = () => {
     ]
   }
 
-  userChart.setOption(option)
+    userChart.setOption(option)
+  } catch (error) {
+    console.error('初始化用户图表失败', error)
+  }
 }
 
 // 初始化检测统计图表
 const initDetectionChart = () => {
   if (!detectionChartRef.value) return
 
-  detectionChart = echarts.init(detectionChartRef.value)
+  try {
+    detectionChart = echarts.init(detectionChartRef.value)
 
   const option = {
     title: {
@@ -226,14 +264,18 @@ const initDetectionChart = () => {
     ]
   }
 
-  detectionChart.setOption(option)
+    detectionChart.setOption(option)
+  } catch (error) {
+    console.error('初始化检测图表失败', error)
+  }
 }
 
 // 初始化媒体统计图表
 const initMediaChart = () => {
   if (!mediaChartRef.value) return
 
-  mediaChart = echarts.init(mediaChartRef.value)
+  try {
+    mediaChart = echarts.init(mediaChartRef.value)
 
   const option = {
     title: {
@@ -279,14 +321,18 @@ const initMediaChart = () => {
     ]
   }
 
-  mediaChart.setOption(option)
+    mediaChart.setOption(option)
+  } catch (error) {
+    console.error('初始化媒体图表失败', error)
+  }
 }
 
 // 初始化模型统计图表
 const initModelChart = () => {
   if (!modelChartRef.value) return
 
-  modelChart = echarts.init(modelChartRef.value)
+  try {
+    modelChart = echarts.init(modelChartRef.value)
 
   const option = {
     title: {
@@ -296,53 +342,124 @@ const initModelChart = () => {
     tooltip: {
       trigger: 'item'
     },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      data: ['活跃', '非活跃']
-    },
     series: [
       {
-        name: '模型状态',
-        type: 'pie',
-        radius: ['40%', '70%'],
+        name: '模型总数',
+        type: 'gauge',
+        radius: '70%',
+        center: ['50%', '60%'],
+        startAngle: 180,
+        endAngle: 0,
+        min: 0,
+        max: statistics.value.models.total > 0 ? statistics.value.models.total * 2 : 10,
+        splitNumber: 5,
         itemStyle: {
-          borderRadius: 5,
-          borderColor: '#fff',
-          borderWidth: 2
+          color: '#409EFF'
+        },
+        progress: {
+          show: true,
+          roundCap: true,
+          width: 18
+        },
+        pointer: {
+          show: false
+        },
+        axisLine: {
+          roundCap: true,
+          lineStyle: {
+            width: 18
+          }
+        },
+        axisTick: {
+          show: false
+        },
+        splitLine: {
+          show: false
+        },
+        axisLabel: {
+          show: false
+        },
+        title: {
+          show: false
+        },
+        detail: {
+          valueAnimation: true,
+          fontSize: 30,
+          offsetCenter: [0, 0],
+          formatter: '{value}',
+          color: '#409EFF'
         },
         data: [
-          { value: statistics.value.models.active, name: '活跃' },
-          { value: statistics.value.models.inactive, name: '非活跃' }
+          {
+            value: statistics.value.models.total
+          }
         ]
       }
     ]
   }
 
-  modelChart.setOption(option)
+    modelChart.setOption(option)
+  } catch (error) {
+    console.error('初始化模型图表失败', error)
+  }
 }
 
 // 初始化所有图表
-const initCharts = () => {
-  initUserChart()
-  initDetectionChart()
-  initMediaChart()
-  initModelChart()
+const initCharts = async () => {
+  // 确保DOM已经渲染完成
+  await nextTick()
+  
+  // 添加一个小延时，确保DOM元素已完全渲染
+  setTimeout(() => {
+    // 先清理旧的图表实例
+    userChart?.dispose()
+    detectionChart?.dispose()
+    mediaChart?.dispose()
+    modelChart?.dispose()
+    
+    // 重新初始化图表
+    initUserChart()
+    initDetectionChart()
+    initMediaChart()
+    initModelChart()
+  }, 100)
 }
 
 // 监听窗口大小变化，调整图表大小
 const handleResize = () => {
-  userChart?.resize()
-  detectionChart?.resize()
-  mediaChart?.resize()
-  modelChart?.resize()
+  try {
+    // 添加防抖处理，避免频繁调整大小
+    if (window.resizeTimer) {
+      clearTimeout(window.resizeTimer)
+    }
+    
+    window.resizeTimer = setTimeout(() => {
+      // 确保图表容器存在
+      if (userChartRef.value && userChart) {
+        userChart.resize()
+      }
+      if (detectionChartRef.value && detectionChart) {
+        detectionChart.resize()
+      }
+      if (mediaChartRef.value && mediaChart) {
+        mediaChart.resize()
+      }
+      if (modelChartRef.value && modelChart) {
+        modelChart.resize()
+      }
+    }, 100)
+  } catch (error) {
+    console.error('调整图表大小失败', error)
+  }
 }
 
 // 监听统计数据变化，更新图表
 watch(
   () => statistics.value,
   () => {
-    initCharts()
+    if (!loading.value) {
+      initCharts()
+    }
   },
   { deep: true }
 )
@@ -360,18 +477,18 @@ watch(
 
 onMounted(() => {
   fetchStatistics()
-  initCharts()
+  // 不在这里调用initCharts，而是在fetchStatistics完成后调用
   window.addEventListener('resize', handleResize)
 })
 
 // 组件卸载时移除事件监听
-const onBeforeUnmount = () => {
+onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   userChart?.dispose()
   detectionChart?.dispose()
   mediaChart?.dispose()
   modelChart?.dispose()
-}
+})
 </script>
 
 <template>
@@ -483,5 +600,6 @@ const onBeforeUnmount = () => {
 
 .chart-container {
   margin-bottom: 20px;
+  height: 27.71vh;
 }
 </style>
