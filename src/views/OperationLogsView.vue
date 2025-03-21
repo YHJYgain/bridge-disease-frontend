@@ -38,7 +38,6 @@ const getUserInfo = async () => {
     // 从 localStorage 中获取用户信息
     const storedUser = localStorage.getItem('login_user')
     userInfo.value = JSON.parse(storedUser);
-    console.info('【用户信息】', userInfo.value)
 
     // 如果不是管理员或开发人员，跳转到首页
     if (!isAdminOrDeveloper.value) {
@@ -70,10 +69,10 @@ const getOperationLogs = async () => {
     if (searchForm.value.start_date) params.start_date = searchForm.value.start_date
     if (searchForm.value.end_date) params.end_date = searchForm.value.end_date
 
-    const response = await request.get('/operations', { params })
-    if (response && response.data) {
-      operationLogs.value = response.data
-    }
+    // const response = await request.get('/operations', { params })
+    // if (response && response.data) {
+    //   operationLogs.value = response.data
+    // }
   } catch (error) {
     console.error('获取操作日志失败', error)
     ElMessage.error('获取操作日志失败，请重试')
@@ -97,15 +96,13 @@ const resetSearchForm = () => {
 // 格式化操作类型
 const formatOperationType = (type) => {
   const typeMap = {
-    'login': '登录',
-    'logout': '登出',
-    'register': '注册',
+    'authenticate': '鉴权',
     'create': '创建',
+    'read': '读取',
     'update': '更新',
     'delete': '删除',
-    'upload': '上传',
-    'download': '下载',
-    'detection': '检测分割'
+    'execute': '执行任务',
+    'manage': '管理操作'
   }
   return typeMap[type] || type
 }
@@ -169,22 +166,19 @@ onMounted(() => {
             </el-form-item>
             <el-form-item label="操作类型">
               <el-select v-model="searchForm.operation_type" placeholder="请选择操作类型" clearable>
-                <el-option label="登录" value="login" />
-                <el-option label="登出" value="logout" />
-                <el-option label="注册" value="register" />
+                <el-option label="鉴权" value="authenticate" />
                 <el-option label="创建" value="create" />
+                <el-option label="读取" value="read" />
                 <el-option label="更新" value="update" />
                 <el-option label="删除" value="delete" />
-                <el-option label="上传" value="upload" />
-                <el-option label="下载" value="download" />
-                <el-option label="检测分割" value="detection" />
+                <el-option label="执行任务" value="execute" />
+                <el-option label="管理操作" value="manage" />
               </el-select>
             </el-form-item>
             <el-form-item label="状态">
               <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
                 <el-option label="成功" value="SUCCESS" />
                 <el-option label="失败" value="FAILURE" />
-                <el-option label="处理中" value="PENDING" />
               </el-select>
             </el-form-item>
             <el-form-item label="开始日期">
@@ -230,7 +224,6 @@ onMounted(() => {
 
 <style scoped>
 .operation-logs-container {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #f0f2f5;
@@ -261,8 +254,7 @@ onMounted(() => {
 }
 
 .sidebar {
-  width: 220px;
-  height: calc(100vh - 60px);
+  width: 180px;
   overflow-y: auto;
   background-color: #304156;
   transition: width 0.3s;

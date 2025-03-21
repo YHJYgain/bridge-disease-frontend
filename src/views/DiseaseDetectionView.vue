@@ -36,7 +36,6 @@ const getUserInfo = async () => {
     // 从 localStorage 中获取用户信息
     const storedUser = localStorage.getItem('login_user')
     userInfo.value = JSON.parse(storedUser);
-    console.info('【用户信息】', userInfo.value)
   } catch (error) {
     console.error('【获取用户信息错误】', error)
     ElMessage.error({
@@ -52,10 +51,10 @@ const getUserInfo = async () => {
 // 获取媒体列表
 const getMediaList = async () => {
   try {
-    const response = await request.get('/media')
-    if (response && response.data) {
-      mediaList.value = response.data
-    }
+    // const response = await request.get('/media')
+    // if (response && response.data) {
+    //   mediaList.value = response.data
+    // }
   } catch (error) {
     console.error('获取媒体列表失败', error)
     ElMessage.error('获取媒体列表失败，请重试')
@@ -65,10 +64,10 @@ const getMediaList = async () => {
 // 获取模型列表
 const getModelList = async () => {
   try {
-    const response = await request.get('/models')
-    if (response && response.data) {
-      modelList.value = response.data
-    }
+    // const response = await request.get('/models')
+    // if (response && response.data) {
+    //   modelList.value = response.data
+    // }
   } catch (error) {
     console.error('获取模型列表失败', error)
     ElMessage.error('获取模型列表失败，请重试')
@@ -89,16 +88,16 @@ const submitDetectionTask = async () => {
 
   try {
     detectLoading.value = true
-    const response = await request.post('/detection', {
-      media_id: selectedMedia.value,
-      model_id: selectedModel.value
-    })
+    // const response = await request.post('/detection', {
+    //   media_id: selectedMedia.value,
+    //   model_id: selectedModel.value
+    // })
 
-    if (response && response.operation && response.operation.status === 'SUCCESS') {
-      ElMessage.success('检测任务提交成功')
-      // 跳转到检测记录页面
-      router.push('/detection-records')
-    }
+    // if (response && response.operation && response.operation.status === 'SUCCESS') {
+    //   ElMessage.success('检测任务提交成功')
+    //   // 跳转到检测记录页面
+    //   router.push('/detection-records')
+    // }
   } catch (error) {
     console.error('提交检测任务失败', error)
     ElMessage.error('提交检测任务失败，请重试')
@@ -173,7 +172,6 @@ onMounted(() => {
 
 <style scoped>
 .disease-detection-container {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #f0f2f5;
@@ -204,8 +202,7 @@ onMounted(() => {
 }
 
 .sidebar {
-  width: 220px;
-  height: calc(100vh - 60px);
+  width: 180px;
   overflow-y: auto;
   background-color: #304156;
   transition: width 0.3s;

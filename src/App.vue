@@ -15,8 +15,8 @@ const isAuthPage = computed(() => {
 <template>
   <div class="app-container">
     <HeaderComponent v-if="!isAuthPage" />
-    <RouterView />
-    <FooterComponent/>
+    <RouterView class="router-view-container" />
+    <FooterComponent />
   </div>
 </template>
 
@@ -36,5 +36,9 @@ body,
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+}
+
+.router-view-container {
+  flex: 1;
 }
 </style>

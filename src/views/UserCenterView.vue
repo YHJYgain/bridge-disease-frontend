@@ -121,10 +121,9 @@ const getUserInfo = async () => {
       return
     }
 
-    /// 从 localStorage 中获取用户信息
+    // 从 localStorage 中获取用户信息
     const storedUser = localStorage.getItem('login_user')
     userInfo.value = JSON.parse(storedUser);
-    console.info('【用户信息】', userInfo.value)
 
     // 初始化修改个人信息表单
     updateForm.value = {
@@ -499,21 +498,10 @@ onMounted(() => {
 
 <style scoped>
 .user-center-container {
-  min-height: calc(100vh - 60px);
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   margin-top: 0;
   padding-top: 0;
   overflow-y: auto;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 30px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .logo h1 {

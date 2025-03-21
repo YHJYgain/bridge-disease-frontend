@@ -38,7 +38,6 @@ const getUserInfo = async () => {
     // 从 localStorage 中获取用户信息
     const storedUser = localStorage.getItem('login_user')
     userInfo.value = JSON.parse(storedUser);
-    console.info('【用户信息】', userInfo.value)
 
     // 如果不是开发人员，跳转到首页
     if (!isDeveloper.value) {
@@ -62,10 +61,10 @@ const getUserInfo = async () => {
 const getModelList = async () => {
   try {
     loading.value = true
-    const response = await request.get('/models')
-    if (response && response.data) {
-      modelList.value = response.data
-    }
+    // const response = await request.get('/models')
+    // if (response && response.data) {
+    //   modelList.value = response.data
+    // }
   } catch (error) {
     console.error('获取模型列表失败', error)
     ElMessage.error('获取模型列表失败，请重试')
@@ -99,21 +98,21 @@ const uploadModel = async () => {
     formData.append('version', uploadForm.value.version)
     formData.append('file', uploadForm.value.file)
 
-    const response = await request.post('/model', formData)
+    // const response = await request.post('/model', formData)
 
-    if (response && response.operation && response.operation.status === 'SUCCESS') {
-      ElMessage.success('模型文件上传成功')
-      uploadDialogVisible.value = false
-      // 重置表单
-      uploadForm.value = {
-        name: '',
-        description: '',
-        version: '1.0',
-        file: null
-      }
-      // 重新获取列表
-      getModelList()
-    }
+    // if (response && response.operation && response.operation.status === 'SUCCESS') {
+    //   ElMessage.success('模型文件上传成功')
+    //   uploadDialogVisible.value = false
+    //   // 重置表单
+    //   uploadForm.value = {
+    //     name: '',
+    //     description: '',
+    //     version: '1.0',
+    //     file: null
+    //   }
+    //   // 重新获取列表
+    //   getModelList()
+    // }
   } catch (error) {
     console.error('上传模型文件失败', error)
     ElMessage.error('上传模型文件失败，请重试')
@@ -125,7 +124,7 @@ const uploadModel = async () => {
 // 删除模型
 const deleteModel = async (id) => {
   try {
-    await request.delete(`/model/${id}`)
+    // await request.delete(`/model/${id}`)
     ElMessage.success('删除成功')
     // 重新获取列表
     getModelList()
@@ -138,7 +137,7 @@ const deleteModel = async (id) => {
 // 切换模型状态
 const toggleModelStatus = async (id, active) => {
   try {
-    await request.put(`/model/${id}/status`, { active: !active })
+    // await request.put(`/model/${id}/status`, { active: !active })
     ElMessage.success(`模型已${!active ? '激活' : '停用'}`)
     // 重新获取列表
     getModelList()
@@ -267,7 +266,6 @@ onMounted(() => {
 
 <style scoped>
 .model-library-container {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #f0f2f5;
@@ -298,8 +296,7 @@ onMounted(() => {
 }
 
 .sidebar {
-  width: 220px;
-  height: calc(100vh - 60px);
+  width: 180px;
   overflow-y: auto;
   background-color: #304156;
   transition: width 0.3s;

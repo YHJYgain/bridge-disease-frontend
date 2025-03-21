@@ -41,7 +41,6 @@ const getUserInfo = async () => {
     // 从 localStorage 中获取用户信息
     const storedUser = localStorage.getItem('login_user')
     userInfo.value = JSON.parse(storedUser);
-    console.info('【用户信息】', userInfo.value)
   } catch (error) {
     console.error('【获取用户信息错误】', error)
     ElMessage.error({
@@ -59,11 +58,11 @@ const getMediaList = async () => {
   try {
     loading.value = true
     // 管理员和开发人员可以查看所有媒体，普通用户只能查看自己的
-    const url = isAdminOrDeveloper.value ? '/media/all' : '/media'
-    const response = await request.get(url)
-    if (response && response.data) {
-      mediaList.value = response.data
-    }
+    // const url = isAdminOrDeveloper.value ? '/media/all' : '/media'
+    // const response = await request.get(url)
+    // if (response && response.data) {
+    //   mediaList.value = response.data
+    // }
   } catch (error) {
     console.error('获取媒体列表失败', error)
     ElMessage.error('获取媒体列表失败，请重试')
@@ -92,21 +91,21 @@ const uploadMedia = async () => {
     formData.append('type', uploadForm.value.type)
     formData.append('file', uploadForm.value.file)
 
-    const response = await request.post('/media', formData)
+    // const response = await request.post('/media', formData)
 
-    if (response && response.operation && response.operation.status === 'SUCCESS') {
-      ElMessage.success('媒体文件上传成功')
-      uploadDialogVisible.value = false
-      // 重置表单
-      uploadForm.value = {
-        name: '',
-        description: '',
-        type: 'image',
-        file: null
-      }
-      // 重新获取列表
-      getMediaList()
-    }
+    // if (response && response.operation && response.operation.status === 'SUCCESS') {
+    //   ElMessage.success('媒体文件上传成功')
+    //   uploadDialogVisible.value = false
+    //   // 重置表单
+    //   uploadForm.value = {
+    //     name: '',
+    //     description: '',
+    //     type: 'image',
+    //     file: null
+    //   }
+    //   // 重新获取列表
+    //   getMediaList()
+    // }
   } catch (error) {
     console.error('上传媒体文件失败', error)
     ElMessage.error('上传媒体文件失败，请重试')
@@ -118,7 +117,7 @@ const uploadMedia = async () => {
 // 删除媒体文件
 const deleteMedia = async (id) => {
   try {
-    await request.delete(`/media/${id}`)
+    // await request.delete(`/media/${id}`)
     ElMessage.success('删除成功')
     // 重新获取列表
     getMediaList()
@@ -130,7 +129,7 @@ const deleteMedia = async (id) => {
 
 // 下载媒体文件
 const downloadMedia = (id, name) => {
-  window.open(`${requestBaseURL}/media/download/${id}`, '_blank')
+  window.open(`${requestBaseURL}/media/${name}`, '_blank')
 }
 
 // 文件上传变化处理
@@ -262,7 +261,6 @@ onMounted(() => {
 
 <style scoped>
 .media-library-container {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #f0f2f5;
@@ -293,8 +291,7 @@ onMounted(() => {
 }
 
 .sidebar {
-  width: 220px;
-  height: calc(100vh - 60px);
+  width: 180px;
   overflow-y: auto;
   background-color: #304156;
   transition: width 0.3s;

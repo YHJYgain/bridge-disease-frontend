@@ -19,7 +19,7 @@ const userForm = ref({
   username: '',
   email: '',
   password: '',
-  role: 'user',
+  role: 'USER',
   first_name: '',
   last_name: '',
   phone: ''
@@ -45,7 +45,6 @@ const getUserInfo = async () => {
     // 从 localStorage 中获取用户信息
     const storedUser = localStorage.getItem('login_user')
     userInfo.value = JSON.parse(storedUser);
-    console.info('【用户信息】', userInfo.value)
 
     // 如果不是管理员或开发人员，跳转到首页
     if (!isAdminOrDeveloper.value) {
@@ -69,10 +68,10 @@ const getUserInfo = async () => {
 const getUserList = async () => {
   try {
     loading.value = true
-    const response = await request.get('/users')
-    if (response && response.data) {
-      userList.value = response.data
-    }
+    // const response = await request.get('/users')
+    // if (response && response.data) {
+    //   userList.value = response.data
+    // }
   } catch (error) {
     console.error('获取用户列表失败', error)
     ElMessage.error('获取用户列表失败，请重试')
@@ -88,7 +87,7 @@ const openAddUserDialog = () => {
     username: '',
     email: '',
     password: '',
-    role: 'user',
+    role: 'USER',
     first_name: '',
     last_name: '',
     phone: ''
@@ -138,22 +137,22 @@ const submitUserForm = async () => {
         delete data.password
       }
 
-      const response = await request.put(`/user/${currentUser.value.id}`, data)
+      // const response = await request.put(`/user/${currentUser.value.id}`, data)
 
-      if (response && response.operation && response.operation.status === 'SUCCESS') {
-        ElMessage.success('用户信息更新成功')
-        dialogVisible.value = false
-        getUserList()
-      }
+      // if (response && response.operation && response.operation.status === 'SUCCESS') {
+      //   ElMessage.success('用户信息更新成功')
+      //   dialogVisible.value = false
+      //   getUserList()
+      // }
     } else {
       // 添加用户
-      const response = await request.post('/user', userForm.value)
+      // const response = await request.post('/user', userForm.value)
 
-      if (response && response.operation && response.operation.status === 'SUCCESS') {
-        ElMessage.success('用户添加成功')
-        dialogVisible.value = false
-        getUserList()
-      }
+      // if (response && response.operation && response.operation.status === 'SUCCESS') {
+      //   ElMessage.success('用户添加成功')
+      //   dialogVisible.value = false
+      //   getUserList()
+      // }
     }
   } catch (error) {
     console.error('提交用户表单失败', error)
@@ -166,7 +165,7 @@ const submitUserForm = async () => {
 // 删除用户
 const deleteUser = async (id) => {
   try {
-    await request.delete(`/user/${id}`)
+    // await request.delete(`/user/${id}`)
     ElMessage.success('删除成功')
     // 重新获取列表
     getUserList()
@@ -307,7 +306,6 @@ onMounted(() => {
 
 <style scoped>
 .user-management-container {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #f0f2f5;
@@ -338,8 +336,7 @@ onMounted(() => {
 }
 
 .sidebar {
-  width: 220px;
-  height: calc(100vh - 60px);
+  width: 180px;
   overflow-y: auto;
   background-color: #304156;
   transition: width 0.3s;

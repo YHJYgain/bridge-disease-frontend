@@ -379,14 +379,12 @@ const onBeforeUnmount = () => {
     <el-row :gutter="20">
       <el-col :span="24">
         <el-card class="statistics-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <h3>系统统计数据</h3>
-              <el-button type="primary" size="small" @click="fetchStatistics" :loading="loading">
-                刷新数据
-              </el-button>
-            </div>
-          </template>
+          <div class="card-header">
+            <h3>系统统计数据</h3>
+            <el-button type="primary" size="small" @click="fetchStatistics" :loading="loading">
+              刷新数据
+            </el-button>
+          </div>
 
           <el-skeleton :rows="4" animated v-if="loading" />
 
@@ -462,11 +460,12 @@ const onBeforeUnmount = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: -17px;
 }
 
 .info-card {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   background-color: #f5f7fa;
 }
 
@@ -483,7 +482,6 @@ const onBeforeUnmount = () => {
 }
 
 .chart-container {
-  height: 350px;
   margin-bottom: 20px;
 }
 </style>

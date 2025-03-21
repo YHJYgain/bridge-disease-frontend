@@ -31,7 +31,6 @@ const getUserInfo = async () => {
     // 从 localStorage 中获取用户信息
     const storedUser = localStorage.getItem('login_user')
     userInfo.value = JSON.parse(storedUser);
-    console.info('【用户信息】', userInfo.value)
   } catch (error) {
     console.error('【获取用户信息错误】', error)
     ElMessage.error({
@@ -49,11 +48,11 @@ const getDetectionRecords = async () => {
   try {
     loading.value = true
     // 管理员和开发人员可以查看所有记录，普通用户只能查看自己的
-    const url = isAdminOrDeveloper.value ? '/detections/all' : '/detections'
-    const response = await request.get(url)
-    if (response && response.data) {
-      detectionRecords.value = response.data
-    }
+    // const url = isAdminOrDeveloper.value ? '/detections/all' : '/detections'
+    // const response = await request.get(url)
+    // if (response && response.data) {
+    //   detectionRecords.value = response.data
+    // }
   } catch (error) {
     console.error('获取检测记录失败', error)
     ElMessage.error('获取检测记录失败，请重试')
@@ -70,7 +69,7 @@ const viewDetectionDetail = (id) => {
 // 删除检测记录
 const deleteDetection = async (id) => {
   try {
-    await request.delete(`/detection/${id}`)
+    // await request.delete(`/detection/${id}`)
     ElMessage.success('删除成功')
     // 重新获取列表
     getDetectionRecords()
@@ -165,7 +164,6 @@ onMounted(() => {
 
 <style scoped>
 .detection-records-container {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #f0f2f5;
@@ -196,8 +194,7 @@ onMounted(() => {
 }
 
 .sidebar {
-  width: 220px;
-  height: calc(100vh - 60px);
+  width: 180px;
   overflow-y: auto;
   background-color: #304156;
   transition: width 0.3s;
