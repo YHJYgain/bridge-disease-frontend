@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import request from '../utils/request'
 
@@ -54,13 +55,17 @@ const loading = ref(true)
 const fetchUserStatistics = async () => {
   try {
     // 调用用户统计接口
-    const response = await request.get('/user/statistics')
-    if (response && response.data) {
-      statistics.value.users = response.data
-    }
+    const data = await request.get('/user/statistics')
+    console.info('【获取用户统计数据响应数据】', data)
+    statistics.value.users = data.users_statistics
+
     return true
   } catch (error) {
-    console.error('获取用户统计数据失败', error)
+    console.error('【获取用户统计数据错误】', error)
+    ElMessage.error({
+      message: '【获取用户统计数据错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
     return false
   }
 }
@@ -116,13 +121,13 @@ const fetchStatistics = async () => {
     loading.value = true
     // 注释掉后端接口请求，使用模拟数据
     // 模拟用户数据
-    statistics.value.users = {
-      total: 10,
-      admin: 2,
-      developer: 3,
-      user: 5
-    }
-    
+    // statistics.value.users = {
+    //   total: 10,
+    //   admin: 2,
+    //   developer: 3,
+    //   user: 5
+    // }
+
     // 模拟检测数据
     statistics.value.detections = {
       total: 100,
@@ -131,26 +136,26 @@ const fetchStatistics = async () => {
       completed: 60,
       failed: 5
     }
-    
+
     // 模拟媒体数据
     statistics.value.medias = {
       total: 50,
       image: 35,
       video: 15
     }
-    
+
     // 模拟模型数据
     statistics.value.models = {
       total: 5
     }
-    
-    // 并行调用四个统计接口（已注释）
-    // await Promise.all([
-    //   fetchUserStatistics(),
-    //   fetchDetectionStatistics(),
-    //   fetchMediaStatistics(),
-    //   fetchModelStatistics()
-    // ])
+
+    // 并行调用四个统计接口
+    await Promise.all([
+      fetchUserStatistics(),
+      // fetchDetectionStatistics(),
+      // fetchMediaStatistics(),
+      // fetchModelStatistics()
+    ])
   } catch (error) {
     console.error('获取统计数据失败', error)
   } finally {
@@ -164,57 +169,57 @@ const fetchStatistics = async () => {
 // 初始化用户统计图表
 const initUserChart = () => {
   if (!userChartRef.value) return
-  
+
   try {
     userChart = echarts.init(userChartRef.value)
 
-  const option = {
-    title: {
-      text: '用户统计',
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item',
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      data: ['管理员', '开发人员', '普通用户']
-    },
-    series: [
-      {
-        name: '用户类型',
-        type: 'pie',
-        radius: ['50%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: {
-          show: false,
-          position: 'center'
-        },
-        emphasis: {
+    const option = {
+      title: {
+        text: '用户统计',
+        left: 'center'
+      },
+      tooltip: {
+        trigger: 'item',
+        formatter: '{a} <br/>{b}: {c} ({d}%)'
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left',
+        data: ['管理员', '开发人员', '普通用户']
+      },
+      series: [
+        {
+          name: '用户类型',
+          type: 'pie',
+          radius: ['50%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: '#fff',
+            borderWidth: 2
+          },
           label: {
-            show: true,
-            fontSize: 16,
-            fontWeight: 'bold'
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: [
-          { value: statistics.value.users.admin, name: '管理员' },
-          { value: statistics.value.users.developer, name: '开发人员' },
-          { value: statistics.value.users.user, name: '普通用户' }
-        ]
-      }
-    ]
-  }
+            show: false,
+            position: 'center'
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 16,
+              fontWeight: 'bold'
+            }
+          },
+          labelLine: {
+            show: false
+          },
+          data: [
+            { value: statistics.value.users.admin, name: '管理员' },
+            { value: statistics.value.users.developer, name: '开发人员' },
+            { value: statistics.value.users.user, name: '普通用户' }
+          ]
+        }
+      ]
+    }
 
     userChart.setOption(option)
   } catch (error) {
@@ -229,40 +234,40 @@ const initDetectionChart = () => {
   try {
     detectionChart = echarts.init(detectionChartRef.value)
 
-  const option = {
-    title: {
-      text: '检测分割记录统计',
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item'
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      data: ['待处理', '处理中', '已完成', '失败']
-    },
-    series: [
-      {
-        name: '检测状态',
-        type: 'pie',
-        radius: '50%',
-        data: [
-          { value: statistics.value.detections.pending, name: '待处理' },
-          { value: statistics.value.detections.in_progress, name: '处理中' },
-          { value: statistics.value.detections.completed, name: '已完成' },
-          { value: statistics.value.detections.failed, name: '失败' }
-        ],
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
+    const option = {
+      title: {
+        text: '检测分割记录统计',
+        left: 'center'
+      },
+      tooltip: {
+        trigger: 'item'
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left',
+        data: ['待处理', '处理中', '已完成', '失败']
+      },
+      series: [
+        {
+          name: '检测状态',
+          type: 'pie',
+          radius: '50%',
+          data: [
+            { value: statistics.value.detections.pending, name: '待处理' },
+            { value: statistics.value.detections.in_progress, name: '处理中' },
+            { value: statistics.value.detections.completed, name: '已完成' },
+            { value: statistics.value.detections.failed, name: '失败' }
+          ],
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
           }
         }
-      }
-    ]
-  }
+      ]
+    }
 
     detectionChart.setOption(option)
   } catch (error) {
@@ -277,49 +282,49 @@ const initMediaChart = () => {
   try {
     mediaChart = echarts.init(mediaChartRef.value)
 
-  const option = {
-    title: {
-      text: '媒体文件统计',
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      }
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: [
-      {
-        type: 'category',
-        data: ['图片', '视频'],
-        axisTick: {
-          alignWithLabel: true
+    const option = {
+      title: {
+        text: '媒体文件统计',
+        left: 'center'
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
         }
-      }
-    ],
-    yAxis: [
-      {
-        type: 'value'
-      }
-    ],
-    series: [
-      {
-        name: '数量',
-        type: 'bar',
-        barWidth: '60%',
-        data: [
-          { value: statistics.value.medias.image, name: '图片' },
-          { value: statistics.value.medias.video, name: '视频' }
-        ]
-      }
-    ]
-  }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: [
+        {
+          type: 'category',
+          data: ['图片', '视频'],
+          axisTick: {
+            alignWithLabel: true
+          }
+        }
+      ],
+      yAxis: [
+        {
+          type: 'value'
+        }
+      ],
+      series: [
+        {
+          name: '数量',
+          type: 'bar',
+          barWidth: '60%',
+          data: [
+            { value: statistics.value.medias.image, name: '图片' },
+            { value: statistics.value.medias.video, name: '视频' }
+          ]
+        }
+      ]
+    }
 
     mediaChart.setOption(option)
   } catch (error) {
@@ -334,69 +339,69 @@ const initModelChart = () => {
   try {
     modelChart = echarts.init(modelChartRef.value)
 
-  const option = {
-    title: {
-      text: '模型统计',
-      left: 'center'
-    },
-    tooltip: {
-      trigger: 'item'
-    },
-    series: [
-      {
-        name: '模型总数',
-        type: 'gauge',
-        radius: '70%',
-        center: ['50%', '60%'],
-        startAngle: 180,
-        endAngle: 0,
-        min: 0,
-        max: statistics.value.models.total > 0 ? statistics.value.models.total * 2 : 10,
-        splitNumber: 5,
-        itemStyle: {
-          color: '#409EFF'
-        },
-        progress: {
-          show: true,
-          roundCap: true,
-          width: 18
-        },
-        pointer: {
-          show: false
-        },
-        axisLine: {
-          roundCap: true,
-          lineStyle: {
+    const option = {
+      title: {
+        text: '模型统计',
+        left: 'center'
+      },
+      tooltip: {
+        trigger: 'item'
+      },
+      series: [
+        {
+          name: '模型总数',
+          type: 'gauge',
+          radius: '70%',
+          center: ['50%', '60%'],
+          startAngle: 180,
+          endAngle: 0,
+          min: 0,
+          max: statistics.value.models.total > 0 ? statistics.value.models.total * 2 : 10,
+          splitNumber: 5,
+          itemStyle: {
+            color: '#409EFF'
+          },
+          progress: {
+            show: true,
+            roundCap: true,
             width: 18
-          }
-        },
-        axisTick: {
-          show: false
-        },
-        splitLine: {
-          show: false
-        },
-        axisLabel: {
-          show: false
-        },
-        title: {
-          show: false
-        },
-        detail: {
-          valueAnimation: true,
-          fontSize: 30,
-          offsetCenter: [0, 0],
-          formatter: '{value}',
-          color: '#409EFF'
-        },
-        data: [
-          {
-            value: statistics.value.models.total
-          }
-        ]
-      }
-    ]
-  }
+          },
+          pointer: {
+            show: false
+          },
+          axisLine: {
+            roundCap: true,
+            lineStyle: {
+              width: 18
+            }
+          },
+          axisTick: {
+            show: false
+          },
+          splitLine: {
+            show: false
+          },
+          axisLabel: {
+            show: false
+          },
+          title: {
+            show: false
+          },
+          detail: {
+            valueAnimation: true,
+            fontSize: 30,
+            offsetCenter: [0, 0],
+            formatter: '{value}',
+            color: '#409EFF'
+          },
+          data: [
+            {
+              value: statistics.value.models.total
+            }
+          ]
+        }
+      ]
+    }
 
     modelChart.setOption(option)
   } catch (error) {
@@ -408,7 +413,7 @@ const initModelChart = () => {
 const initCharts = async () => {
   // 确保DOM已经渲染完成
   await nextTick()
-  
+
   // 添加一个小延时，确保DOM元素已完全渲染
   setTimeout(() => {
     // 先清理旧的图表实例
@@ -416,7 +421,7 @@ const initCharts = async () => {
     detectionChart?.dispose()
     mediaChart?.dispose()
     modelChart?.dispose()
-    
+
     // 重新初始化图表
     initUserChart()
     initDetectionChart()
@@ -432,7 +437,7 @@ const handleResize = () => {
     if (window.resizeTimer) {
       clearTimeout(window.resizeTimer)
     }
-    
+
     window.resizeTimer = setTimeout(() => {
       // 确保图表容器存在
       if (userChartRef.value && userChart) {
@@ -477,7 +482,6 @@ watch(
 
 onMounted(() => {
   fetchStatistics()
-  // 不在这里调用initCharts，而是在fetchStatistics完成后调用
   window.addEventListener('resize', handleResize)
 })
 
