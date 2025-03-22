@@ -11,20 +11,26 @@ const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(false)
+const uploadLoading = ref(false)
 const mediaList = ref([])
 const uploadDialogVisible = ref(false)
-const uploadForm = ref({
-  name: '',
-  description: '',
-  type: 'image',
-  file: null
-})
-const uploadLoading = ref(false)
+const uploadFormRef = ref(null)
+
+// 分页相关（默认每页 5 条）
+const currentPage = ref(1)
+const pageSize = ref(5)
+const total = ref(0)
 
 // 判断用户角色
 const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
 const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
 const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
+
+const uploadForm = ref({
+  description: '',
+  type: 'image',
+  file: null
+})
 
 // 获取用户信息
 const getUserInfo = async () => {
@@ -57,39 +63,87 @@ const getUserInfo = async () => {
 const getMediaList = async () => {
   try {
     loading.value = true
-    // 管理员和开发人员可以查看所有媒体，普通用户只能查看自己的
-    // const url = isAdminOrDeveloper.value ? '/media/all' : '/media'
-    // const response = await request.get(url)
-    // if (response && response.data) {
-    //   mediaList.value = response.data
-    // }
+    var data = null
+
+    // 根据用户角色来决定获取媒体列表的方式
+    if (isAdminOrDeveloper.value) {
+      // 获取所有用户的媒体列表，添加分页参数
+    } else {
+      // 获取当前用户的媒体列表，添加分页参数
+      data = await request.get(`/media/medias/${userInfo.value.user_id}`, {
+        params: {
+          page: currentPage.value,
+          per_page: pageSize.value
+        }
+      })
+    }
+    console.info('【获取媒体列表响应数据】', data)
+
+    if (data && !data.failure_message) {
+      mediaList.value = data.medias
+      total.value = data.total || 0
+    }
   } catch (error) {
-    console.error('获取媒体列表失败', error)
-    ElMessage.error('获取媒体列表失败，请重试')
+    console.error('【获取媒体列表失败】', error)
+    ElMessage.error({
+      message: '【获取媒体列表失败】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   } finally {
     loading.value = false
   }
 }
 
-// 上传媒体文件
-const uploadMedia = async () => {
-  if (!uploadForm.value.name) {
-    ElMessage.warning('请输入媒体名称')
-    return
-  }
+// 表单验证规则
+const uploadFormRules = {
+  file: [
+    { required: true, message: '请选择要上传的文件', trigger: ['blur', 'change'] }
+  ]
+}
 
-  if (!uploadForm.value.file) {
-    ElMessage.warning('请选择要上传的文件')
+// 监听对话框关闭事件，重置表单
+const resetUploadForm = () => {
+  uploadForm.value = {
+    description: '',
+    type: 'image',
+    file: null
+  }
+  // 如果表单引用存在，重置验证状态
+  if (uploadFormRef.value) {
+    uploadFormRef.value.resetFields()
+  }
+}
+
+// 创建媒体文件预览 URL 的计算属性
+const mediaPreviewUrl = computed(() => {
+  if (uploadForm.value.file) {
+    return URL.createObjectURL(uploadForm.value.file)
+  }
+  return ''
+})
+
+// 上传媒体
+const uploadMedia = async () => {
+  if (!uploadFormRef.value) {
+    ElMessage.error('【上传媒体错误】表单实例不存在')
     return
   }
 
   try {
+    // 使用表单验证
+    await uploadFormRef.value.validate()
+
     uploadLoading.value = true
     const formData = new FormData()
-    formData.append('name', uploadForm.value.name)
     formData.append('description', uploadForm.value.description)
-    formData.append('type', uploadForm.value.type)
     formData.append('file', uploadForm.value.file)
+
+    // 打印上传表单数据
+    console.info('【上传媒体表单数据】', {
+      description: uploadForm.value.description,
+      type: uploadForm.value.type,
+      has_file: uploadForm.value.file ? '已选择' : '未选择'
+    })
 
     // const response = await request.post('/media', formData)
 
@@ -97,18 +151,16 @@ const uploadMedia = async () => {
     //   ElMessage.success('媒体文件上传成功')
     //   uploadDialogVisible.value = false
     //   // 重置表单
-    //   uploadForm.value = {
-    //     name: '',
-    //     description: '',
-    //     type: 'image',
-    //     file: null
-    //   }
+    //   resetUploadForm()
     //   // 重新获取列表
     //   getMediaList()
     // }
   } catch (error) {
-    console.error('上传媒体文件失败', error)
-    ElMessage.error('上传媒体文件失败，请重试')
+    console.error('【上传媒体错误】', error)
+    ElMessage.error({
+      message: '【上传媒体错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   } finally {
     uploadLoading.value = false
   }
@@ -133,7 +185,21 @@ const downloadMedia = (id, name) => {
 }
 
 // 文件上传变化处理
-const handleFileChange = (file) => {
+const handleMediaFileChange = (file) => {
+  // 验证文件格式
+  if (uploadForm.value.type === 'image') {
+    if (!file.raw.type.startsWith('image/')) {
+      ElMessage.error('图片格式不正确，请上传 jpg/jpeg/png 格式')
+      return false
+    }
+  } else if (uploadForm.value.type === 'video') {
+    if (!file.raw.type.startsWith('video/')) {
+      ElMessage.error('视频格式不正确，请上传 mp4/avi/mov 格式')
+      return false
+    }
+  }
+
+  // 验证通过，更新媒体文件
   uploadForm.value.file = file.raw
   return false // 阻止自动上传
 }
@@ -215,41 +281,67 @@ onMounted(() => {
               </template>
             </el-table-column>
           </el-table>
+
+          <!-- 分页控件 -->
+          <div class="pagination-container">
+            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+              layout="total, prev, pager, next, jumper" :total="total" @current-change="getMediaList" />
+          </div>
         </el-card>
       </div>
     </div>
 
     <!-- 上传媒体对话框 -->
-    <el-dialog v-model="uploadDialogVisible" title="上传媒体文件" width="500px">
-      <el-form :model="uploadForm" label-width="100px">
-        <el-form-item label="媒体名称" required>
-          <el-input v-model="uploadForm.name" placeholder="请输入媒体名称" />
-        </el-form-item>
+    <el-dialog v-model="uploadDialogVisible" title="上传媒体" width="500px">
+      <el-form ref="uploadFormRef" :model="uploadForm" :rules="uploadFormRules" label-width="100px" status-icon>
         <el-form-item label="媒体描述">
           <el-input v-model="uploadForm.description" type="textarea" placeholder="请输入媒体描述" />
         </el-form-item>
         <el-form-item label="媒体类型">
           <el-radio-group v-model="uploadForm.type">
-            <el-radio label="image">图片</el-radio>
-            <el-radio label="video">视频</el-radio>
+            <el-radio value="image">图片</el-radio>
+            <el-radio value="video">视频</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="媒体文件" required>
-          <el-upload class="upload-demo" action="" :auto-upload="false" :on-change="handleFileChange" :limit="1">
+        <el-form-item label="媒体文件" prop="file">
+          <el-upload class="upload-demo" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
+            accept="image/png, image/jpg, image/jpeg, video/mp4, video/avi, video/mov"
+            :on-change="handleMediaFileChange" :auto-upload="false" :show-file-list="false">
             <template #trigger>
               <el-button type="primary">选择文件</el-button>
             </template>
             <template #tip>
               <div class="el-upload__tip">
-                {{ uploadForm.type === 'image' ? '支持jpg、png、jpeg格式，不超过10MB' : '支持mp4、avi格式，不超过100MB' }}
+                {{ uploadForm.type === 'image' ? '仅支持 png/jpg/jpeg 格式' : '仅支持 mp4/avi/mov格式' }}
               </div>
             </template>
           </el-upload>
         </el-form-item>
+        
+        <!-- 媒体文件预览区域 -->
+        <el-form-item label="预览" v-if="mediaPreviewUrl">
+          <div class="media-preview-container">
+            <!-- 图片预览 -->
+            <el-image 
+              v-if="uploadForm.type === 'image'" 
+              style="width: 200px; max-height: 200px" 
+              :src="mediaPreviewUrl" 
+              fit="contain"
+              :preview-src-list="[mediaPreviewUrl]"
+            />
+            <!-- 视频预览 -->
+            <video 
+              v-else-if="uploadForm.type === 'video'" 
+              style="width: 200px; max-height: 200px"
+              :src="mediaPreviewUrl" 
+              controls
+            ></video>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="uploadDialogVisible = false">取消</el-button>
+          <el-button @click="() => { uploadDialogVisible = false; resetUploadForm(); }">取消</el-button>
           <el-button type="primary" @click="uploadMedia" :loading="uploadLoading">
             上传
           </el-button>
@@ -318,5 +410,21 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 20px;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.media-preview-container {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  padding: 10px;
+  background-color: #fafafa;
 }
 </style>

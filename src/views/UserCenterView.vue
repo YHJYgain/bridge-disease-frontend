@@ -9,6 +9,45 @@ const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(false)
+const updateFormRef = ref(null)
+const passwordFormRef = ref(null)
+
+// 获取用户信息
+const getUserInfo = async () => {
+  try {
+    loading.value = true
+    // 检查是否有 token
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      ElMessage.error('【获取用户信息失败】未登录或登录已过期，请重新登录')
+      router.push('/login')
+      return
+    }
+
+    // 从 localStorage 中获取用户信息
+    const storedUser = localStorage.getItem('login_user')
+    userInfo.value = JSON.parse(storedUser);
+
+    // 初始化修改个人信息表单
+    updateForm.value = {
+      username: userInfo.value.username,
+      email: userInfo.value.email,
+      first_name: userInfo.value.first_name || '',
+      last_name: userInfo.value.last_name || '',
+      phone: userInfo.value.phone || '',
+      avatar_file: null
+    }
+  } catch (error) {
+    console.error('【获取用户信息错误】', error)
+    ElMessage.error({
+      message: '【获取用户信息错误】' + error?.message || '请重试',
+      duration: 5000
+    })
+    router.push('/login')
+  } finally {
+    loading.value = false
+  }
+}
 
 // 对话框显示状态
 const dialogVisible = reactive({
@@ -76,10 +115,6 @@ const passwordRules = {
   ]
 }
 
-// 表单引用
-const updateFormRef = ref(null)
-const passwordFormRef = ref(null)
-
 // 创建头像预览 URL 的计算属性
 const avatarPreviewUrl = computed(() => {
   if (updateForm.value.avatar_file) {
@@ -107,43 +142,6 @@ const handleAvatarChange = (file) => {
   // 验证通过，更新头像文件
   updateForm.value.avatar_file = file.raw
   return false // 阻止自动上传
-}
-
-// 获取用户信息
-const getUserInfo = async () => {
-  try {
-    loading.value = true
-    // 检查是否有 token
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      ElMessage.error('【获取用户信息失败】未登录或登录已过期，请重新登录')
-      router.push('/login')
-      return
-    }
-
-    // 从 localStorage 中获取用户信息
-    const storedUser = localStorage.getItem('login_user')
-    userInfo.value = JSON.parse(storedUser);
-
-    // 初始化修改个人信息表单
-    updateForm.value = {
-      username: userInfo.value.username,
-      email: userInfo.value.email,
-      first_name: userInfo.value.first_name || '',
-      last_name: userInfo.value.last_name || '',
-      phone: userInfo.value.phone || '',
-      avatar_file: null
-    }
-  } catch (error) {
-    console.error('【获取用户信息错误】', error)
-    ElMessage.error({
-      message: '【获取用户信息错误】' + error?.message || '请重试',
-      duration: 5000
-    })
-    router.push('/login')
-  } finally {
-    loading.value = false
-  }
 }
 
 // 返回首页

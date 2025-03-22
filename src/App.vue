@@ -1,10 +1,10 @@
 <script setup>
-import HeaderComponent from './components/HeaderComponent.vue'
-import { RouterView, useRoute } from 'vue-router'
-import FooterComponent from './components/FooterComponent.vue'
 import { computed } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
+import HeaderComponent from './components/HeaderComponent.vue'
+import FooterComponent from './components/FooterComponent.vue'
 
-// 获取当前路由，判断是否为登录相关页面
+// 获取当前路由，判断是否为登录相关页面（只有进入首页时，才显示 Header 组件）
 const route = useRoute()
 const isAuthPage = computed(() => {
   const path = route.path

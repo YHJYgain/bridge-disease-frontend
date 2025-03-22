@@ -10,18 +10,19 @@ import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(false)
+const uploadLoading = ref(false)
 const modelList = ref([])
 const uploadDialogVisible = ref(false)
+
+// 判断用户角色
+const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
+
 const uploadForm = ref({
   name: '',
   description: '',
   version: '1.0',
   file: null
 })
-const uploadLoading = ref(false)
-
-// 判断用户角色
-const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
 
 // 获取用户信息
 const getUserInfo = async () => {
@@ -73,7 +74,7 @@ const getModelList = async () => {
   }
 }
 
-// 上传模型文件
+// 上传模型
 const uploadModel = async () => {
   if (!uploadForm.value.name) {
     ElMessage.warning('请输入模型名称')

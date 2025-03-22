@@ -9,10 +9,15 @@ import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(false)
+const formLoading = ref(false)
 const userList = ref([])
 const dialogVisible = ref(false)
 const currentUser = ref(null)
-const formLoading = ref(false)
+
+// 判断用户角色
+const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
+const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
+const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
 
 // 表单数据
 const userForm = ref({
@@ -24,11 +29,6 @@ const userForm = ref({
   last_name: '',
   phone: ''
 })
-
-// 判断用户角色
-const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
-const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
-const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
 
 // 获取用户信息
 const getUserInfo = async () => {

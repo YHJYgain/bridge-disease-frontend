@@ -1,15 +1,15 @@
-<template>
-  <div class="footer">
-    <p>© {{ currentYear }} 桥梁病害检测与分割系统 版权所有</p>
-  </div>
-</template>
-
 <script setup>
 import { computed } from 'vue'
 
 // 计算当前年份
 const currentYear = computed(() => new Date().getFullYear())
 </script>
+
+<template>
+  <div class="footer">
+    <p>© {{ currentYear }} 桥梁病害检测与分割系统 版权所有</p>
+  </div>
+</template>
 
 <style scoped>
 .footer {
