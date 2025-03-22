@@ -193,13 +193,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.sidebar {
-  width: 180px;
-  overflow-y: auto;
-  background-color: #304156;
-  transition: width 0.3s;
-}
-
 .content-area {
   flex: 1;
   padding: 20px;

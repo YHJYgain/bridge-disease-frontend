@@ -251,13 +251,7 @@ onMounted(() => {
   display: flex;
   flex: 1;
   overflow: hidden;
-}
-
-.sidebar {
-  width: 180px;
-  overflow-y: auto;
-  background-color: #304156;
-  transition: width 0.3s;
+  transition: all 0.3s ease;
 }
 
 .content-area {

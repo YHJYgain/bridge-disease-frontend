@@ -1,12 +1,18 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Menu as IconMenu, Odometer, Picture, List, Plus, User, Operation } from '@element-plus/icons-vue'
+import { Picture, List, Plus, User, Operation, Fold, Expand, HomeFilled, Aim } from '@element-plus/icons-vue'
+import { isCollapsed, toggleCollapse } from '../stores/sidebarStore'
 
 const router = useRouter()
 const route = useRoute()
 
-// 从localStorage获取用户信息
+// 使用全局状态管理的折叠状态
+const isCollapse = isCollapsed
+
+// 组件挂载时应用折叠状态
+
+// 从 localStorage 获取用户信息
 const userInfo = computed(() => {
   const storedUser = localStorage.getItem('login_user')
   return storedUser ? JSON.parse(storedUser) : null
@@ -22,13 +28,13 @@ const menuItems = computed(() => [
   {
     name: '首页',
     path: '/home',
-    icon: Odometer,
+    icon: HomeFilled,
     visible: true
   },
   {
     name: '病害检测分割',
     path: '/disease-detection',
-    icon: IconMenu,
+    icon: Aim,
     visible: true
   },
   {
@@ -73,15 +79,22 @@ const navigateTo = (path) => {
 </script>
 
 <template>
-  <div class="sidebar-menu">
-    <el-menu :default-active="activeMenu" class="el-menu-vertical" :collapse="false" background-color="#304156"
-      text-color="#bfcbd9" active-text-color="#409EFF">
+  <div class="sidebar-menu" :class="{ 'collapsed': isCollapse }">
+    <div class="collapse-btn" @click="toggleCollapse">
+      <el-icon class="collapse-icon">
+        <component :is="isCollapse ? Expand : Fold" />
+      </el-icon>
+      <span class="collapse-text" :class="{ 'hidden': isCollapse }">收起菜单</span>
+    </div>
+    <el-menu :default-active="activeMenu" class="el-menu-vertical" :collapse="isCollapse" :collapse-transition="true">
       <el-menu-item v-for="(item, index) in menuItems.filter(item => item.visible)" :key="index" :index="item.path"
         @click="navigateTo(item.path)">
         <el-icon>
           <component :is="item.icon" />
         </el-icon>
-        <span>{{ item.name }}</span>
+        <template #title>
+          <span class="menu-text">{{ item.name }}</span>
+        </template>
       </el-menu-item>
     </el-menu>
   </div>
@@ -90,11 +103,122 @@ const navigateTo = (path) => {
 <style scoped>
 .sidebar-menu {
   height: 100%;
-  background-color: #304156;
+  width: 18vh;
+  background: linear-gradient(180deg, #2b3a4a 0%, #1e2a3a 100%);
+  transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.sidebar-menu.collapsed {
+  width: 64px;
 }
 
 .el-menu-vertical {
   border-right: none;
   width: 100%;
+  flex: 1;
+  background-color: transparent !important;
+}
+
+.el-menu-vertical :deep(.el-menu-item) {
+  height: 50px;
+  line-height: 50px;
+  color: #b4c0d3;
+  margin: 4px 0;
+  border-radius: 4px;
+  padding: 0 20px !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.el-menu-vertical :deep(.el-menu-item.is-active) {
+  background: rgba(64, 158, 255, 0.1);
+  color: #409EFF;
+  font-weight: 500;
+}
+
+.el-menu-vertical :deep(.el-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.collapse-btn {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 20px;
+  cursor: pointer;
+  color: #b4c0d3;
+  transition: color 0.3s ease, background-color 0.3s ease;
+  margin: 8px 0;
+}
+
+.collapse-icon {
+  width: 24px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.collapse-text {
+  margin-left: 8px;
+  font-size: 14px;
+  transition: opacity 0.25s ease 0.05s, transform 0.3s ease;
+  white-space: nowrap;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.collapse-text.hidden {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.menu-text {
+  transition: opacity 0.25s ease 0.05s, transform 0.3s ease;
+  opacity: 1;
+  transform: translateX(0);
+  display: inline-block;
+}
+
+.el-menu--collapse :deep(.el-menu-item) .menu-text {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.el-menu-vertical :deep(.el-icon) {
+  width: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.el-menu--collapse :deep(.el-menu-item) .el-icon {
+  margin: 0 auto;
+  justify-content: center;
+  transform: translateX(0);
+  left: 0;
+  width: 24px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+}
+
+.collapse-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 </style>
