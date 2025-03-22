@@ -95,7 +95,7 @@ request.interceptors.response.use(
       
       // 显示错误信息
       ElMessage.error({
-        message: error.response.data.operation?.failure_message || '请求失败',
+        message: error.response.data.operation?.failure_message || error.response.data.failure_message || '请求失败',
         duration: 5000
       })
       // 返回响应数据，让业务代码可以继续处理

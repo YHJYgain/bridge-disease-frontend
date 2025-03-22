@@ -68,6 +68,12 @@ const getMediaList = async () => {
     // 根据用户角色来决定获取媒体列表的方式
     if (isAdminOrDeveloper.value) {
       // 获取所有用户的媒体列表，添加分页参数
+      data = await request.get('/media/medias/all', {
+        params: {
+          page: currentPage.value,
+          per_page: pageSize.value
+        }
+      })
     } else {
       // 获取当前用户的媒体列表，添加分页参数
       data = await request.get(`/media/medias/${userInfo.value.user_id}`, {
@@ -81,12 +87,12 @@ const getMediaList = async () => {
 
     if (data && !data.failure_message) {
       mediaList.value = data.medias
-      total.value = data.total || 0
+      total.value = data.total
     }
   } catch (error) {
-    console.error('【获取媒体列表失败】', error)
+    console.error('【获取媒体列表错误】', error)
     ElMessage.error({
-      message: '【获取媒体列表失败】' + (error?.message || '请重试'),
+      message: '【获取媒体列表错误】' + (error?.message || '请重试'),
       duration: 5000
     })
   } finally {
