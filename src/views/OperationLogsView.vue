@@ -10,6 +10,12 @@ const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(false)
 const operationLogs = ref([])
+
+// 判断用户角色
+const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
+const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
+const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
+
 const searchForm = ref({
   user_id: '',
   operation_type: '',
@@ -17,11 +23,6 @@ const searchForm = ref({
   start_date: '',
   end_date: ''
 })
-
-// 判断用户角色
-const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
-const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
-const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
 
 // 获取用户信息
 const getUserInfo = async () => {
@@ -126,6 +127,7 @@ const statusType = (status) => {
 }
 
 onMounted(() => {
+  // 先获取用户信息，防止未登录/无权限用户能够直接访问该页面
   getUserInfo().then(() => {
     if (isAdminOrDeveloper.value) {
       getOperationLogs()

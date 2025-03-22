@@ -155,6 +155,7 @@ const handleFileChange = (file) => {
 }
 
 onMounted(() => {
+  // 先获取用户信息，防止未登录/无权限用户能够直接访问该页面
   getUserInfo().then(() => {
     if (isDeveloper.value) {
       getModelList()

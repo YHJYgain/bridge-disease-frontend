@@ -184,6 +184,7 @@ const handleRegister = async () => {
     }
     console.info('【注册表单数据】', safeFormData)
 
+    // 发送注册请求
     const data = await request.post('/user/register', formData)
     console.info('【注册响应数据】', data)
     const operation = data.operation
@@ -195,7 +196,7 @@ const handleRegister = async () => {
         duration: 3000
       })
 
-      // 注册成功后跳转到登录页面
+      // 注册成功后自动跳转到登录页面
       router.push('/login')
     }
     // 注册失败情况已在响应拦截器中处理，这里不再重复

@@ -23,21 +23,19 @@ const goToUserCenter = () => {
 // 退出登录
 const handleLogout = async () => {
   try {
-    // 调用后端退出接口
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      const data = await request.post('/user/logout')
-      console.info('【登出响应数据】', data)
-      const operation = data.operation
+    // 发送登出请求
+    const data = await request.post('/user/logout')
+    console.info('【登出响应数据】', data)
+    const operation = data.operation
 
-      if (operation.status === 'SUCCESS') {
-        ElMessage.success({
-          message: '【登出成功】',
-          duration: 3000
-        })
-      }
-      // 登出失败情况已在响应拦截器中处理，这里不再重复
+    // 根据后端操作状态判断登出是否成功
+    if (operation.status === 'SUCCESS') {
+      ElMessage.success({
+        message: '【登出成功】',
+        duration: 3000
+      })
     }
+    // 登出失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
     console.warning('【登出警告】', error)
     ElMessage.warning({

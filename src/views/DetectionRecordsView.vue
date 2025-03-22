@@ -102,6 +102,7 @@ const statusType = (status) => {
 }
 
 onMounted(() => {
+  // 先获取用户信息，防止未登录用户能够直接访问该页面
   getUserInfo().then(() => {
     getDetectionRecords()
   })

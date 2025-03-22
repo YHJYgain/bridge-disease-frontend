@@ -26,7 +26,7 @@ const getUserInfo = async () => {
 
     // 从 localStorage 中获取用户信息
     const storedUser = localStorage.getItem('login_user')
-    userInfo.value = JSON.parse(storedUser);
+    userInfo.value = storedUser ? JSON.parse(storedUser) : null
 
     // 初始化修改个人信息表单
     updateForm.value = {
@@ -325,6 +325,7 @@ const submitDeleteAccount = async () => {
 }
 
 onMounted(() => {
+  // 先获取用户信息，防止未登录用户能够直接访问该页面
   getUserInfo()
 })
 </script>

@@ -55,6 +55,7 @@ const handleLogin = async () => {
     }
     console.info('【登录表单数据】', safeFormData)
 
+    // 发送登录请求
     const data = await request.post('/user/login', formData)
     console.info('【登录响应数据】', data)
     const operation = data.operation

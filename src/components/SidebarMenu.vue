@@ -10,12 +10,10 @@ const route = useRoute()
 // 使用全局状态管理的折叠状态
 const isCollapse = isCollapsed
 
-// 组件挂载时应用折叠状态
-
 // 从 localStorage 获取用户信息
 const userInfo = computed(() => {
   const storedUser = localStorage.getItem('login_user')
-  return storedUser ? JSON.parse(storedUser) : null
+  return storedUser ? JSON.parse(storedUser) : {}
 })
 
 // 判断用户角色
