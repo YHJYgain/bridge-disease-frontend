@@ -131,7 +131,9 @@ onMounted(() => {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  background-color: #f0f2f5;
+  border-radius: 20px;
+  background-color: #f8fafc;
+  background-image: linear-gradient(135deg, #f8fafc 0%, #e6f2ff 100%);
 }
 
 .statistics-area {

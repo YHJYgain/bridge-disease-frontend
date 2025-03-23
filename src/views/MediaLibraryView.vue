@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus, Delete, Download } from '@element-plus/icons-vue'
+import { Upload, Delete, Download } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
@@ -100,6 +100,81 @@ const getMediaList = async () => {
   }
 }
 
+// 根据文件类型返回标签类型
+const getTagType = (fileType) => {
+  // 图片类型的扩展名
+  const imageTypes = ['png', 'jpg', 'jpeg'];
+  if (imageTypes.includes(fileType.toLowerCase())) {
+    return 'primary'; // 图片显示 primary 类型标签
+  }
+
+  // 视频类型的扩展名
+  const videoTypes = ['mp4', 'avi', 'mov'];
+  if (videoTypes.includes(fileType.toLowerCase())) {
+    return 'warning'; // 视频显示 warning 类型标签
+  }
+
+  // 其他类型返回 info 标签
+  return 'info';
+}
+
+// 根据文件类型返回标签文本
+const getFileTypeLabel = (fileType) => {
+  const imageTypes = ['png', 'jpg', 'jpeg'];
+  if (imageTypes.includes(fileType.toLowerCase())) {
+    return '图片'; // 图片
+  }
+
+  const videoTypes = ['mp4', 'avi', 'mov'];
+  if (videoTypes.includes(fileType.toLowerCase())) {
+    return '视频'; // 视频
+  }
+
+  return '未知'; // 默认返回未知类型
+}
+
+// 格式化日期时间
+const dataTimeFormatter = (row, column) => {
+  const dateTimeStr = row.updated_at; // 获取 updated_at 字段的值
+  if (!dateTimeStr) return '暂无数据'; // 如果为空，返回 '暂无数据'
+
+  // 创建一个 UTC 日期对象，然后使用 toLocaleString 转换为中国时区
+  const date = new Date(dateTimeStr);
+  // 手动调整时区偏移，中国是 UTC+8，所以需要减去 8 小时
+  const adjustedDate = new Date(date.getTime() - 8 * 60 * 60 * 1000);
+  return adjustedDate.toLocaleString('zh-CN'); // 格式化为中文时区的日期字符串
+}
+
+// 文件类型筛选选项
+const fileTypeFilters = [
+  { text: '图片', value: 'image' },
+  { text: '视频', value: 'video' }
+]
+
+// 文件类型筛选方法
+const filterFileType = (value, row) => {
+  if (value === 'image') {
+    const imageTypes = ['png', 'jpg', 'jpeg'];
+    return imageTypes.includes(row.file_type.toLowerCase());
+  } else if (value === 'video') {
+    const videoTypes = ['mp4', 'avi', 'mov'];
+    return videoTypes.includes(row.file_type.toLowerCase());
+  }
+  return true;
+}
+
+// 用户筛选方法
+const filterOwner = (value, row) => {
+  return row.owner_id === value;
+}
+
+// 获取所有用户 ID 作为筛选选项
+const ownerFilters = computed(() => {
+  // 从媒体列表中提取不重复的用户 ID
+  const uniqueOwners = [...new Set(mediaList.value.map(item => item.owner_id))];
+  return uniqueOwners.map(owner => ({ text: `用户 ${owner}`, value: owner }));
+})
+
 // 表单验证规则
 const uploadFormRules = {
   file: [
@@ -128,6 +203,26 @@ const mediaPreviewUrl = computed(() => {
   return ''
 })
 
+// 文件上传变化处理
+const handleMediaFileChange = (file) => {
+  // 验证文件格式
+  if (uploadForm.value.type === 'image') {
+    if (!file.raw.type.startsWith('image/')) {
+      ElMessage.error('图片格式不正确，请上传 jpg/jpeg/png 格式')
+      return false
+    }
+  } else if (uploadForm.value.type === 'video') {
+    if (!file.raw.type.startsWith('video/')) {
+      ElMessage.error('视频格式不正确，请上传 mp4/avi/mov 格式')
+      return false
+    }
+  }
+
+  // 验证通过，更新媒体文件
+  uploadForm.value.file = file.raw
+  return false // 阻止自动上传
+}
+
 // 上传媒体
 const uploadMedia = async () => {
   if (!uploadFormRef.value) {
@@ -136,31 +231,35 @@ const uploadMedia = async () => {
   }
 
   try {
-    // 使用表单验证
     await uploadFormRef.value.validate()
-
     uploadLoading.value = true
+
     const formData = new FormData()
+    formData.append('media_file', uploadForm.value.file)
     formData.append('description', uploadForm.value.description)
-    formData.append('file', uploadForm.value.file)
 
     // 打印上传表单数据
     console.info('【上传媒体表单数据】', {
+      has_file: uploadForm.value.file ? '已选择' : '未选择',
       description: uploadForm.value.description,
-      type: uploadForm.value.type,
-      has_file: uploadForm.value.file ? '已选择' : '未选择'
+      type: uploadForm.value.type
     })
 
-    // const response = await request.post('/media', formData)
+    // 发送上传请求
+    const data = await request.post('/media/upload', formData)
+    console.info('【上传媒体响应数据】', data)
+    const operation = data.operation
 
-    // if (response && response.operation && response.operation.status === 'SUCCESS') {
-    //   ElMessage.success('媒体文件上传成功')
-    //   uploadDialogVisible.value = false
-    //   // 重置表单
-    //   resetUploadForm()
-    //   // 重新获取列表
-    //   getMediaList()
-    // }
+    // 根据后端操作状态判断上传是否成功
+    if (operation.status === 'SUCCESS') {
+      ElMessage.success({
+        message: '【上传媒体成功】',
+        duration: 3000
+      })
+      uploadDialogVisible.value = false
+      resetUploadForm()
+      getMediaList()
+    }
   } catch (error) {
     console.error('【上传媒体错误】', error)
     ElMessage.error({
@@ -186,28 +285,8 @@ const deleteMedia = async (id) => {
 }
 
 // 下载媒体文件
-const downloadMedia = (id, name) => {
-  window.open(`${requestBaseURL}/media/${name}`, '_blank')
-}
-
-// 文件上传变化处理
-const handleMediaFileChange = (file) => {
-  // 验证文件格式
-  if (uploadForm.value.type === 'image') {
-    if (!file.raw.type.startsWith('image/')) {
-      ElMessage.error('图片格式不正确，请上传 jpg/jpeg/png 格式')
-      return false
-    }
-  } else if (uploadForm.value.type === 'video') {
-    if (!file.raw.type.startsWith('video/')) {
-      ElMessage.error('视频格式不正确，请上传 mp4/avi/mov 格式')
-      return false
-    }
-  }
-
-  // 验证通过，更新媒体文件
-  uploadForm.value.file = file.raw
-  return false // 阻止自动上传
+const downloadMedia = (file_path) => {
+  window.open(`${requestBaseURL}/${file_path}`, '_blank')
 }
 
 onMounted(() => {
@@ -240,7 +319,7 @@ onMounted(() => {
               <div>
                 <el-button type="primary" @click="uploadDialogVisible = true">
                   <el-icon>
-                    <Plus />
+                    <Upload />
                   </el-icon>
                   上传媒体
                 </el-button>
@@ -252,34 +331,45 @@ onMounted(() => {
           </template>
 
           <el-table :data="mediaList" style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="name" label="名称" />
-            <el-table-column prop="description" label="描述" />
-            <el-table-column prop="type" label="类型" width="100">
+            <el-table-column prop="media_id" label="ID" width="63" sortable />
+            <el-table-column prop="file_name" label="名称" show-overflow-tooltip sortable />
+            <el-table-column prop="description" label="描述" show-overflow-tooltip />
+            <el-table-column prop="owner_id" label="所属用户" width="120" show-overflow-tooltip sortable
+              :filters="ownerFilters" :filter-method="filterOwner" filter-placement="bottom" />
+            <el-table-column prop="file_type" label="类型" width="68" :filters="fileTypeFilters"
+              :filter-method="filterFileType" filter-placement="bottom">
               <template #default="scope">
-                <el-tag :type="scope.row.type === 'image' ? 'success' : 'warning'">
-                  {{ scope.row.type === 'image' ? '图片' : '视频' }}
+                <el-tag :type="getTagType(scope.row.file_type)">
+                  {{ getFileTypeLabel(scope.row.file_type) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="created_at" label="创建时间" width="180" />
-            <el-table-column label="预览" width="120">
+            <el-table-column prop="updated_at" label="最后更新时间" width="180" sortable :formatter="dataTimeFormatter" />
+            <el-table-column label="预览">
               <template #default="scope">
-                <el-image v-if="scope.row.type === 'image'" style="width: 50px; height: 50px"
+                <!-- 图片预览 -->
+                <el-image v-if="['png', 'jpg', 'jpeg'].includes(scope.row.file_type.toLowerCase())" 
+                  style="width: 97px; height: 97px"
                   :src="`${requestBaseURL}/${scope.row.file_path}`"
-                  :preview-src-list="[`${requestBaseURL}/${scope.row.file_path}`]" fit="cover" />
-                <el-tag v-else>视频文件</el-tag>
+                  :preview-src-list="[`${requestBaseURL}/${scope.row.file_path}`]" fit="contain" />
+                <!-- 视频预览 -->
+                <video v-else-if="['mp4', 'avi', 'mov'].includes(scope.row.file_type.toLowerCase())" 
+                  style="width: 140px; height: 140px" 
+                  :src="`${requestBaseURL}/${scope.row.file_path}`" 
+                  controls></video>
+                <!-- 其他类型文件 -->
+                <el-tag v-else :type="'info'">其他文件</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="180">
+            <el-table-column label="操作" fixed="right">
               <template #default="scope">
-                <el-button type="primary" size="small" @click="downloadMedia(scope.row.id, scope.row.name)">
+                <el-button type="success" size="small" @click="downloadMedia(scope.row.file_path)">
                   <el-icon>
                     <Download />
                   </el-icon>
                   下载
                 </el-button>
-                <el-button type="danger" size="small" @click="deleteMedia(scope.row.id)">
+                <el-button type="danger" size="small" @click="deleteMedia(scope.row.media_id)">
                   <el-icon>
                     <Delete />
                   </el-icon>
@@ -299,7 +389,7 @@ onMounted(() => {
     </div>
 
     <!-- 上传媒体对话框 -->
-    <el-dialog v-model="uploadDialogVisible" title="上传媒体" width="500px">
+    <el-dialog v-model="uploadDialogVisible" title="上传媒体" width="500px" @close="resetUploadForm">
       <el-form ref="uploadFormRef" :model="uploadForm" :rules="uploadFormRules" label-width="100px" status-icon>
         <el-form-item label="媒体描述">
           <el-input v-model="uploadForm.description" type="textarea" placeholder="请输入媒体描述" />
@@ -324,25 +414,16 @@ onMounted(() => {
             </template>
           </el-upload>
         </el-form-item>
-        
+
         <!-- 媒体文件预览区域 -->
         <el-form-item label="预览" v-if="mediaPreviewUrl">
           <div class="media-preview-container">
             <!-- 图片预览 -->
-            <el-image 
-              v-if="uploadForm.type === 'image'" 
-              style="width: 200px; max-height: 200px" 
-              :src="mediaPreviewUrl" 
-              fit="contain"
-              :preview-src-list="[mediaPreviewUrl]"
-            />
+            <el-image v-if="uploadForm.type === 'image'" style="width: 200px; max-height: 200px" :src="mediaPreviewUrl"
+              fit="contain" :preview-src-list="[mediaPreviewUrl]" />
             <!-- 视频预览 -->
-            <video 
-              v-else-if="uploadForm.type === 'video'" 
-              style="width: 200px; max-height: 200px"
-              :src="mediaPreviewUrl" 
-              controls
-            ></video>
+            <video v-else-if="uploadForm.type === 'video'" style="width: 200px; max-height: 200px"
+              :src="mediaPreviewUrl" controls></video>
           </div>
         </el-form-item>
       </el-form>
@@ -394,11 +475,17 @@ onMounted(() => {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  background-color: #f0f2f5;
+  border-radius: 20px;
+  background-color: #f8fafc;
+  background-image: linear-gradient(135deg, #f8fafc 0%, #e6f2ff 100%);
 }
 
 .media-card {
   margin-top: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .card-header {
@@ -433,5 +520,10 @@ onMounted(() => {
   border-radius: 6px;
   padding: 10px;
   background-color: #fafafa;
+}
+
+/* 覆盖表格单元格的 z-index 设置，解决预览与表格层级冲突问题 */
+:deep(.el-table .el-table__cell) {
+  z-index: auto !important;
 }
 </style>

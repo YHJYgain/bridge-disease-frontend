@@ -575,6 +575,7 @@ onBeforeUnmount(() => {
 
 .statistics-card {
   margin-bottom: 20px;
+  border-radius: 12px;
 }
 
 .card-header {

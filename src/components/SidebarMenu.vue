@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Picture, List, Plus, User, Operation, Fold, Expand, HomeFilled, Aim } from '@element-plus/icons-vue'
+import { Picture, List, User, Operation, Fold, Expand, HomeFilled, Aim, Coin } from '@element-plus/icons-vue'
 import { isCollapsed, toggleCollapse } from '../stores/sidebarStore'
 
 const router = useRouter()
@@ -50,7 +50,7 @@ const menuItems = computed(() => [
   {
     name: '模型库',
     path: '/model-library',
-    icon: Plus,
+    icon: Coin,
     visible: isDeveloper.value
   },
   {
@@ -102,13 +102,14 @@ const navigateTo = (path) => {
 .sidebar-menu {
   height: 100%;
   width: 18vh;
-  background: linear-gradient(180deg, #2b3a4a 0%, #1e2a3a 100%);
+  background: linear-gradient(180deg, #3478c8 0%, #2b7de1 100%);
   transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  border-radius: 0 12px 12px 0;
 }
 
 .sidebar-menu.collapsed {
@@ -125,25 +126,29 @@ const navigateTo = (path) => {
 .el-menu-vertical :deep(.el-menu-item) {
   height: 50px;
   line-height: 50px;
-  color: #b4c0d3;
+  color: #e6f0ff;
   margin: 4px 0;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 0 20px !important;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: flex-start;
 }
 
 .el-menu-vertical :deep(.el-menu-item.is-active) {
-  background: rgba(64, 158, 255, 0.1);
-  color: #409EFF;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
   font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
 }
 
 .el-menu-vertical :deep(.el-menu-item:hover) {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.15);
   color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .collapse-btn {
@@ -153,7 +158,7 @@ const navigateTo = (path) => {
   justify-content: flex-start;
   padding: 0 20px;
   cursor: pointer;
-  color: #b4c0d3;
+  color: #c9e0ff;
   transition: color 0.3s ease, background-color 0.3s ease;
   margin: 8px 0;
 }
@@ -217,6 +222,30 @@ const navigateTo = (path) => {
 
 .collapse-btn:hover {
   color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.15);
+  border-left: 3px solid rgba(201, 224, 255, 0.7);
+}
+
+/* 添加图标样式 */
+.el-menu-vertical :deep(.el-menu-item) .el-icon {
+  color: #c9e0ff;
+  margin-right: 10px;
+  transition: all 0.3s ease;
+}
+
+.el-menu-vertical :deep(.el-menu-item.is-active) .el-icon {
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.el-menu-vertical :deep(.el-menu-item:hover) .el-icon {
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.collapse-btn:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-left: 3px solid rgba(201, 224, 255, 0.7);
 }
 </style>

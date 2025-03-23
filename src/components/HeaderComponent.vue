@@ -102,16 +102,20 @@ const handleLogout = async () => {
   align-items: center;
   padding: 0 16px;
   height: 55px;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   z-index: 10;
+  border-radius: 0 0 12px 12px;
 }
 
 .logo h1 {
   margin: 0;
   font-size: 1.5rem;
-  color: #4a5568;
-  font-weight: 500;
+  color: #3478c8;
+  font-weight: 600;
+  background: linear-gradient(90deg, #3478c8, #2c78d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .user-info {
@@ -123,19 +127,22 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 20px;
+  border-radius: 24px;
   transition: all 0.3s ease;
+  background: rgba(52, 120, 200, 0.05);
 }
 
 .user-avatar-container:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(52, 120, 200, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  color: #ffffff;
 }
 
 .username {
   margin: 0 10px;
   font-weight: 500;
-  color: #4a5568;
+  color: #3478c8;
 }
 
 .user-info-loading {
