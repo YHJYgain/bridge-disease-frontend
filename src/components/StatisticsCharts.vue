@@ -74,13 +74,17 @@ const fetchUserStatistics = async () => {
 const fetchDetectionStatistics = async () => {
   try {
     // 调用检测统计接口
-    const response = await request.get('/detection/statistics')
-    if (response && response.data) {
-      statistics.value.detections = response.data
-    }
+    const data = await request.get('/detection/statistics')
+    console.info('【获取检测统计数据响应数据】', data)
+    statistics.value.detections = data.detections_statistics
+
     return true
   } catch (error) {
-    console.error('获取检测统计数据失败', error)
+    console.error('【获取检测统计数据错误】', error)
+    ElMessage.error({
+      message: '【获取检测统计数据错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
     return false
   }
 }
@@ -120,15 +124,6 @@ const fetchStatistics = async () => {
   try {
     loading.value = true
 
-    // 模拟检测数据
-    statistics.value.detections = {
-      total: 100,
-      pending: 20,
-      in_progress: 15,
-      completed: 60,
-      failed: 5
-    }
-
     // 模拟媒体数据
     statistics.value.medias = {
       total: 50,
@@ -144,7 +139,7 @@ const fetchStatistics = async () => {
     // 并行调用四个统计接口
     await Promise.all([
       fetchUserStatistics(),
-      // fetchDetectionStatistics(),
+      fetchDetectionStatistics(),
       // fetchMediaStatistics(),
       // fetchModelStatistics()
     ])
