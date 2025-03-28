@@ -69,7 +69,7 @@ const getUserInfo = async () => {
 const getMediaList = async () => {
   try {
     loading.value = true
-    
+
     // 使用共享的媒体存储获取媒体列表
     const { medias, total: totalCount, error } = await mediaStore.fetchMediaList(
       userInfo.value,
@@ -77,13 +77,13 @@ const getMediaList = async () => {
       pageSize.value,
       true // 强制刷新，确保获取最新数据
     )
-    
+
     if (error) {
       throw error
     }
-    
+
     console.info('【获取媒体列表响应数据】', { medias, total: totalCount })
-    
+
     mediaList.value = medias
     total.value = totalCount
   } catch (error) {
@@ -165,10 +165,19 @@ const ownerFilters = computed(() => {
   return uniqueOwners.map(owner => ({ text: `用户 ${owner}`, value: owner }));
 })
 
+// 自定义文件上传验证规则
+const validateMediaFile = (rule, value, callback) => {
+  if (!uploadForm.value.file) {
+    callback(new Error('请选择媒体文件'))
+  } else {
+    callback()
+  }
+}
+
 // 表单验证规则
 const uploadFormRules = {
   media_file: [
-    { required: true, message: '请选择要上传的文件', trigger: ['blur', 'change'] }
+    { validator: validateMediaFile, trigger: ['blur', 'change'] },
   ]
 }
 
@@ -220,6 +229,8 @@ const uploadMedia = async () => {
     ElMessage.error('【上传媒体错误】表单实例不存在')
     return
   }
+
+  console.info('【媒体文件已更新】', uploadForm.value.file)
 
   try {
     await uploadFormRef.value.validate()
@@ -337,14 +348,12 @@ onMounted(() => {
             <el-table-column label="预览">
               <template #default="scope">
                 <!-- 图片预览 -->
-                <el-image v-if="['png', 'jpg', 'jpeg'].includes(scope.row.file_type.toLowerCase())" 
-                  style="width: 97px; height: 97px"
-                  :src="`${requestBaseURL}/${scope.row.file_path}`"
+                <el-image v-if="['png', 'jpg', 'jpeg'].includes(scope.row.file_type.toLowerCase())"
+                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/${scope.row.file_path}`"
                   :preview-src-list="[`${requestBaseURL}/${scope.row.file_path}`]" fit="contain" />
                 <!-- 视频预览 -->
-                <video v-else-if="['mp4', 'avi', 'mov'].includes(scope.row.file_type.toLowerCase())" 
-                  style="width: 140px; height: 140px" 
-                  :src="`${requestBaseURL}/${scope.row.file_path}`" 
+                <video v-else-if="['mp4', 'avi', 'mov'].includes(scope.row.file_type.toLowerCase())"
+                  style="width: 140px; height: 140px" :src="`${requestBaseURL}/${scope.row.file_path}`"
                   controls></video>
                 <!-- 其他类型文件 -->
                 <el-tag v-else :type="'info'">其他文件</el-tag>
