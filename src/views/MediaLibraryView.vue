@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Upload, Delete, Download } from '@element-plus/icons-vue'
 import request from '../utils/request'
+import { formatDateTime } from '../utils/dateTimeFormatter'
+import { resourceStore } from '../stores/resourceStore'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
@@ -12,6 +14,7 @@ const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(false)
 const uploadLoading = ref(false)
+const mediaStore = resourceStore()
 const mediaList = ref([])
 const uploadDialogVisible = ref(false)
 const uploadFormRef = ref(null)
@@ -39,7 +42,10 @@ const getUserInfo = async () => {
     // 检查是否有 token
     const token = localStorage.getItem('access_token')
     if (!token) {
-      ElMessage.error('【获取用户信息失败】未登录或登录已过期，请重新登录')
+      ElMessage.warning({
+        message: '【获取用户信息失败】未登录或登录已过期，请重新登录',
+        duration: 4000
+      })
       router.push('/login')
       return
     }
@@ -63,32 +69,23 @@ const getUserInfo = async () => {
 const getMediaList = async () => {
   try {
     loading.value = true
-    var data = null
-
-    // 根据用户角色来决定获取媒体列表的方式
-    if (isAdminOrDeveloper.value) {
-      // 获取所有用户的媒体列表，添加分页参数
-      data = await request.get('/media/medias/all', {
-        params: {
-          page: currentPage.value,
-          per_page: pageSize.value
-        }
-      })
-    } else {
-      // 获取当前用户的媒体列表，添加分页参数
-      data = await request.get(`/media/medias/${userInfo.value.user_id}`, {
-        params: {
-          page: currentPage.value,
-          per_page: pageSize.value
-        }
-      })
+    
+    // 使用共享的媒体存储获取媒体列表
+    const { medias, total: totalCount, error } = await mediaStore.fetchMediaList(
+      userInfo.value,
+      currentPage.value,
+      pageSize.value,
+      true // 强制刷新，确保获取最新数据
+    )
+    
+    if (error) {
+      throw error
     }
-    console.info('【获取媒体列表响应数据】', data)
-
-    if (data && !data.failure_message) {
-      mediaList.value = data.medias
-      total.value = data.total
-    }
+    
+    console.info('【获取媒体列表响应数据】', { medias, total: totalCount })
+    
+    mediaList.value = medias
+    total.value = totalCount
   } catch (error) {
     console.error('【获取媒体列表错误】', error)
     ElMessage.error({
@@ -135,14 +132,7 @@ const getFileTypeLabel = (fileType) => {
 
 // 格式化日期时间
 const dataTimeFormatter = (row, column) => {
-  const dateTimeStr = row.updated_at; // 获取 updated_at 字段的值
-  if (!dateTimeStr) return '暂无数据'; // 如果为空，返回 '暂无数据'
-
-  // 创建一个 UTC 日期对象，然后使用 toLocaleString 转换为中国时区
-  const date = new Date(dateTimeStr);
-  // 手动调整时区偏移，中国是 UTC+8，所以需要减去 8 小时
-  const adjustedDate = new Date(date.getTime() - 8 * 60 * 60 * 1000);
-  return adjustedDate.toLocaleString('zh-CN'); // 格式化为中文时区的日期字符串
+  return formatDateTime(row.updated_at); // 使用通用的日期时间格式化工具函数
 }
 
 // 文件类型筛选选项
@@ -177,7 +167,7 @@ const ownerFilters = computed(() => {
 
 // 表单验证规则
 const uploadFormRules = {
-  file: [
+  media_file: [
     { required: true, message: '请选择要上传的文件', trigger: ['blur', 'change'] }
   ]
 }
@@ -189,6 +179,7 @@ const resetUploadForm = () => {
     type: 'image',
     file: null
   }
+
   // 如果表单引用存在，重置验证状态
   if (uploadFormRef.value) {
     uploadFormRef.value.resetFields()
@@ -334,8 +325,6 @@ onMounted(() => {
             <el-table-column prop="media_id" label="ID" width="63" sortable />
             <el-table-column prop="file_name" label="名称" show-overflow-tooltip sortable />
             <el-table-column prop="description" label="描述" show-overflow-tooltip />
-            <el-table-column prop="owner_id" label="所属用户" width="120" show-overflow-tooltip sortable
-              :filters="ownerFilters" :filter-method="filterOwner" filter-placement="bottom" />
             <el-table-column prop="file_type" label="类型" width="68" :filters="fileTypeFilters"
               :filter-method="filterFileType" filter-placement="bottom">
               <template #default="scope">
@@ -361,6 +350,8 @@ onMounted(() => {
                 <el-tag v-else :type="'info'">其他文件</el-tag>
               </template>
             </el-table-column>
+            <el-table-column prop="owner_id" label="所属用户" width="120" show-overflow-tooltip sortable
+              :filters="ownerFilters" :filter-method="filterOwner" filter-placement="bottom" />
             <el-table-column label="操作" fixed="right">
               <template #default="scope">
                 <el-button type="success" size="small" @click="downloadMedia(scope.row.file_path)">
@@ -400,7 +391,7 @@ onMounted(() => {
             <el-radio value="video">视频</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="媒体文件" prop="file">
+        <el-form-item label="媒体文件" prop="media_file">
           <el-upload class="upload-demo" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
             accept="image/png, image/jpg, image/jpeg, video/mp4, video/avi, video/mov"
             :on-change="handleMediaFileChange" :auto-upload="false" :show-file-list="false">

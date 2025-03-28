@@ -37,7 +37,10 @@ const getUserInfo = async () => {
     // 检查是否有 token
     const token = localStorage.getItem('access_token')
     if (!token) {
-      ElMessage.error('【获取用户信息失败】未登录或登录已过期，请重新登录')
+      ElMessage.warning({
+        message: '【获取用户信息失败】未登录或登录已过期，请重新登录',
+        duration: 4000
+      })
       router.push('/login')
       return
     }

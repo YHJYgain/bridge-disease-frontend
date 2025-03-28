@@ -111,11 +111,11 @@ const handleLogout = async () => {
 .logo h1 {
   margin: 0;
   font-size: 1.5rem;
-  color: #3478c8;
   font-weight: 600;
   background: linear-gradient(90deg, #3478c8, #2c78d4);
+  background-clip: text;
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
 .user-info {

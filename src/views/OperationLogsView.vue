@@ -31,7 +31,10 @@ const getUserInfo = async () => {
     // 检查是否有 token
     const token = localStorage.getItem('access_token')
     if (!token) {
-      ElMessage.error('【获取用户信息失败】未登录或登录已过期，请重新登录')
+      ElMessage.warning({
+        message: '【获取用户信息失败】未登录或登录已过期，请重新登录',
+        duration: 4000
+      })
       router.push('/login')
       return
     }
@@ -42,7 +45,10 @@ const getUserInfo = async () => {
 
     // 如果不是管理员或开发人员，跳转到首页
     if (!isAdminOrDeveloper.value) {
-      ElMessage.warning('您没有权限访问此页面')
+      ElMessage.warning({
+        message: '您非管理员/开发人员，没有权限访问此页面',
+        duration: 4000
+      })
       router.push('/home')
       return
     }
@@ -75,8 +81,11 @@ const getOperationLogs = async () => {
     //   operationLogs.value = response.data
     // }
   } catch (error) {
-    console.error('获取操作日志失败', error)
-    ElMessage.error('获取操作日志失败，请重试')
+    console.error('【获取操作日志错误】', error)
+    ElMessage.error({
+      message: '【获取操作日志错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   } finally {
     loading.value = false
   }

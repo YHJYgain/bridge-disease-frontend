@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Message, Phone, Avatar } from '@element-plus/icons-vue'
 import request from '../utils/request'
+import { handleAvatarUpload } from '../utils/avatarUtils'
 import ParticleBackground from '../components/ParticleBackground.vue'
 
 const router = useRouter()
@@ -19,13 +20,10 @@ const isRegistering = ref(false)
 const registerSuccess = ref(false)
 const formRef = ref(null)
 
-// 创建头像预览 URL 的计算属性
-const avatarPreviewUrl = computed(() => {
-  if (avatar_file.value) {
-    return URL.createObjectURL(avatar_file.value)
-  }
-  return ''
-})
+// 返回登录页面
+const goToLogin = () => {
+  router.push('/')
+}
 
 // 邮箱验证规则
 const validateEmail = (rule, value, callback) => {
@@ -46,19 +44,19 @@ const validateConfirmPassword = (rule, value, callback) => {
   }
 }
 
-// 姓氏验证规则
+// 名字验证规则
 const validateFirstName = (rule, value, callback) => {
   if (!value) {
-    callback() // 姓氏可以为空
+    callback() // 名字可以为空
     return
   }
   callback()
 }
 
-// 名字验证规则
+// 姓氏验证规则
 const validateLastName = (rule, value, callback) => {
   if (!value) {
-    callback() // 名字可以为空
+    callback() // 姓氏可以为空
     return
   }
   callback()
@@ -71,27 +69,6 @@ const validateAvatar = (rule, value, callback) => {
     return
   }
   callback()
-}
-
-// 头像上传处理函数
-const handleAvatarChange = (file) => {
-  // 检查文件类型
-  const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg']
-  if (!allowedTypes.includes(file.raw.type)) {
-    ElMessage.error('请上传 JPG/PNG/JEPG 格式的图片')
-    return false
-  }
-
-  // 检查文件大小（限制为 5MB）
-  const isLt5M = file.raw.size / 1024 / 1024 < 5
-  if (!isLt5M) {
-    ElMessage.error('图片大小不能超过 5MB')
-    return false
-  }
-
-  // 验证通过，更新头像文件
-  avatar_file.value = file.raw
-  return false // 阻止自动上传
 }
 
 // 手机号验证规则
@@ -134,19 +111,31 @@ const formRules = {
     { validator: validateAvatar, trigger: ['blur', 'change'] },
   ],
   phone: [
-    { validator: validatePhone, trigger: ['blur', 'change'] },
+    { validator: validatePhone, trigger: 'change' },
   ]
 }
 
-// 返回登录页面
-const goToLogin = () => {
-  router.push('/')
+// 创建头像预览 URL 的计算属性
+const avatarPreviewUrl = computed(() => {
+  if (avatar_file.value) {
+    return URL.createObjectURL(avatar_file.value)
+  }
+  return ''
+})
+
+const handleAvatarChange = (file) => {
+  return handleAvatarUpload(file, (rawFile) => {
+    avatar_file.value = rawFile
+  })
 }
 
 // 注册方法
 const handleRegister = async () => {
   if (!formRef.value) {
-    ElMessage.error('【注册错误】表单实例不存在')
+    ElMessage.error({
+      message: '【注册错误】表单实例不存在',
+      duration: 5000
+    })
     return
   }
 
@@ -253,12 +242,11 @@ const handleRegister = async () => {
           </el-form-item>
 
           <div class="name-group">
-            <el-form-item prop="first_name" class="name-item">
-              <el-input v-model="first_name" placeholder="姓氏（可选）" :prefix-icon="User" />
-            </el-form-item>
-
             <el-form-item prop="last_name" class="name-item">
-              <el-input v-model="last_name" placeholder="名字（可选）" :prefix-icon="User" />
+              <el-input v-model="last_name" placeholder="姓氏（可选）" :prefix-icon="User" />
+            </el-form-item>
+            <el-form-item prop="first_name" class="name-item">
+              <el-input v-model="first_name" placeholder="名字（可选）" :prefix-icon="User" />
             </el-form-item>
           </div>
 

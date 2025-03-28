@@ -119,14 +119,6 @@ const fetchModelStatistics = async () => {
 const fetchStatistics = async () => {
   try {
     loading.value = true
-    // 注释掉后端接口请求，使用模拟数据
-    // 模拟用户数据
-    // statistics.value.users = {
-    //   total: 10,
-    //   admin: 2,
-    //   developer: 3,
-    //   user: 5
-    // }
 
     // 模拟检测数据
     statistics.value.detections = {
@@ -157,7 +149,11 @@ const fetchStatistics = async () => {
       // fetchModelStatistics()
     ])
   } catch (error) {
-    console.error('获取统计数据失败', error)
+    console.error('【获取统计数据错误】', error)
+    ElMessage.error({
+      message: '【获取统计数据错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   } finally {
     loading.value = false
     // 确保数据更新后重新渲染图表
@@ -223,7 +219,11 @@ const initUserChart = () => {
 
     userChart.setOption(option)
   } catch (error) {
-    console.error('初始化用户图表失败', error)
+    console.error('【初始化用户图表错误】', error)
+    ElMessage.error({
+      message: '【初始化用户图表错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   }
 }
 
@@ -271,7 +271,11 @@ const initDetectionChart = () => {
 
     detectionChart.setOption(option)
   } catch (error) {
-    console.error('初始化检测图表失败', error)
+    console.error('【初始化检测图表错误】', error)
+    ElMessage.error({
+      message: '【初始化检测图表错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   }
 }
 
@@ -328,7 +332,11 @@ const initMediaChart = () => {
 
     mediaChart.setOption(option)
   } catch (error) {
-    console.error('初始化媒体图表失败', error)
+    console.error('【初始化媒体图表错误】', error)
+    ElMessage.error({
+      message: '【初始化媒体图表错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   }
 }
 
@@ -405,16 +413,20 @@ const initModelChart = () => {
 
     modelChart.setOption(option)
   } catch (error) {
-    console.error('初始化模型图表失败', error)
+    console.error('【初始化模型图表错误】', error)
+    ElMessage.error({
+      message: '【初始化模型图表错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   }
 }
 
 // 初始化所有图表
 const initCharts = async () => {
-  // 确保DOM已经渲染完成
+  // 确保 DOM 已经渲染完成
   await nextTick()
 
-  // 添加一个小延时，确保DOM元素已完全渲染
+  // 添加一个小延时，确保 DOM 元素已完全渲染
   setTimeout(() => {
     // 先清理旧的图表实例
     userChart?.dispose()
@@ -454,7 +466,11 @@ const handleResize = () => {
       }
     }, 100)
   } catch (error) {
-    console.error('调整图表大小失败', error)
+    console.error('【调整图表大小错误】', error)
+    ElMessage.error({
+      message: '【调整图表大小错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   }
 }
 

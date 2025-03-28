@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '../utils/request'
+import { resourceStore } from '../stores/resourceStore'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
@@ -10,16 +11,23 @@ const router = useRouter()
 const userInfo = ref(null)
 const loading = ref(false)
 
-// 媒体列表
+// 使用共享的媒体和模型存储
+const mediaStore = resourceStore()
+
+// 媒体列表和模型列表
 const mediaList = ref([])
-// 模型列表
 const modelList = ref([])
+
 // 选中的媒体
 const selectedMedia = ref(null)
 // 选中的模型
 const selectedModel = ref(null)
 // 检测任务加载状态
 const detectLoading = ref(false)
+
+// 媒体和模型加载状态
+const mediaLoading = computed(() => mediaStore.mediaLoading)
+const modelLoading = computed(() => mediaStore.modelLoading)
 
 // 获取用户信息
 const getUserInfo = async () => {
@@ -28,7 +36,10 @@ const getUserInfo = async () => {
     // 检查是否有 token
     const token = localStorage.getItem('access_token')
     if (!token) {
-      ElMessage.error('【获取用户信息失败】未登录或登录已过期，请重新登录')
+      ElMessage.warning({
+        message: '【获取用户信息失败】未登录或登录已过期，请重新登录',
+        duration: 4000
+      })
       router.push('/login')
       return
     }
@@ -51,10 +62,12 @@ const getUserInfo = async () => {
 // 获取媒体列表
 const getMediaList = async () => {
   try {
-    // const response = await request.get('/media')
-    // if (response && response.data) {
-    //   mediaList.value = response.data
-    // }
+    // 使用共享的媒体存储获取媒体列表
+    const { medias, error } = await mediaStore.fetchMediaList(userInfo.value)
+    if (error) {
+      throw error
+    }
+    mediaList.value = medias
   } catch (error) {
     console.error('获取媒体列表失败', error)
     ElMessage.error('获取媒体列表失败，请重试')
@@ -64,10 +77,12 @@ const getMediaList = async () => {
 // 获取模型列表
 const getModelList = async () => {
   try {
-    // const response = await request.get('/models')
-    // if (response && response.data) {
-    //   modelList.value = response.data
-    // }
+    // 使用共享的模型存储获取模型列表
+    const { models, error } = await mediaStore.fetchModelList()
+    if (error) {
+      throw error
+    }
+    modelList.value = models
   } catch (error) {
     console.error('获取模型列表失败', error)
     ElMessage.error('获取模型列表失败，请重试')
@@ -140,10 +155,10 @@ onMounted(() => {
           <el-form label-position="top">
             <el-form-item label="选择媒体文件">
               <el-select v-model="selectedMedia" placeholder="请选择媒体文件" style="width: 100%">
-                <el-option v-for="item in mediaList" :key="item.id" :label="item.name" :value="item.id">
+                <el-option v-for="item in mediaList" :key="item.media_id" :label="item.file_name" :value="item.media_id">
                   <div class="media-option">
-                    <span>{{ item.name }}</span>
-                    <span class="media-type">{{ item.type === 'image' ? '图片' : '视频' }}</span>
+                    <span>{{ item.file_name }}</span>
+                    <span class="media-type">{{ ['png', 'jpg', 'jpeg'].includes(item.file_type.toLowerCase()) ? '图片' : '视频' }}</span>
                   </div>
                 </el-option>
               </el-select>
@@ -151,10 +166,10 @@ onMounted(() => {
 
             <el-form-item label="选择检测模型">
               <el-select v-model="selectedModel" placeholder="请选择检测模型" style="width: 100%">
-                <el-option v-for="item in modelList" :key="item.id" :label="item.name" :value="item.id">
+                <el-option v-for="item in modelList" :key="item.model_id" :label="item.model_name" :value="item.model_id">
                   <div class="model-option">
-                    <span>{{ item.name }}</span>
-                    <span class="model-version">v{{ item.version }}</span>
+                    <span>{{ item.model_name }}</span>
+                    <span class="model-version">{{ item.disease_category }}</span>
                   </div>
                 </el-option>
               </el-select>

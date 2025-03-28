@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Check, Close, Warning, InfoFilled, User, Lock, Delete, Plus, ArrowLeft } from '@element-plus/icons-vue'
 import request from '../utils/request'
+import { formatDateTime } from '../utils/dateTimeFormatter'
+import { handleAvatarUpload } from '../utils/avatarUtils'
 
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
@@ -12,6 +14,11 @@ const loading = ref(false)
 const updateFormRef = ref(null)
 const passwordFormRef = ref(null)
 
+// 返回首页
+const goToHome = () => {
+  router.push('/home')
+}
+
 // 获取用户信息
 const getUserInfo = async () => {
   try {
@@ -19,7 +26,10 @@ const getUserInfo = async () => {
     // 检查是否有 token
     const token = localStorage.getItem('access_token')
     if (!token) {
-      ElMessage.error('【获取用户信息失败】未登录或登录已过期，请重新登录')
+      ElMessage.warning({
+        message: '【获取用户信息失败】未登录或登录已过期，请重新登录',
+        duration: 4000
+      })
       router.push('/login')
       return
     }
@@ -35,8 +45,13 @@ const getUserInfo = async () => {
       first_name: userInfo.value.first_name || '',
       last_name: userInfo.value.last_name || '',
       phone: userInfo.value.phone || '',
-      avatar_file: null
+      avatar_file: null // 保持为 null，通过 avatarPreviewUrl 计算属性显示当前头像
     }
+
+    // 注意：这里不需要设置 avatar_file 为当前头像文件，因为：
+    // 1. 头像在服务器上是通过路径存储的，不是文件对象
+    // 2. avatarPreviewUrl 计算属性已经处理了头像显示逻辑
+    // 3. 只有用户上传新头像时，才会设置 avatar_file
   } catch (error) {
     console.error('【获取用户信息错误】', error)
     ElMessage.error({
@@ -49,12 +64,46 @@ const getUserInfo = async () => {
   }
 }
 
+// 根据用户状态获取对应的图标和颜色
+const statusInfo = computed(() => {
+  if (!userInfo.value) return { icon: '', color: '' }
+
+  const status = userInfo.value.status
+  switch (status) {
+    case 'ACTIVE':
+      return { icon: Check, color: '#67C23A' } // 绿色
+    case 'INACTIVE':
+      return { icon: InfoFilled, color: '#909399' } // 灰色
+    case 'BANNED':
+      return { icon: Close, color: '#F56C6C' } // 红色
+    case 'DELETED':
+      return { icon: Warning, color: '#E6A23C' } // 黄色
+    default:
+      return { icon: '', color: '' }
+  }
+})
+
 // 对话框显示状态
 const dialogVisible = reactive({
   updateProfile: false,
   changePassword: false,
   deleteAccount: false
 })
+
+// 打开修改个人信息对话框
+const openUpdateProfileDialog = () => {
+  dialogVisible.updateProfile = true
+}
+
+// 打开修改密码对话框
+const openChangePasswordDialog = () => {
+  dialogVisible.changePassword = true
+}
+
+// 打开注销账户对话框
+const openDeleteAccountDialog = () => {
+  dialogVisible.deleteAccount = true
+}
 
 // 修改个人信息表单数据
 const updateForm = ref({
@@ -73,12 +122,67 @@ const passwordForm = ref({
   confirm_password: ''
 })
 
+// 名字验证规则
+const validateFirstName = (rule, value, callback) => {
+  if (!value) {
+    callback() // 名字可以为空
+    return
+  }
+  callback()
+}
+
+// 姓氏验证规则
+const validateLastName = (rule, value, callback) => {
+  if (!value) {
+    callback() // 姓氏可以为空
+    return
+  }
+  callback()
+}
+
+// 头像文件验证规则
+const validateAvatar = (rule, value, callback) => {
+  if (!value) {
+    callback() // 头像可以为空
+    return
+  }
+  callback()
+}
+
+// 手机号验证规则
+const validatePhone = (rule, value, callback) => {
+  if (!value) {
+    callback() // 手机号可以为空
+    return
+  }
+  const phoneRegex = /^1[3-9]\d{9}$/
+  if (!phoneRegex.test(value)) {
+    callback(new Error('请输入正确的手机号格式'))
+  } else {
+    callback()
+  }
+}
+
 // 修改个人信息表单验证规则
 const updateRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' }
+  ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change'] }
+  ],
+  first_name: [
+    { validator: validateFirstName, trigger: ['blur', 'change'] },
+  ],
+  last_name: [
+    { validator: validateLastName, trigger: ['blur', 'change'] },
+  ],
+  avatar_file: [
+    { validator: validateAvatar, trigger: ['blur', 'change'] },
+  ],
+  phone: [
+    { validator: validatePhone, trigger: 'change' },
   ]
 }
 
@@ -123,74 +227,36 @@ const avatarPreviewUrl = computed(() => {
   return userInfo.value?.avatar_path ? `${requestBaseURL}/${userInfo.value.avatar_path}` : ''
 })
 
-// 头像上传处理函数
 const handleAvatarChange = (file) => {
-  // 检查文件类型
-  const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg']
-  if (!allowedTypes.includes(file.raw.type)) {
-    ElMessage.error('请上传 JPG/PNG/JEPG 格式的图片')
-    return false
+  return handleAvatarUpload(file, (rawFile) => {
+    updateForm.value.avatar_file = rawFile
+  })
+}
+
+// 重置表单
+const resetForm = () => {
+  // 重新初始化表单数据
+  updateForm.value = {
+    username: userInfo.value.username,
+    email: userInfo.value.email,
+    first_name: userInfo.value.first_name || '',
+    last_name: userInfo.value.last_name || '',
+    phone: userInfo.value.phone || '',
+    avatar_file: null
+  }
+  passwordForm.value = {
+    current_password: '',
+    new_password: '',
+    confirm_password: ''
   }
 
-  // 检查文件大小（限制为 5MB）
-  const isLt5M = file.raw.size / 1024 / 1024 < 5
-  if (!isLt5M) {
-    ElMessage.error('图片大小不能超过 5MB')
-    return false
+  // 如果有表单实例，重置验证状态
+  if (updateFormRef.value) {
+    updateFormRef.value.resetFields()
   }
-
-  // 验证通过，更新头像文件
-  updateForm.value.avatar_file = file.raw
-  return false // 阻止自动上传
-}
-
-// 返回首页
-const goToHome = () => {
-  router.push('/home')
-}
-
-// 根据用户状态获取对应的图标和颜色
-const statusInfo = computed(() => {
-  if (!userInfo.value) return { icon: '', color: '' }
-
-  const status = userInfo.value.status
-  switch (status) {
-    case 'ACTIVE':
-      return { icon: Check, color: '#67C23A' } // 绿色
-    case 'INACTIVE':
-      return { icon: InfoFilled, color: '#909399' } // 灰色
-    case 'BANNED':
-      return { icon: Close, color: '#F56C6C' } // 红色
-    case 'DELETED':
-      return { icon: Warning, color: '#E6A23C' } // 黄色
-    default:
-      return { icon: '', color: '' }
+  if (passwordFormRef.value) {
+    passwordFormRef.value.resetFields()
   }
-})
-
-// 格式化时间显示
-const formatDateTime = (dateTimeStr) => {
-  if (!dateTimeStr) return '暂无数据'
-  // 创建一个 UTC 日期对象，然后使用 toLocaleString 转换为中国时区
-  const date = new Date(dateTimeStr)
-  // 手动调整时区偏移，中国是 UTC+8，所以需要减去 8 小时
-  const adjustedDate = new Date(date.getTime() - 8 * 60 * 60 * 1000)
-  return adjustedDate.toLocaleString('zh-CN')
-}
-
-// 打开修改个人信息对话框
-const openUpdateProfileDialog = () => {
-  dialogVisible.updateProfile = true
-}
-
-// 打开修改密码对话框
-const openChangePasswordDialog = () => {
-  dialogVisible.changePassword = true
-}
-
-// 打开注销账户对话框
-const openDeleteAccountDialog = () => {
-  dialogVisible.deleteAccount = true
 }
 
 // 提交修改个人信息
@@ -303,7 +369,7 @@ const submitDeleteAccount = async () => {
 
     if (operation.status === 'SUCCESS') {
       ElMessage.success({
-        message: '【账户已注销】',
+        message: '【注销账户成功】',
         duration: 3000
       })
       dialogVisible.deleteAccount = false
@@ -379,7 +445,7 @@ onMounted(() => {
             <el-descriptions-item label="名字" v-if="userInfo.first_name">{{ userInfo.first_name }}</el-descriptions-item>
             <el-descriptions-item label="电话" v-if="userInfo.phone">{{ userInfo.phone }}</el-descriptions-item>
             <el-descriptions-item label="角色">{{ userInfo.role === 'ADMIN' ? '管理员' : userInfo.role === 'DEVELOPER' ?
-          '开发者' : '普通用户' }}</el-descriptions-item>
+          '开发人员' : '普通用户' }}</el-descriptions-item>
             <el-descriptions-item label="最后登录时间" v-if="userInfo.last_login">{{ formatDateTime(userInfo.last_login)
               }}</el-descriptions-item>
             <el-descriptions-item label="注册时间">{{ formatDateTime(userInfo.created_at) }}</el-descriptions-item>
@@ -412,9 +478,9 @@ onMounted(() => {
         </div>
 
         <!-- 修改个人信息对话框 -->
-        <el-dialog v-model="dialogVisible.updateProfile" title="修改个人信息" width="500px" :close-on-click-modal="false">
+        <el-dialog v-model="dialogVisible.updateProfile" title="修改个人信息" width="500px" @close="resetForm">
           <el-form ref="updateFormRef" :model="updateForm" :rules="updateRules" label-width="100px" status-icon>
-            <el-form-item label="头像">
+            <el-form-item label="头像" prop="avatar_file">
               <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
                 :auto-upload="false" :show-file-list="false" :on-change="handleAvatarChange"
                 accept="image/png, image/jpg, image/jpeg">
@@ -431,13 +497,13 @@ onMounted(() => {
             <el-form-item label="邮箱" prop="email">
               <el-input v-model="updateForm.email" />
             </el-form-item>
-            <el-form-item label="姓氏">
+            <el-form-item label="姓氏" prop="last_name">
               <el-input v-model="updateForm.last_name" />
             </el-form-item>
-            <el-form-item label="名字">
+            <el-form-item label="名字" prop="first_name">
               <el-input v-model="updateForm.first_name" />
             </el-form-item>
-            <el-form-item label="电话">
+            <el-form-item label="电话" prop="phone">
               <el-input v-model="updateForm.phone" />
             </el-form-item>
           </el-form>
@@ -450,7 +516,7 @@ onMounted(() => {
         </el-dialog>
 
         <!-- 修改密码对话框 -->
-        <el-dialog v-model="dialogVisible.changePassword" title="修改密码" width="500px" :close-on-click-modal="false">
+        <el-dialog v-model="dialogVisible.changePassword" title="修改密码" width="500px" @close="resetForm">
           <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px" status-icon>
             <el-form-item label="当前密码" prop="current_password">
               <el-input v-model="passwordForm.current_password" type="password" show-password />
@@ -471,7 +537,7 @@ onMounted(() => {
         </el-dialog>
 
         <!-- 注销账户对话框 -->
-        <el-dialog v-model="dialogVisible.deleteAccount" title="注销账户" width="500px" :close-on-click-modal="false">
+        <el-dialog v-model="dialogVisible.deleteAccount" title="注销账户" width="500px" @close="resetForm">
           <div class="delete-account-warning">
             <el-icon class="warning-icon">
               <Warning />
@@ -645,7 +711,6 @@ onMounted(() => {
   }
 }
 
-/* 上传头像相关样式 */
 .avatar-uploader {
   display: flex;
   justify-content: center;
@@ -688,7 +753,6 @@ onMounted(() => {
   text-align: center;
 }
 
-/* 注销账户警告样式 */
 .delete-account-warning {
   background-color: #fef0f0;
   padding: 20px;
@@ -720,7 +784,6 @@ onMounted(() => {
   margin-bottom: 5px;
 }
 
-/* 对话框底部按钮样式 */
 .dialog-footer {
   display: flex;
   justify-content: flex-end;

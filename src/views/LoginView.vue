@@ -25,7 +25,7 @@ const validateEmail = (rule, value, callback) => {
 // 表单验证规则
 const formRules = {
   username_or_email: [
-    { required: true, message: '请输入用户名或邮箱', trigger: 'blur' },
+    { required: true, message: '请输入用户名或邮箱', trigger: ['blur', 'change'] },
     { validator: validateEmail, trigger: ['blur', 'change'] },
   ],
   password: [
@@ -36,7 +36,10 @@ const formRules = {
 // 登录方法
 const handleLogin = async () => {
   if (!formRef.value) {
-    ElMessage.error('【登录错误】表单实例不存在')
+    ElMessage.error({
+      message: '【登录错误】表单实例不存在',
+      duration: 5000
+    })
     return
   }
 
@@ -93,7 +96,10 @@ onMounted(() => {
   // 检查是否有 token
   const token = localStorage.getItem('access_token')
   if (token) {
-    ElMessage.success('您已登录，正在跳转到首页...')
+    ElMessage.success({
+        message: '您已登录，正在跳转到首页...',
+        duration: 3000
+      })
     router.push('/home')
   }
 })
