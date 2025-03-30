@@ -66,6 +66,7 @@ const fetchUserStatistics = async () => {
       message: '【获取用户统计数据错误】' + (error?.message || '请重试'),
       duration: 5000
     })
+
     return false
   }
 }
@@ -85,6 +86,7 @@ const fetchDetectionStatistics = async () => {
       message: '【获取检测统计数据错误】' + (error?.message || '请重试'),
       duration: 5000
     })
+
     return false
   }
 }
@@ -93,13 +95,18 @@ const fetchDetectionStatistics = async () => {
 const fetchMediaStatistics = async () => {
   try {
     // 调用媒体统计接口
-    const response = await request.get('/media/statistics')
-    if (response && response.data) {
-      statistics.value.medias = response.data
-    }
+    const data = await request.get('/media/statistics')
+    console.info('【获取媒体统计数据响应数据】', data)
+    statistics.value.medias = data.medias_statistics
+
     return true
   } catch (error) {
-    console.error('获取媒体统计数据失败', error)
+    console.error('【获取媒体统计数据错误】', error)
+    ElMessage.error({
+      message: '【获取媒体统计数据错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+
     return false
   }
 }
@@ -108,13 +115,18 @@ const fetchMediaStatistics = async () => {
 const fetchModelStatistics = async () => {
   try {
     // 调用模型统计接口
-    const response = await request.get('/model/statistics')
-    if (response && response.data) {
-      statistics.value.models = response.data
-    }
+    const data = await request.get('/model/statistics')
+    console.info('【获取模型统计响应数据成功】', data)
+    statistics.value.models = data.models_statistics
+
     return true
   } catch (error) {
-    console.error('获取模型统计数据失败', error)
+    console.error('【获取模型统计数据错误】', error)
+    ElMessage.error({
+      message: '【获取模型统计数据错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+
     return false
   }
 }
@@ -124,24 +136,12 @@ const fetchStatistics = async () => {
   try {
     loading.value = true
 
-    // 模拟媒体数据
-    statistics.value.medias = {
-      total: 50,
-      image: 35,
-      video: 15
-    }
-
-    // 模拟模型数据
-    statistics.value.models = {
-      total: 5
-    }
-
     // 并行调用四个统计接口
     await Promise.all([
       fetchUserStatistics(),
       fetchDetectionStatistics(),
-      // fetchMediaStatistics(),
-      // fetchModelStatistics()
+      fetchMediaStatistics(),
+      fetchModelStatistics()
     ])
   } catch (error) {
     console.error('【获取统计数据错误】', error)
