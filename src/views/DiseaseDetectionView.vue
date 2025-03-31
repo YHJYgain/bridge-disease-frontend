@@ -30,9 +30,9 @@ const selectedModelInfo = ref(null)
 // 步骤条相关
 const activeStep = ref(0)
 const steps = [
-  { title: '选择模型', icon: Coin },
-  { title: '选择媒体', icon: Picture },
-  { title: '开始检测', icon: Aim }
+  { title: 'Step 1：选择模型', icon: Coin },
+  { title: 'Step 2：选择媒体', icon: Picture },
+  { title: 'Step 3：开始检测分割', icon: Aim }
 ]
 
 // 获取用户信息
@@ -224,7 +224,7 @@ watch(selectedModel, watchSelectedModel)
           </template>
 
           <!-- 步骤条 -->
-          <el-steps :active="activeStep" finish-status="success" class="detection-steps">
+          <el-steps :active="activeStep" finish-status="success" class="detection-steps" simple>
             <el-step v-for="(step, index) in steps" :key="index" :title="step.title">
               <template #icon>
                 <el-icon>
@@ -266,7 +266,7 @@ watch(selectedModel, watchSelectedModel)
                     <span class="info-value">{{ selectedModelInfo.disease_category }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="info-label">适应度分数：</span>
+                    <span class="info-label">fitness_score（适应度分数）：</span>
                     <span class="info-value">{{ selectedModelInfo.fitness_score }}</span>
                   </div>
                 </div>
@@ -466,7 +466,6 @@ watch(selectedModel, watchSelectedModel)
   gap: 10px;
 }
 
-/* 模型信息卡片样式 */
 .model-info-card {
   margin-top: 20px;
   padding: 15px;
@@ -506,7 +505,6 @@ watch(selectedModel, watchSelectedModel)
   font-weight: 500;
 }
 
-/* 媒体预览样式 */
 .media-preview {
   margin-top: 20px;
 }
@@ -542,7 +540,6 @@ watch(selectedModel, watchSelectedModel)
   font-size: 14px;
 }
 
-/* 检测任务信息样式 */
 .detection-summary {
   margin-top: 20px;
   padding: 15px;

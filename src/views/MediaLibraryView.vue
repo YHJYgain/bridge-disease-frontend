@@ -334,9 +334,9 @@ onMounted(() => {
 
           <el-table :data="mediaList" style="width: 100%" v-loading="loading">
             <el-table-column prop="media_id" label="ID" width="63" sortable />
-            <el-table-column prop="file_name" label="名称" show-overflow-tooltip sortable />
-            <el-table-column prop="description" label="描述" show-overflow-tooltip />
-            <el-table-column prop="file_type" label="类型" width="68" :filters="fileTypeFilters"
+            <el-table-column prop="file_name" label="名称" sortable show-overflow-tooltip />
+            <el-table-column prop="description" label="描述" sortable show-overflow-tooltip />
+            <el-table-column prop="file_type" label="类型" width="90" sortable :filters="fileTypeFilters"
               :filter-method="filterFileType" filter-placement="bottom">
               <template #default="scope">
                 <el-tag :type="getTagType(scope.row.file_type)">
@@ -344,7 +344,6 @@ onMounted(() => {
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="updated_at" label="最后更新时间" width="180" sortable :formatter="dataTimeFormatter" />
             <el-table-column label="预览">
               <template #default="scope">
                 <!-- 图片预览 -->
@@ -359,9 +358,10 @@ onMounted(() => {
                 <el-tag v-else :type="'info'">其他文件</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="owner_id" label="所属用户" width="120" show-overflow-tooltip sortable
+            <el-table-column prop="updated_at" label="最后更新时间" width="180" sortable :formatter="dataTimeFormatter" />
+            <el-table-column prop="owner_id" label="所属用户" width="120" sortable show-overflow-tooltip
               :filters="ownerFilters" :filter-method="filterOwner" filter-placement="bottom" />
-            <el-table-column label="操作" fixed="right">
+            <el-table-column label="操作" fixed="right" width="227">
               <template #default="scope">
                 <el-button type="success" size="small" @click="downloadMedia(scope.row.file_path)">
                   <el-icon>
