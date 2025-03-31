@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '../router'
 
 const request = axios.create({
@@ -39,16 +39,18 @@ request.interceptors.response.use(
       if (error.response.status === 401) {
         const originalRequest = error.config
         const refreshToken = localStorage.getItem('refresh_token')
-        
+
         // 如果没有 refresh_token，直接跳转到登录页
         if (!refreshToken) {
-          ElMessage.error('登录已过期，请重新登录')
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
+          ElMessage.error({
+            message: '登录已过期，请重新登录',
+            duration: 5000
+          })
+          localStorage.clear()
           router.push('/login')
           return Promise.reject(error)
         }
-        
+
         // 如果已经在刷新 token，将请求加入队列
         if (isRefreshing) {
           return new Promise(resolve => {
@@ -58,9 +60,9 @@ request.interceptors.response.use(
             })
           })
         }
-        
+
         isRefreshing = true
-        
+
         try {
           // 创建一个新的 axios 实例来刷新 token，避免进入拦截器循环
           const refreshResponse = await axios.post('http://127.0.0.1:5000/user/refresh', {}, {
@@ -68,31 +70,34 @@ request.interceptors.response.use(
               'Authorization': `Bearer ${refreshToken}`
             }
           })
-          
+
           // 更新 token
           const newToken = refreshResponse.data.access_token
           localStorage.setItem('access_token', newToken)
-          
+
           // 重新发送队列中的请求
           requestQueue.forEach(callback => callback())
           requestQueue = []
-          
+
           // 重新发送原始请求
           originalRequest.headers.Authorization = `Bearer ${newToken}`
           return request(originalRequest)
         } catch (refreshError) {
-          // 刷新 token 失败，清除 token 并跳转到登录页
+          // 刷新 token 失败，说明 refresh_token 过期，清除 token 并跳转到登录页
           console.error('刷新 token 失败', refreshError)
           ElMessage.error('登录已过期，请重新登录')
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
+          ElMessage.error({
+            message: '登录已过期，请重新登录',
+            duration: 5000
+          })
+          localStorage.clear()
           router.push('/login')
           return Promise.reject(refreshError)
         } finally {
           isRefreshing = false
         }
       }
-      
+
       // 显示错误信息
       ElMessage.error({
         message: error.response.data.operation?.failure_message || error.response.data.failure_message || '请求失败',
