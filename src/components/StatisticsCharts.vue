@@ -116,7 +116,7 @@ const fetchModelStatistics = async () => {
   try {
     // 调用模型统计接口
     const data = await request.get('/model/statistics')
-    console.info('【获取模型统计响应数据成功】', data)
+    console.info('【获取模型统计数据响应数据】', data)
     statistics.value.models = data.models_statistics
 
     return true
@@ -492,7 +492,10 @@ watch(
 )
 
 onMounted(() => {
-  fetchStatistics()
+  // 访问首页时，如果当前无登录用户，避免获取统计数据
+  if (props.userInfo) {
+    fetchStatistics()
+  }
   window.addEventListener('resize', handleResize)
 })
 

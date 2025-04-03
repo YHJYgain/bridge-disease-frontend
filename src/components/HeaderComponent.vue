@@ -1,19 +1,13 @@
 <script setup>
-import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Setting, SwitchButton } from '@element-plus/icons-vue'
 import request from '../utils/request'
+import { useUserStore } from '../stores/userStore'
 
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
-const loading = ref(false)
-
-// 从 localStorage 获取用户信息
-const userInfo = computed(() => {
-  const storedUser = localStorage.getItem('login_user')
-  return storedUser ? JSON.parse(storedUser) : null
-})
+const { userInfo, loading } = useUserStore()
 
 // 进入个人中心
 const goToUserCenter = () => {

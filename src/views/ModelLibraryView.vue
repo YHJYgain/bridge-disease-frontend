@@ -5,20 +5,20 @@ import { ElMessage } from 'element-plus'
 import { Upload, Delete, Download, Edit } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { formatDateTime } from '../utils/dateTimeFormatter'
-import { resourceStore } from '../stores/resourceStore'
+import { useResourceStore } from '../stores/resourceStore'
+import { useUserStore } from '../stores/userStore'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
-const userInfo = ref(null)
-const loading = ref(false)
-const uploadLoading = ref(false)
-const mediaStore = resourceStore()
+const { userInfo, loading, getUserInfo } = useUserStore()
+const resourceStore = useResourceStore()
 const modelList = ref([])
 const uploadDialogVisible = ref(false)
 const editDialogVisible = ref(false)
 const uploadFormRef = ref(null)
+const uploadLoading = ref(false)
 const editFormRef = ref(null)
 
 // 分页相关（默认每页 5 条）
@@ -47,54 +47,13 @@ const uploadForm = ref({
   fitness_score: 0.0,
   f1_score: 0.0,
 })
-
-// 获取用户信息
-const getUserInfo = async () => {
-  try {
-    loading.value = true
-    // 检查是否有 token
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      ElMessage.warning({
-        message: '【获取用户信息失败】未登录或登录已过期，请重新登录',
-        duration: 4000
-      })
-      router.push('/login')
-      return
-    }
-
-    // 从 localStorage 中获取用户信息
-    const storedUser = localStorage.getItem('login_user')
-    userInfo.value = JSON.parse(storedUser);
-
-    // 如果不是开发人员，跳转到首页
-    if (!isDeveloper.value) {
-      ElMessage.warning({
-        message: '您非开发人员，没有权限访问此页面',
-        duration: 4000
-      })
-      router.push('/home')
-      return
-    }
-  } catch (error) {
-    console.error('【获取用户信息错误】', error)
-    ElMessage.error({
-      message: '【获取用户信息错误】' + (error?.message || '请重试'),
-      duration: 5000
-    })
-    router.push('/login')
-  } finally {
-    loading.value = false
-  }
-}
-
 // 获取模型列表
 const getModelList = async () => {
   try {
     loading.value = true
 
     // 使用共享的媒体存储获取模型列表
-    const { models, total: totalCount, error } = await mediaStore.fetchModelList(
+    const { models, total: totalCount, error } = await resourceStore.fetchModelList(
       currentPage.value,
       pageSize.value,
       true // 强制刷新，确保获取最新数据
@@ -250,6 +209,7 @@ const uploadModel = async () => {
       resetForm()
       getModelList()
     }
+    // 上传模型失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
     console.error('上传模型错误', error)
     ElMessage.error({
@@ -368,8 +328,18 @@ const deleteModel = async (id) => {
 onMounted(() => {
   // 先获取用户信息，防止未登录/无权限用户能够直接访问该页面
   getUserInfo().then(() => {
-    if (isDeveloper.value) {
-      getModelList()
+    if (userInfo.value) {
+      if (isDeveloper.value) {
+        getModelList()
+      } else {
+        ElMessage.warning({
+          message: '【访问页面失败】您非开发人员，没有权限访问此页面',
+          duration: 4000
+        })
+        router.push('/home')
+      }
+    } else {
+      router.push('/login')
     }
   })
 })

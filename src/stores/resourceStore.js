@@ -1,4 +1,4 @@
-import { ref, reactive, readonly } from 'vue'
+import { ref, readonly } from 'vue'
 import request from '../utils/request'
 
 // 创建一个简单的状态存储，用于缓存媒体列表数据
@@ -111,7 +111,7 @@ const clearCache = () => {
 }
 
 // 导出 composable 函数
-export function resourceStore() {
+export function useResourceStore() {
   return {
     // 状态
     mediaList: readonly(mediaList),

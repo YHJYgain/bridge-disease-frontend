@@ -3,12 +3,12 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '../utils/request'
+import { useUserStore } from '../stores/userStore'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
 const router = useRouter()
-const userInfo = ref(null)
-const loading = ref(false)
+const { userInfo, loading, getUserInfo } = useUserStore()
 const formLoading = ref(false)
 const userList = ref([])
 const dialogVisible = ref(false)
@@ -29,43 +29,6 @@ const userForm = ref({
   last_name: '',
   phone: ''
 })
-
-// 获取用户信息
-const getUserInfo = async () => {
-  try {
-    loading.value = true
-    // 检查是否有 token
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      ElMessage.warning({
-        message: '【获取用户信息失败】未登录或登录已过期，请重新登录',
-        duration: 4000
-      })
-      router.push('/login')
-      return
-    }
-
-    // 从 localStorage 中获取用户信息
-    const storedUser = localStorage.getItem('login_user')
-    userInfo.value = JSON.parse(storedUser);
-
-    // 如果不是管理员或开发人员，跳转到首页
-    if (!isAdminOrDeveloper.value) {
-      ElMessage.warning('您没有权限访问此页面')
-      router.push('/home')
-      return
-    }
-  } catch (error) {
-    console.error('【获取用户信息错误】', error)
-    ElMessage.error({
-      message: '【获取用户信息错误】' + (error?.message || '请重试'),
-      duration: 5000
-    })
-    router.push('/login')
-  } finally {
-    loading.value = false
-  }
-}
 
 // 获取用户列表
 const getUserList = async () => {
@@ -201,8 +164,18 @@ const roleType = (role) => {
 onMounted(() => {
   // 先获取用户信息，防止未登录/无权限用户能够直接访问该页面
   getUserInfo().then(() => {
-    if (isAdminOrDeveloper.value) {
-      getUserList()
+    if (userInfo.value) {
+      if (isAdminOrDeveloper.value) {
+        getUserList()
+      } else {
+        ElMessage.warning({
+          message: '【访问页面失败】您非管理员/开发人员，没有权限访问此页面',
+          duration: 4000
+        })
+        router.push('/home')
+      }
+    } else {
+      router.push('/login')
     }
   })
 })

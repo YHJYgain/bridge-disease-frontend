@@ -4,7 +4,7 @@ import router from '../router'
 
 const request = axios.create({
   baseURL: 'http://127.0.0.1:5000',
-  timeout: 5000
+  timeout: 20000
 })
 
 // 是否正在刷新 token
@@ -98,16 +98,20 @@ request.interceptors.response.use(
         }
       }
 
-      // 显示错误信息
-      ElMessage.error({
+      // 显示失败信息
+      ElMessage.warning({
         message: error.response.data.operation?.failure_message || error.response.data.failure_message || '请求失败',
-        duration: 5000
+        duration: 4000
       })
       // 返回响应数据，让业务代码可以继续处理
       return error.response.data
     }
+
     // 如果没有响应数据，则拒绝 Promise
-    ElMessage.error('网络错误，请稍后重试')
+    ElMessage.error({
+      message: '网络错误，请稍后重试',
+      duration: 5000
+    })
     return Promise.reject(error)
   }
 )

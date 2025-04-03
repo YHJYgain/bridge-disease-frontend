@@ -97,7 +97,7 @@ onMounted(() => {
   const token = localStorage.getItem('access_token')
   if (token) {
     ElMessage.success({
-        message: '您已登录，正在跳转到首页...',
+        message: '【登录成功】您已登录，正在跳转到首页...',
         duration: 3000
       })
     router.push('/home')

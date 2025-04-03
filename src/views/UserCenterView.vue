@@ -4,64 +4,19 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Check, Close, Warning, InfoFilled, User, Lock, Delete, Plus, ArrowLeft } from '@element-plus/icons-vue'
 import request from '../utils/request'
+import { useUserStore } from '../stores/userStore'
 import { formatDateTime } from '../utils/dateTimeFormatter'
 import { handleAvatarUpload } from '../utils/avatarUtils'
 
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
-const userInfo = ref(null)
-const loading = ref(false)
+const { userInfo, loading, getUserInfo } = useUserStore()
 const updateFormRef = ref(null)
 const passwordFormRef = ref(null)
 
 // 返回首页
 const goToHome = () => {
   router.push('/home')
-}
-
-// 获取用户信息
-const getUserInfo = async () => {
-  try {
-    loading.value = true
-    // 检查是否有 token
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      ElMessage.warning({
-        message: '【获取用户信息失败】未登录或登录已过期，请重新登录',
-        duration: 4000
-      })
-      router.push('/login')
-      return
-    }
-
-    // 从 localStorage 中获取用户信息
-    const storedUser = localStorage.getItem('login_user')
-    userInfo.value = storedUser ? JSON.parse(storedUser) : null
-
-    // 初始化修改个人信息表单
-    updateForm.value = {
-      username: userInfo.value.username,
-      email: userInfo.value.email,
-      first_name: userInfo.value.first_name || '',
-      last_name: userInfo.value.last_name || '',
-      phone: userInfo.value.phone || '',
-      avatar_file: null // 保持为 null，通过 avatarPreviewUrl 计算属性显示当前头像
-    }
-
-    // 注意：这里不需要设置 avatar_file 为当前头像文件，因为：
-    // 1. 头像在服务器上是通过路径存储的，不是文件对象
-    // 2. avatarPreviewUrl 计算属性已经处理了头像显示逻辑
-    // 3. 只有用户上传新头像时，才会设置 avatar_file
-  } catch (error) {
-    console.error('【获取用户信息错误】', error)
-    ElMessage.error({
-      message: '【获取用户信息错误】' + error?.message || '请重试',
-      duration: 5000
-    })
-    router.push('/login')
-  } finally {
-    loading.value = false
-  }
 }
 
 // 根据用户状态获取对应的图标和颜色
@@ -392,7 +347,26 @@ const submitDeleteAccount = async () => {
 
 onMounted(() => {
   // 先获取用户信息，防止未登录用户能够直接访问该页面
-  getUserInfo()
+  getUserInfo().then(() => {
+    if (userInfo.value) {
+      // 初始化修改个人信息表单
+      updateForm.value = {
+        username: userInfo.value.username,
+        email: userInfo.value.email,
+        first_name: userInfo.value.first_name || '',
+        last_name: userInfo.value.last_name || '',
+        phone: userInfo.value.phone || '',
+        avatar_file: null // 保持为 null，通过 avatarPreviewUrl 计算属性显示当前头像
+      }
+
+      // 注意：这里不需要设置 avatar_file 为当前头像文件，因为：
+      // 1. 头像在服务器上是通过路径存储的，不是文件对象
+      // 2. avatarPreviewUrl 计算属性已经处理了头像显示逻辑
+      // 3. 只有用户上传新头像时，才会设置 avatar_file
+    } else {
+      router.push('/login')
+    }
+  })
 })
 </script>
 
@@ -432,7 +406,7 @@ onMounted(() => {
             <el-tag class="status-tag"
               :type="userInfo.status === 'ACTIVE' ? 'success' : userInfo.status === 'INACTIVE' ? 'info' : userInfo.status === 'BANNED' ? 'danger' : 'warning'">
               {{ userInfo.status === 'ACTIVE' ? '在线' : userInfo.status === 'INACTIVE' ? '离线' : userInfo.status ===
-          'BANNED' ? '封禁' : '已注销' }}
+                'BANNED' ? '封禁' : '已注销' }}
             </el-tag>
           </div>
         </div>
@@ -445,13 +419,13 @@ onMounted(() => {
             <el-descriptions-item label="名字" v-if="userInfo.first_name">{{ userInfo.first_name }}</el-descriptions-item>
             <el-descriptions-item label="电话" v-if="userInfo.phone">{{ userInfo.phone }}</el-descriptions-item>
             <el-descriptions-item label="角色">{{ userInfo.role === 'ADMIN' ? '管理员' : userInfo.role === 'DEVELOPER' ?
-          '开发人员' : '普通用户' }}</el-descriptions-item>
+              '开发人员' : '普通用户' }}</el-descriptions-item>
             <el-descriptions-item label="最后登录时间" v-if="userInfo.last_login">{{ formatDateTime(userInfo.last_login)
-              }}</el-descriptions-item>
+            }}</el-descriptions-item>
             <el-descriptions-item label="注册时间">{{ formatDateTime(userInfo.created_at) }}</el-descriptions-item>
             <el-descriptions-item label="更新时间">{{ formatDateTime(userInfo.updated_at) }}</el-descriptions-item>
             <el-descriptions-item label="注销时间" v-if="userInfo.status === 'deleted' && userInfo.deleted_at">{{
-          formatDateTime(userInfo.deleted_at) }}</el-descriptions-item>
+              formatDateTime(userInfo.deleted_at) }}</el-descriptions-item>
           </el-descriptions>
         </div>
 

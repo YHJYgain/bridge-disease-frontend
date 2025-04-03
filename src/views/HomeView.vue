@@ -1,46 +1,21 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { useUserStore } from '../stores/userStore'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 import StatisticsCharts from '../components/StatisticsCharts.vue'
 
 const router = useRouter()
-const userInfo = ref(null)
-const loading = ref(false)
-
-// 获取用户信息
-const getUserInfo = async () => {
-  try {
-    loading.value = true
-    // 检查是否有 token
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      ElMessage.error('【获取用户信息失败】未登录或登录已过期，请重新登录')
-      router.push('/login')
-      return
-    }
-
-    // 从 localStorage 中获取用户信息
-    const storedUser = localStorage.getItem('login_user')
-    userInfo.value = JSON.parse(storedUser);
-    console.info('【用户信息】', userInfo.value)
-  } catch (error) {
-    console.error('【获取用户信息错误】', error)
-    ElMessage.error({
-      message: '【获取用户信息错误】' + (error?.message || '请重试'),
-      duration: 5000
-    })
-    router.push('/login')
-  } finally {
-    loading.value = false
-  }
-}
+const { userInfo, getUserInfo } = useUserStore()
 
 onMounted(() => {
   // 先获取用户信息，防止未登录用户能够直接访问该页面
-  getUserInfo()
+  getUserInfo().then(() => {
+    if (!userInfo.value) {
+      router.push('/login')
+    }
+  })
 })
 </script>
 

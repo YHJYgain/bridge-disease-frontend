@@ -2,30 +2,18 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Aim, Coin, Picture } from '@element-plus/icons-vue'
 import request from '../utils/request'
-import { resourceStore } from '../stores/resourceStore'
+import { useResourceStore } from '../stores/resourceStore'
+import { useUserStore } from '../stores/userStore'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
-import { Aim, Coin, Picture } from '@element-plus/icons-vue'
 
+const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
-const userInfo = ref(null)
-const loading = ref(false)
+const { userInfo, getUserInfo } = useUserStore()
+const { mediaList, modelList, fetchMediaList, fetchModelList } = useResourceStore()
 const detectLoading = ref(false)
-
-// 使用共享的媒体和模型存储
-const mediaStore = resourceStore()
-
-// 媒体列表和模型列表
-const mediaList = ref([])
-const modelList = ref([])
-
-// 选中的媒体
-const selectedMedia = ref(null)
-// 选中的模型
-const selectedModel = ref(null)
-// 选中的模型详情
-const selectedModelInfo = ref(null)
 
 // 步骤条相关
 const activeStep = ref(0)
@@ -35,91 +23,23 @@ const steps = [
   { title: 'Step 3：开始检测分割', icon: Aim }
 ]
 
-// 获取用户信息
-const getUserInfo = async () => {
-  try {
-    loading.value = true
-    // 检查是否有 token
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      ElMessage.warning({
-        message: '【获取用户信息失败】未登录或登录已过期，请重新登录',
-        duration: 4000
-      })
-      router.push('/login')
-      return
-    }
-
-    // 从 localStorage 中获取用户信息
-    const storedUser = localStorage.getItem('login_user')
-    userInfo.value = JSON.parse(storedUser);
-  } catch (error) {
-    console.error('【获取用户信息错误】', error)
-    ElMessage.error({
-      message: '【获取用户信息错误】' + (error?.message || '请重试'),
-      duration: 5000
-    })
-    router.push('/login')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 获取媒体列表
-const getMediaList = async () => {
-  try {
-    // 使用共享的媒体存储获取媒体列表
-    const { medias, error } = await mediaStore.fetchMediaList(userInfo.value)
-    if (error) {
-      throw error
-    }
-    mediaList.value = medias
-  } catch (error) {
-    console.error('【获取媒体列表错误】', error)
-    ElMessage.error({
-      message: '【获取媒体列表错误】' + (error?.message || '请重试'),
-      duration: 5000
-    })
-  }
-}
-
-// 获取模型列表
-const getModelList = async () => {
-  try {
-    // 使用共享的模型存储获取模型列表
-    const { models, error } = await mediaStore.fetchModelList()
-    if (error) {
-      throw error
-    }
-    modelList.value = models
-  } catch (error) {
-    console.error('【获取模型列表错误】', error)
-    ElMessage.error({
-      message: '【获取模型列表错误】' + (error?.message || '请重试'),
-      duration: 5000
-    })
-  }
-}
-
-// 选择模型时更新模型详情
-const updateSelectedModelInfo = () => {
-  if (selectedModel.value) {
-    selectedModelInfo.value = modelList.value.find(model => model.model_id === selectedModel.value)
-  } else {
-    selectedModelInfo.value = null
+// 上一步
+const prevStep = () => {
+  if (activeStep.value > 0) {
+    activeStep.value--
   }
 }
 
 // 下一步
 const nextStep = () => {
-  if (activeStep.value === 0 && !selectedModel.value) {
+  if (activeStep.value === 0 && !selectedModelId.value) {
     ElMessage.warning({
       message: '【下一步失败】请先选择一个模型',
       duration: 4000
     })
     return
   }
-  if (activeStep.value === 1 && !selectedMedia.value) {
+  if (activeStep.value === 1 && !selectedMediaId.value) {
     ElMessage.warning({
       message: '【下一步失败】请先选择一个媒体',
       duration: 4000
@@ -131,26 +51,132 @@ const nextStep = () => {
   }
 }
 
-// 上一步
-const prevStep = () => {
-  if (activeStep.value > 0) {
-    activeStep.value--
+// 滚动加载相关状态
+const loadingMoreMedia = ref(false)
+const loadingMoreModel = ref(false)
+const hasMoreMedia = ref(true)
+const hasMoreModel = ref(true)
+const currentMediaPage = ref(1)
+const currentModelPage = ref(1)
+
+// 加载更多媒体数据
+const loadMoreMedia = async () => {
+  if (loadingMoreMedia.value || !hasMoreMedia.value) return
+
+  loadingMoreMedia.value = true
+  currentMediaPage.value++
+
+  try {
+    const { medias, total } = await fetchMediaList(userInfo.value, currentMediaPage.value, 5)
+    if (medias.length === 0) {
+      hasMoreMedia.value = false
+    }
+  } catch (error) {
+    console.error('【加载更多媒体错误】', error)
+    ElMessage.error({
+      message: '【加载更多媒体错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+  } finally {
+    loadingMoreMedia.value = false
   }
 }
 
-// 进行检测分割任务
+// 加载更多模型数据
+const loadMoreModel = async () => {
+  if (loadingMoreModel.value || !hasMoreModel.value) return
+
+  loadingMoreModel.value = true
+  currentModelPage.value++
+
+  try {
+    const { models, total } = await fetchModelList(currentModelPage.value, 5)
+    if (models.length === 0) {
+      hasMoreModel.value = false
+    }
+  } catch (error) {
+    console.error('【加载更多模型错误】', error)
+    ElMessage.error({
+      message: '【加载更多模型错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+  } finally {
+    loadingMoreModel.value = false
+  }
+}
+
+// 滚动事件处理
+const handleScroll = () => {
+  const el = document.querySelector('.el-select-dropdown__wrap')
+  if (!el) return
+
+  const { scrollTop, scrollHeight, clientHeight } = el
+  if (scrollHeight - (scrollTop + clientHeight) < 50) {
+    if (activeStep.value === 0) {
+      loadMoreModel()
+    } else if (activeStep.value === 1) {
+      loadMoreMedia()
+    }
+  }
+}
+
+// 选中的模型
+const selectedModelId = ref(null)
+const selectedModel = ref(null)
+
+// 选中的媒体
+const selectedMediaId = ref(null)
+const selectedMedia = ref(null)
+
+// 选择模型时更新模型详情
+const updateSelectedModel = () => {
+  if (selectedModelId.value) {
+    selectedModel.value = modelList.value.find(model => model.model_id === selectedModelId.value)
+  } else {
+    selectedModel.value = null
+  }
+}
+
+// 选择媒体时更新媒体详情
+const updateSelectedMedia = () => {
+  if (selectedMediaId.value) {
+    selectedMedia.value = mediaList.value.find(media => media.media_id === selectedMediaId.value)
+  } else {
+    selectedMedia.value = null
+  }
+}
+
+// 监听选中的模型变化
+const watchSelectedModel = () => {
+  updateSelectedModel()
+}
+
+// 监听选中的媒体变化
+const watchSelectedMedia = () => {
+  updateSelectedMedia()
+}
+
+// 监听选中的模型/媒体变化
+watch(selectedModelId, watchSelectedModel)
+watch(selectedMediaId, watchSelectedMedia)
+
+const mediaPreviewURL = computed(() => {
+  return selectedMedia ? `${requestBaseURL}/${selectedMedia.value.media_path}` : '';
+})
+
+// 检测分割
 const submitDetectionTask = async () => {
-  if (!selectedModel.value) {
+  if (!selectedModelId.value) {
     ElMessage.warning({
-      message: '【检测分割任务失败】请选择要使用的检测模型',
+      message: '【检测分割失败】请选择要使用的检测模型',
       duration: 4000
     })
     return
   }
 
-  if (!selectedMedia.value) {
+  if (!selectedMediaId.value) {
     ElMessage.warning({
-      message: '【检测分割任务失败】请选择要检测的媒体',
+      message: '【检测分割失败】请选择要检测的媒体',
       duration: 4000
     })
     return
@@ -163,20 +189,27 @@ const submitDetectionTask = async () => {
 
   try {
     detectLoading.value = true
-    // const response = await request.post('/detection', {
-    //   media_id: selectedMedia.value,
-    //   model_id: selectedModel.value
-    // })
 
-    // if (response && response.operation && response.operation.status === 'SUCCESS') {
-    //   ElMessage.success('检测任务提交成功')
-    //   // 跳转到检测记录页面
+    // const data = await request.post('/detection/detection_segmentation', {
+    //   media_id: selectedMediaId.value,
+    //   model_id: selectedModelId.value
+    // })
+    // console.info('【检测分割响应数据】', data)
+    // const operation = data.operation
+
+    // if (operation && operation.status === 'SUCCESS') {
+    //   ElMessage.success({
+    //     message: '【检测分割成功】',
+    //     duration: 3000
+    //   })
+    //   // 跳转到检测分割记录页面
     //   router.push('/detection-records')
     // }
+    // 检测分割失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
-    console.error('【检测分割任务错误】', error)
+    console.error('【检测分割错误】', error)
     ElMessage.error({
-      message: '【检测分割任务错误】' + (error?.message || '请重试'),
+      message: '【检测分割错误】' + (error?.message || '请重试'),
       duration: 5000
     })
   } finally {
@@ -184,21 +217,24 @@ const submitDetectionTask = async () => {
   }
 }
 
-// 监听选中的模型变化
-const watchSelectedModel = () => {
-  updateSelectedModelInfo()
-}
-
 onMounted(() => {
   // 先获取用户信息，防止未登录用户能够直接访问该页面
   getUserInfo().then(() => {
-    getMediaList()
-    getModelList()
+    if (userInfo.value) {
+      // 初始加载第一页数据
+      fetchMediaList(userInfo.value, 1, 5)
+      fetchModelList(1, 5)
+
+      // 添加滚动事件监听
+      const el = document.querySelector('.el-select-dropdown__wrap')
+      if (el) {
+        el.addEventListener('scroll', handleScroll)
+      }
+    } else {
+      router.push('/login')
+    }
   })
 })
-
-// 监听选中的模型变化
-watch(selectedModel, watchSelectedModel)
 </script>
 
 <template>
@@ -238,10 +274,10 @@ watch(selectedModel, watchSelectedModel)
           <div class="step-content">
             <!-- 步骤 1：选择模型 -->
             <div v-if="activeStep === 0" class="step-container">
-              <h3>选择检测模型</h3>
+              <h3>选择检测模型（名称升序/综合性能降序）</h3>
               <el-form label-position="top">
                 <el-form-item>
-                  <el-select v-model="selectedModel" placeholder="请选择检测模型" style="width: 100%">
+                  <el-select v-model="selectedModelId" placeholder="请选择检测模型" style="width: 100%">
                     <el-option v-for="item in modelList" :key="item.model_id" :label="item.model_name"
                       :value="item.model_id">
                       <div class="model-option">
@@ -254,20 +290,20 @@ watch(selectedModel, watchSelectedModel)
               </el-form>
 
               <!-- 显示选中模型的详细信息 -->
-              <div v-if="selectedModelInfo" class="model-info-card">
+              <div v-if="selectedModel" class="model-info-card">
                 <h4>模型信息</h4>
                 <div class="model-info-grid">
                   <div class="info-item">
                     <span class="info-label">模型名称：</span>
-                    <span class="info-value">{{ selectedModelInfo.model_name }}</span>
+                    <span class="info-value">{{ selectedModel.model_name }}</span>
                   </div>
                   <div class="info-item">
                     <span class="info-label">病害类别：</span>
-                    <span class="info-value">{{ selectedModelInfo.disease_category }}</span>
+                    <span class="info-value">{{ selectedModel.disease_category }}</span>
                   </div>
                   <div class="info-item">
                     <span class="info-label">fitness_score（适应度分数）：</span>
-                    <span class="info-value">{{ selectedModelInfo.fitness_score }}</span>
+                    <span class="info-value">{{ selectedModel.fitness_score }}</span>
                   </div>
                 </div>
               </div>
@@ -282,14 +318,14 @@ watch(selectedModel, watchSelectedModel)
               <h3>选择媒体文件</h3>
               <el-form label-position="top">
                 <el-form-item>
-                  <el-select v-model="selectedMedia" placeholder="请选择媒体文件" style="width: 100%">
-                    <el-option v-for="item in mediaList" :key="item.media_id" :label="item.file_name"
+                  <el-select v-model="selectedMediaId" placeholder="请选择媒体文件" style="width: 100%">
+                    <el-option v-for="item in mediaList" :key="item.media_id" :label="item.media_name"
                       :value="item.media_id">
                       <div class="media-option">
-                        <span>{{ item.file_name }}</span>
+                        <span>{{ item.media_name }}</span>
                         <span class="media-type">{{ ['png', 'jpg', 'jpeg'].includes(item.file_type.toLowerCase()) ? '图片'
-            : '视频'
-                          }}</span>
+                          : '视频'
+                        }}</span>
                       </div>
                     </el-option>
                   </el-select>
@@ -297,18 +333,14 @@ watch(selectedModel, watchSelectedModel)
               </el-form>
 
               <!-- 媒体预览 -->
-              <div v-if="selectedMedia" class="media-preview">
+              <div v-if="selectedMediaId" class="media-preview">
                 <h4>媒体预览</h4>
                 <div class="preview-container">
-                  <el-image v-if="mediaList.find(m => m.media_id === selectedMedia)?.file_type.toLowerCase() === 'png' ||
-            mediaList.find(m => m.media_id === selectedMedia)?.file_type.toLowerCase() === 'jpg' ||
-            mediaList.find(m => m.media_id === selectedMedia)?.file_type.toLowerCase() === 'jpeg'"
-                    :src="mediaList.find(m => m.media_id === selectedMedia)?.file_url" fit="contain"
-                    class="preview-image">
+                  <el-image v-if="['png', 'jpg', 'jpeg'].includes(selectedMedia.file_type.toLowerCase())"
+                    :src="mediaPreviewURL" fit="contain" class="preview-image" :preview-src-list="[mediaPreviewURL]">
                   </el-image>
-                  <video v-else-if="mediaList.find(m => m.media_id === selectedMedia)?.file_type.toLowerCase() === 'mp4' ||
-            mediaList.find(m => m.media_id === selectedMedia)?.file_type.toLowerCase() === 'avi'"
-                    :src="mediaList.find(m => m.media_id === selectedMedia)?.file_url" controls class="preview-video">
+                  <video v-else-if="['mp4', 'avi', 'mov'].includes(selectedMedia.file_type.toLowerCase())"
+                    :src="mediaPreviewURL" controls class="preview-video">
                   </video>
                   <div v-else class="preview-placeholder">
                     无法预览该类型的媒体文件
@@ -322,31 +354,47 @@ watch(selectedModel, watchSelectedModel)
               </div>
             </div>
 
-            <!-- 步骤 3：开始检测分割 -->
+            <!-- 步骤 3：检测分割 -->
             <div v-if="activeStep === 2" class="step-container">
-              <h3>开始检测分割</h3>
+              <h3>检测分割</h3>
 
               <div class="detection-summary">
                 <h4>检测任务信息</h4>
                 <div class="summary-item">
                   <span class="summary-label">选择的模型：</span>
-                  <span class="summary-value">{{ selectedModelInfo?.model_name }}</span>
+                  <span class="summary-value">{{ selectedModel?.model_name }}</span>
                 </div>
                 <div class="summary-item">
                   <span class="summary-label">病害类别：</span>
-                  <span class="summary-value">{{ selectedModelInfo?.disease_category }}</span>
+                  <span class="summary-value">{{ selectedModel?.disease_category }}</span>
                 </div>
                 <div class="summary-item">
                   <span class="summary-label">选择的媒体：</span>
-                  <span class="summary-value">{{ mediaList.find(m => m.media_id === selectedMedia)?.file_name }}</span>
+                  <span class="summary-value">{{mediaList.find(m => m.media_id === selectedMediaId)?.media_name}}</span>
                 </div>
                 <div class="summary-item">
                   <span class="summary-label">媒体类型：</span>
                   <span class="summary-value">
-                    {{ ['png', 'jpg', 'jpeg'].includes(mediaList.find(m => m.media_id ===
-            selectedMedia)?.file_type.toLowerCase())
-            ? '图片' : '视频' }}
+                    {{['png', 'jpg', 'jpeg'].includes(mediaList.find(m => m.media_id ===
+                      selectedMediaId)?.file_type.toLowerCase())
+                      ? '图片' : '视频'}}
                   </span>
+                </div>
+              </div>
+
+              <!-- 媒体预览 -->
+              <div v-if="selectedMediaId" class="media-preview">
+                <h4>媒体预览</h4>
+                <div class="preview-container">
+                  <el-image v-if="['png', 'jpg', 'jpeg'].includes(selectedMedia.file_type.toLowerCase())"
+                    :src="mediaPreviewURL" fit="contain" class="preview-image" :preview-src-list="[mediaPreviewURL]">
+                  </el-image>
+                  <video v-else-if="['mp4', 'avi', 'mov'].includes(selectedMedia.file_type.toLowerCase())"
+                    :src="mediaPreviewURL" controls class="preview-video">
+                  </video>
+                  <div v-else class="preview-placeholder">
+                    无法预览该类型的媒体文件
+                  </div>
                 </div>
               </div>
 
@@ -519,7 +567,7 @@ watch(selectedModel, watchSelectedModel)
 
 .preview-container {
   width: 100%;
-  height: 300px;
+  height: auto;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -530,8 +578,9 @@ watch(selectedModel, watchSelectedModel)
 
 .preview-image,
 .preview-video {
-  max-width: 100%;
-  max-height: 100%;
+  max-width: 15%;
+  max-height: 15%;
+  margin: 10px;
   object-fit: contain;
 }
 
