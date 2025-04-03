@@ -8,7 +8,7 @@ import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
 const router = useRouter()
-const { userInfo, loading, getUserInfo } = useUserStore()
+const { userInfo, getUserInfo } = useUserStore()
 const operationLogs = ref([])
 
 // 判断用户角色

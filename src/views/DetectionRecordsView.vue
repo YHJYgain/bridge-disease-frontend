@@ -4,56 +4,95 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '../utils/request'
 import { useUserStore } from '../stores/userStore'
+import { useResourceStore } from '../stores/resourceStore'
+import { formatDateTime } from '../utils/dateTimeFormatter'
+import { getModelDetail, getMediaDetail, getUserDetail } from '../utils/detailFetcher'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
+const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
-const { userInfo, loading, getUserInfo } = useUserStore()
-const detectionRecords = ref([])
+const { userInfo, getUserInfo } = useUserStore()
+const resourceStore = useResourceStore()
+const detectionList = ref([])
 
-// 判断用户角色
-const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
-const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
-const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
+// 分页相关（默认每页 5 条）
+const currentPage = ref(1)
+const pageSize = ref(5)
+const total = ref(0)
 
-
-// 获取检测记录
+// 获取检测分割记录
 const getDetectionRecords = async () => {
   try {
-    loading.value = true
-    // 管理员和开发人员可以查看所有记录，普通用户只能查看自己的
-    // const url = isAdminOrDeveloper.value ? '/detections/all' : '/detections'
-    // const response = await request.get(url)
-    // if (response && response.data) {
-    //   detectionRecords.value = response.data
-    // }
+    resourceStore.detectionLoading = true
+
+    // 使用共享的资源存储获取检测分割记录列表
+    const { detections, total: totalCount, error } = await resourceStore.fetchDetectionList(
+      userInfo.value,
+      currentPage.value,
+      pageSize.value,
+      true // 强制刷新，确保获取最新数据
+    )
+
+    if (error) {
+      throw error
+    }
+
+    console.info('【获取检测分割记录响应数据】', { detections, total: totalCount })
+
+    // 处理检测记录数据，获取模型、媒体和用户的详细信息
+    const processedDetections = [];
+    for (const detection of detections) {
+      // 创建检测记录的副本
+      const processedDetection = { ...detection };
+
+      // 获取模型详情
+      if (detection.model_id) {
+        const { model, error: modelError } = await getModelDetail(detection.model_id);
+        if (model && !modelError) {
+          processedDetection.model_name = model.model_name;
+        }
+      }
+
+      // 获取媒体详情
+      if (detection.media_id) {
+        const { media, error: mediaError } = await getMediaDetail(detection.media_id);
+        if (media && !mediaError) {
+          processedDetection.media_name = media.media_name;
+          processedDetection.media_type = media.type; // 保存媒体类型信息
+        }
+      }
+
+      // 获取用户详情
+      if (detection.owner_id) {
+        const { user, error: userError } = await getUserDetail(detection.owner_id);
+        if (user && !userError) {
+          processedDetection.owner_username = user.username;
+        }
+      }
+
+      processedDetections.push(processedDetection);
+    }
+
+    detectionList.value = processedDetections;
+    total.value = totalCount;
   } catch (error) {
-    console.error('获取检测记录失败', error)
-    ElMessage.error('获取检测记录失败，请重试')
+    console.error('【获取检测分割记录错误】', error)
+    ElMessage.error({
+      message: '【获取检测分割记录错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   } finally {
-    loading.value = false
+    resourceStore.detectionLoading = false
   }
 }
 
-// 查看检测结果详情
-const viewDetectionDetail = (id) => {
-  router.push(`/detection-detail/${id}`)
+// 格式化日期时间
+const dataTimeFormatter = (row, column) => {
+  return formatDateTime(row.updated_at); // 使用通用的日期时间格式化工具函数
 }
 
-// 删除检测记录
-const deleteDetection = async (id) => {
-  try {
-    // await request.delete(`/detection/${id}`)
-    ElMessage.success('删除成功')
-    // 重新获取列表
-    getDetectionRecords()
-  } catch (error) {
-    console.error('删除检测记录失败', error)
-    ElMessage.error('删除检测记录失败，请重试')
-  }
-}
-
-// 格式化状态
+// 格式化任务状态
 const formatStatus = (status) => {
   const statusMap = {
     'PENDING': '待处理',
@@ -64,7 +103,7 @@ const formatStatus = (status) => {
   return statusMap[status] || status
 }
 
-// 状态标签类型
+// 任务状态标签类型
 const statusType = (status) => {
   const typeMap = {
     'PENDING': 'warning',
@@ -73,6 +112,98 @@ const statusType = (status) => {
     'FAILED': 'danger'
   }
   return typeMap[status] || ''
+}
+
+// 任务状态筛选方法
+const filterStatus = (value, row) => {
+  return row.status === value
+}
+
+// 获取所有任务状态作为筛选选项
+const statusFilters = [
+  { text: '待处理', value: 'PENDING' },
+  { text: '处理中', value: 'IN_PROGRESS' },
+  { text: '已完成', value: 'COMPLETED' },
+  { text: '失败', value: 'FAILED' }
+]
+
+// 格式化病害等级
+const formatDiseaseGrade = (grade) => {
+  const gradeMap = {
+    'MILD': '轻度',
+    'MODERATE': '中度',
+    'SEVERE': '重度',
+    'CRITICAL': '严重'
+  }
+  return gradeMap[grade] || grade
+}
+
+// 病害等级标签类型
+const diseaseGradeType = (grade) => {
+  const typeMap = {
+    'MILD': 'success',
+    'MODERATE': 'warning',
+    'SEVERE': 'danger',
+    'CRITICAL': 'danger'
+  }
+  return typeMap[grade] || ''
+}
+
+// 获取所有病害等级作为筛选选项
+const diseaseGradeFilters = [
+  { text: '轻度', value: 'MILD' },
+  { text: '中度', value: 'MODERATE' },
+  { text: '重度', value: 'SEVERE' },
+  { text: '严重', value: 'CRITICAL' }
+]
+
+// 病害等级筛选方法
+const filterDiseaseGrade = (value, row) => {
+  return row.disease_grade === value
+}
+
+// 用户名筛选方法
+const filterOwnerUsername = (value, row) => {
+  return row.owner_username === value
+}
+
+// 获取所有用户名作为筛选选项
+const ownerUsernameFilters = computed(() => {
+  // 从检测记录列表中提取不重复的用户名
+  const uniqueOwners = [...new Set(detectionList.value.map(item => item.owner_username))]
+  return uniqueOwners.map(owner => ({ text: owner, value: owner }))
+})
+
+// 获取所有模型名称作为筛选选项
+const modelNameFilters = computed(() => {
+  // 从检测记录列表中提取不重复的模型名称
+  const uniqueModels = [...new Set(detectionList.value.map(item => item.model_name))]
+  return uniqueModels.map(model => ({ text: model, value: model }))
+})
+
+// 获取所有媒体名称作为筛选选项
+const mediaNameFilters = computed(() => {
+  // 从检测记录列表中提取不重复的媒体名称
+  const uniqueMedias = [...new Set(detectionList.value.map(item => item.media_name))]
+  return uniqueMedias.map(media => ({ text: media, value: media }))
+})
+
+// 查看检测结果详情
+const viewDetectionDetail = (detection_id) => {
+  // router.push(`/detection-detail/${detection_id}`)
+}
+
+// 删除检测记录
+const deleteDetection = async (detection_id) => {
+  try {
+    // await request.delete(`/detection/${detection_id}`)
+    ElMessage.success('删除成功')
+    // 重新获取列表
+    getDetectionRecords()
+  } catch (error) {
+    console.error('删除检测记录失败', error)
+    ElMessage.error('删除检测记录失败，请重试')
+  }
 }
 
 onMounted(() => {
@@ -106,35 +237,69 @@ onMounted(() => {
           <template #header>
             <div class="card-header">
               <h2>检测分割记录</h2>
-              <el-button type="primary" size="small" @click="getDetectionRecords" :loading="loading">
+              <el-button type="primary" size="small" @click="getDetectionRecords"
+                :loading="resourceStore.detectionLoading.value">
                 刷新数据
               </el-button>
             </div>
           </template>
 
-          <el-table :data="detectionRecords" style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="media_name" label="媒体文件" />
-            <el-table-column prop="model_name" label="使用模型" />
-            <el-table-column prop="created_at" label="创建时间" width="180" />
-            <el-table-column prop="status" label="状态" width="100">
+          <el-table :data="detectionList" style="width: 100%" v-loading="resourceStore.detectionLoading.value">
+            <el-table-column prop="detection_id" label="ID" width="63" />
+            <el-table-column prop="model_name" label="使用模型" sortable show-overflow-tooltip />
+            <el-table-column prop="media_name" label="媒体文件" sortable show-overflow-tooltip />
+            <el-table-column prop="status" label="任务状态" width="94" :filters="statusFilters"
+              :filter-method="filterStatus">
               <template #default="scope">
                 <el-tag :type="statusType(scope.row.status)">
                   {{ formatStatus(scope.row.status) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="180">
+            <el-table-column prop="disease_severity_score" label="严重性得分" width="118" sortable />
+            <el-table-column prop="disease_grade" label="病害等级" width="94" :filters="diseaseGradeFilters"
+              :filter-method="filterDiseaseGrade">
               <template #default="scope">
-                <el-button type="primary" size="small" @click="viewDetectionDetail(scope.row.id)">
+                <el-tag :type="diseaseGradeType(scope.row.disease_grade)">
+                  {{ formatDiseaseGrade(scope.row.disease_grade) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="检测分割结果" width="140">
+              <template #default="scope">
+                <!-- 图片结果 -->
+                <el-image v-if="scope.row.result_image_path && !scope.row.result_video_path"
+                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/${scope.row.result_image_path}`"
+                  :preview-src-list="[`${requestBaseURL}/${scope.row.result_image_path}`]" fit="contain" />
+                <!-- 视频结果 -->
+                <video v-else-if="scope.row.result_video_path" style="width: 160px; height: 160px" controls
+                  :src="`${requestBaseURL}/${scope.row.result_video_path}`">
+                  您的浏览器不支持视频播放
+                </video>
+                <!-- 无结果 -->
+                <el-tag v-else type="info">暂无结果</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="detection_at" label="检测分割时间" width="180" sortable :formatter="dataTimeFormatter" />
+            <el-table-column prop="owner_username" label="所属用户" width="118" sortable :filters="ownerUsernameFilters"
+              :filter-method="filterOwnerUsername" />
+            <el-table-column label="操作" width="227" fixed="right">
+              <template #default="scope">
+                <el-button type="primary" size="small" @click="viewDetectionDetail(scope.row.detection_id)">
                   查看详情
                 </el-button>
-                <el-button type="danger" size="small" @click="deleteDetection(scope.row.id)">
+                <el-button type="danger" size="small" @click="deleteDetection(scope.row.detection_id)">
                   删除
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
+
+          <!-- 分页控件 -->
+          <div class="pagination-container">
+            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+              layout="total, prev, pager, next, jumper" :total="total" @current-change="getDetectionRecords" />
+          </div>
         </el-card>
       </div>
     </div>
@@ -199,5 +364,16 @@ onMounted(() => {
   margin: 0;
   font-size: 18px;
   font-weight: 500;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* 覆盖表格单元格的 z-index 设置，解决预览与表格层级冲突问题 */
+:deep(.el-table .el-table__cell) {
+  z-index: auto !important;
 }
 </style>

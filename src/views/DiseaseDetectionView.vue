@@ -190,21 +190,21 @@ const submitDetectionTask = async () => {
   try {
     detectLoading.value = true
 
-    // const data = await request.post('/detection/detection_segmentation', {
-    //   media_id: selectedMediaId.value,
-    //   model_id: selectedModelId.value
-    // })
-    // console.info('【检测分割响应数据】', data)
-    // const operation = data.operation
+    const data = await request.post('/detection/detection_segmentation', {
+      media_id: selectedMediaId.value,
+      model_id: selectedModelId.value
+    })
+    console.info('【检测分割响应数据】', data)
+    const operation = data.operation
 
-    // if (operation && operation.status === 'SUCCESS') {
-    //   ElMessage.success({
-    //     message: '【检测分割成功】',
-    //     duration: 3000
-    //   })
-    //   // 跳转到检测分割记录页面
-    //   router.push('/detection-records')
-    // }
+    if (operation && operation.status === 'SUCCESS') {
+      ElMessage.success({
+        message: '【检测分割成功】',
+        duration: 3000
+      })
+      // 跳转到检测分割记录页面
+      router.push('/detection-records')
+    }
     // 检测分割失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
     console.error('【检测分割错误】', error)
@@ -302,7 +302,7 @@ onMounted(() => {
                     <span class="info-value">{{ selectedModel.disease_category }}</span>
                   </div>
                   <div class="info-item">
-                    <span class="info-label">fitness_score（适应度分数）：</span>
+                    <span class="info-label">fitness_score（整体性能分数）：</span>
                     <span class="info-value">{{ selectedModel.fitness_score }}</span>
                   </div>
                 </div>

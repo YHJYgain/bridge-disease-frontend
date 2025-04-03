@@ -2,11 +2,11 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
 const userInfo = ref(null)
-const loading = ref(false)
+const userLoading = ref(false)
 
 const getUserInfo = async () => {
   try {
-    loading.value = true
+    userLoading.value = true
     // 检查是否有 token
     const token = localStorage.getItem('access_token')
     if (!token) {
@@ -27,14 +27,14 @@ const getUserInfo = async () => {
       duration: 5000
     })
   } finally {
-    loading.value = false
+    userLoading.value = false
   }
 }
 
 export function useUserStore() {
   return {
     userInfo,
-    loading,
+    userLoading: userLoading,
     getUserInfo
   }
 }

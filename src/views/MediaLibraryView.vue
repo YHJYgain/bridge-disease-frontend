@@ -7,12 +7,13 @@ import request from '../utils/request'
 import { formatDateTime } from '../utils/dateTimeFormatter'
 import { useResourceStore } from '../stores/resourceStore'
 import { useUserStore } from '../stores/userStore'
+import { getUserDetail } from '../utils/detailFetcher'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
-const { userInfo, loading, getUserInfo } = useUserStore()
+const { userInfo, getUserInfo } = useUserStore()
 const uploadLoading = ref(false)
 const resourceStore = useResourceStore()
 const mediaList = ref([])
@@ -34,7 +35,7 @@ const uploadForm = ref({
 // 获取媒体列表
 const getMediaList = async () => {
   try {
-    loading.value = true
+    resourceStore.mediaLoading = true
 
     // 使用共享的媒体存储获取媒体列表
     const { medias, total: totalCount, error } = await resourceStore.fetchMediaList(
@@ -50,7 +51,24 @@ const getMediaList = async () => {
 
     console.info('【获取媒体列表响应数据】', { medias, total: totalCount })
 
-    mediaList.value = medias
+    // 处理媒体列表数据，获取用户的详细信息
+    const processedMedias = [];
+    for (const media of medias) {
+      // 创建媒体记录的副本
+      const processedMedia = { ...media };
+
+      // 获取用户详情
+      if (media.owner_id) {
+        const { user, error: userError } = await getUserDetail(media.owner_id);
+        if (user && !userError) {
+          processedMedia.owner_username = user.username;
+        }
+      }
+
+      processedMedias.push(processedMedia);
+    }
+
+    mediaList.value = processedMedias
     total.value = totalCount
   } catch (error) {
     console.error('【获取媒体列表错误】', error)
@@ -59,7 +77,7 @@ const getMediaList = async () => {
       duration: 5000
     })
   } finally {
-    loading.value = false
+    resourceStore.mediaLoading = false
   }
 }
 
@@ -121,14 +139,14 @@ const filterFileType = (value, row) => {
 
 // 用户筛选方法
 const filterOwner = (value, row) => {
-  return row.owner_id === value;
+  return row.owner_username === value;
 }
 
-// 获取所有用户 ID 作为筛选选项
+// 获取所有用户名作为筛选选项
 const ownerFilters = computed(() => {
-  // 从媒体列表中提取不重复的用户 ID
-  const uniqueOwners = [...new Set(mediaList.value.map(item => item.owner_id))];
-  return uniqueOwners.map(owner => ({ text: `用户 ${owner}`, value: owner }));
+  // 从媒体列表中提取不重复的用户名
+  const uniqueOwners = [...new Set(mediaList.value.map(item => item.owner_username).filter(Boolean))];
+  return uniqueOwners.map(owner => ({ text: owner, value: owner }));
 })
 
 // 自定义文件上传验证规则
@@ -302,14 +320,14 @@ onMounted(() => {
                   </el-icon>
                   上传媒体
                 </el-button>
-                <el-button type="primary" size="small" @click="getMediaList" :loading="loading">
+                <el-button type="primary" size="small" @click="getMediaList" :loading="resourceStore.mediaLoading.value">
                   刷新数据
                 </el-button>
               </div>
             </div>
           </template>
 
-          <el-table :data="mediaList" style="width: 100%" v-loading="loading">
+          <el-table :data="mediaList" style="width: 100%" v-loading="resourceStore.mediaLoading.value">
             <el-table-column prop="media_id" label="ID" width="63" sortable />
             <el-table-column prop="media_name" label="名称" sortable show-overflow-tooltip />
             <el-table-column prop="description" label="描述" sortable show-overflow-tooltip />
@@ -336,7 +354,7 @@ onMounted(() => {
               </template>
             </el-table-column>
             <el-table-column prop="updated_at" label="最后更新时间" width="180" sortable :formatter="dataTimeFormatter" />
-            <el-table-column prop="owner_id" label="所属用户" width="120" sortable show-overflow-tooltip
+            <el-table-column prop="owner_username" label="所属用户" width="120" sortable show-overflow-tooltip
               :filters="ownerFilters" :filter-method="filterOwner" filter-placement="bottom" />
             <el-table-column label="操作" fixed="right" width="227">
               <template #default="scope">

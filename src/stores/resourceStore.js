@@ -1,15 +1,19 @@
 import { ref, readonly } from 'vue'
 import request from '../utils/request'
 
-// 创建一个简单的状态存储，用于缓存媒体列表数据
+// 创建一个简单的状态存储，用于缓存媒体列表、模型列表和检测分割记录数据
 const mediaList = ref([])
 const modelList = ref([])
+const detectionList = ref([])
 const mediaTotal = ref(0)
 const modelTotal = ref(0)
+const detectionTotal = ref(0)
 const mediaLoading = ref(false)
 const modelLoading = ref(false)
+const detectionLoading = ref(false)
 const lastMediaFetchTime = ref(null)
 const lastModelFetchTime = ref(null)
+const lastDetectionFetchTime = ref(null)
 
 // 缓存过期时间（毫秒）
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000 // 5 分钟
@@ -100,14 +104,65 @@ const fetchModelList = async (currentPage = 1, pageSize = 5, forceRefresh = fals
   }
 }
 
+// 检测分割记录列表获取函数
+const fetchDetectionList = async (userInfo, currentPage = 1, pageSize = 5, forceRefresh = false) => {
+  // 如果数据已加载且缓存未过期，则直接返回缓存的数据
+  if (detectionList.value.length > 0 && !forceRefresh && !isCacheExpired(lastDetectionFetchTime)) {
+    return { detections: detectionList.value, total: detectionTotal.value }
+  }
+
+  try {
+    detectionLoading.value = true
+    let data = null
+
+    // 根据用户角色来决定获取检测分割记录列表的方式
+    const isAdmin = userInfo?.role === 'ADMIN'
+    const isDeveloper = userInfo?.role === 'DEVELOPER'
+    const isAdminOrDeveloper = isAdmin || isDeveloper
+
+    if (isAdminOrDeveloper) {
+      // 获取所有用户的检测分割记录列表
+      data = await request.get('/detection/detections/all', {
+        params: {
+          page: currentPage,
+          per_page: pageSize
+        }
+      })
+    } else {
+      // 获取当前用户的检测分割记录列表
+      data = await request.get(`/detection/detections/${userInfo.user_id}`, {
+        params: {
+          page: currentPage,
+          per_page: pageSize
+        }
+      })
+    }
+
+    if (data && !data.failure_message) {
+      detectionList.value = data.detections
+      detectionTotal.value = data.total
+      lastDetectionFetchTime.value = Date.now()
+      return { detections: data.detections, total: data.total }
+    }
+    return { detections: [], total: 0 }
+  } catch (error) {
+    return { detections: [], total: 0, error }
+  } finally {
+    detectionLoading.value = false
+  }
+}
+
 // 清除缓存
 const clearCache = () => {
   mediaList.value = []
   modelList.value = []
+  detectionList.value = []
   mediaTotal.value = 0
   modelTotal.value = 0
+  detectionTotal.value = 0
   lastMediaFetchTime.value = null
   lastModelFetchTime.value = null
+  lastDetectionFetchTime.value = null
 }
 
 // 导出 composable 函数
@@ -116,14 +171,18 @@ export function useResourceStore() {
     // 状态
     mediaList: readonly(mediaList),
     modelList: readonly(modelList),
+    detectionList: readonly(detectionList),
     mediaTotal: readonly(mediaTotal),
     modelTotal: readonly(modelTotal),
+    detectionTotal: readonly(detectionTotal),
     mediaLoading: readonly(mediaLoading),
     modelLoading: readonly(modelLoading),
+    detectionLoading: readonly(detectionLoading),
     
     // 方法
     fetchMediaList,
     fetchModelList,
+    fetchDetectionList,
     clearCache
   }
 }

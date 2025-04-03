@@ -7,12 +7,13 @@ import request from '../utils/request'
 import { formatDateTime } from '../utils/dateTimeFormatter'
 import { useResourceStore } from '../stores/resourceStore'
 import { useUserStore } from '../stores/userStore'
+import { getUserDetail } from '../utils/detailFetcher'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
-const { userInfo, loading, getUserInfo } = useUserStore()
+const { userInfo, getUserInfo } = useUserStore()
 const resourceStore = useResourceStore()
 const modelList = ref([])
 const uploadDialogVisible = ref(false)
@@ -50,7 +51,7 @@ const uploadForm = ref({
 // 获取模型列表
 const getModelList = async () => {
   try {
-    loading.value = true
+    resourceStore.modelLoading = true
 
     // 使用共享的媒体存储获取模型列表
     const { models, total: totalCount, error } = await resourceStore.fetchModelList(
@@ -65,7 +66,24 @@ const getModelList = async () => {
 
     console.info('【获取模型列表响应数据】', { models, total: totalCount })
 
-    modelList.value = models
+    // 处理模型列表数据，获取用户的详细信息
+    const processedModels = [];
+    for (const model of models) {
+      // 创建模型记录的副本
+      const processedModel = { ...model };
+
+      // 获取用户详情
+      if (model.owner_id) {
+        const { user, error: userError } = await getUserDetail(model.owner_id);
+        if (user && !userError) {
+          processedModel.owner_username = user.username;
+        }
+      }
+
+      processedModels.push(processedModel);
+    }
+
+    modelList.value = processedModels
     total.value = totalCount
   } catch (error) {
     console.error('【获取模型列表错误】', error)
@@ -74,7 +92,7 @@ const getModelList = async () => {
       duration: 5000
     })
   } finally {
-    loading.value = false
+    resourceStore.modelLoading = false
   }
 }
 
@@ -93,6 +111,11 @@ const filterAugmentation = (value, row) => {
   return row.augmentation === value;
 }
 
+// 用户名筛选方法
+const filterOwnerUsername = (value, row) => {
+  return row.owner_username === value;
+}
+
 // 获取所有病害类别作为筛选选项
 const diseaseCategoryFilters = computed(() => {
   // 从模型列表中提取不重复的病害类别
@@ -105,6 +128,13 @@ const augmentationFilters = computed(() => {
   // 从模型列表中提取不重复的数据增强方式
   const uniqueAugmentations = [...new Set(modelList.value.map(item => item.augmentation))];
   return uniqueAugmentations.map(augmentation => ({ text: augmentation, value: augmentation }));
+})
+
+// 获取所有用户名作为筛选选项
+const ownerUsernameFilters = computed(() => {
+  // 从模型列表中提取不重复的用户名
+  const uniqueOwners = [...new Set(modelList.value.map(item => item.owner_username).filter(Boolean))];
+  return uniqueOwners.map(owner => ({ text: owner, value: owner }));
 })
 
 const validateAugmentation = (rule, value, callback) => {
@@ -371,14 +401,14 @@ onMounted(() => {
                   </el-icon>
                   上传模型
                 </el-button>
-                <el-button type="primary" size="small" @click="getModelList" :loading="loading">
+                <el-button type="primary" size="small" @click="getModelList" :loading="resourceStore.modelLoading.value">
                   刷新数据
                 </el-button>
               </div>
             </div>
           </template>
 
-          <el-table :data="modelList" style="width: 100%" v-loading="loading">
+          <el-table :data="modelList" style="width: 100%" v-loading="resourceStore.modelLoading.value">
             <el-table-column prop="model_id" label="ID" width="63" sortable />
             <el-table-column prop="model_name" label="名称" sortable show-overflow-tooltip />
             <el-table-column prop="disease_category" label="病害类别" sortable show-overflow-tooltip
@@ -388,10 +418,11 @@ onMounted(() => {
             <el-table-column prop="f1_score" label="f1_score（F1 分数）" width="182" sortable />
             <el-table-column prop="fitness_score" label="fitness_score（适应度分数）" width="237" sortable />
             <el-table-column prop="updated_at" label="更新时间" width="180" sortable :formatter="dataTimeFormatter" />
-            <el-table-column prop="owner_id" label="所属用户" width="120" sortable show-overflow-tooltip />
+            <el-table-column prop="owner_username" label="所属用户" width="120" sortable show-overflow-tooltip
+              :filters="ownerUsernameFilters" :filter-method="filterOwnerUsername" filter-placement="bottom" />
             <el-table-column label="操作" fixed="right" width="227">
               <template #default="scope">
-                <el-button type="success" size="small" @click="downloadModel(scope.row.file_path)">
+                <el-button type="success" size="small" @click="downloadModel(scope.row.model_path)">
                   <el-icon>
                     <Download />
                   </el-icon>
