@@ -4,7 +4,7 @@ import router from '../router'
 
 const request = axios.create({
   baseURL: 'http://127.0.0.1:5000',
-  timeout: 60000
+  timeout: 600000
 })
 
 // 是否正在刷新 token

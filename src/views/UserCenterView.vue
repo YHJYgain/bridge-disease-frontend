@@ -10,7 +10,8 @@ import { handleAvatarUpload } from '../utils/avatarUtils'
 
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
-const { userInfo, loading, getUserInfo } = useUserStore()
+const { userInfo, getUserInfo } = useUserStore()
+const loading = ref(false)
 const updateFormRef = ref(null)
 const passwordFormRef = ref(null)
 
@@ -189,28 +190,37 @@ const handleAvatarChange = (file) => {
 }
 
 // 重置表单
-const resetForm = () => {
-  // 重新初始化表单数据
-  updateForm.value = {
-    username: userInfo.value.username,
-    email: userInfo.value.email,
-    first_name: userInfo.value.first_name || '',
-    last_name: userInfo.value.last_name || '',
-    phone: userInfo.value.phone || '',
-    avatar_file: null
+const resetForm = (formType = 'all') => {
+  // 根据表单类型选择性地重置表单
+  if (formType === 'update' || formType === 'all') {
+    // 重置修改个人信息表单
+    updateForm.value = {
+      username: userInfo.value.username,
+      email: userInfo.value.email,
+      first_name: userInfo.value.first_name || '',
+      last_name: userInfo.value.last_name || '',
+      phone: userInfo.value.phone || '',
+      avatar_file: null
+    }
+    
+    // 如果表单实例存在，重置验证状态
+    if (updateFormRef.value) {
+      updateFormRef.value.resetFields()
+    }
   }
-  passwordForm.value = {
-    current_password: '',
-    new_password: '',
-    confirm_password: ''
-  }
-
-  // 如果有表单实例，重置验证状态
-  if (updateFormRef.value) {
-    updateFormRef.value.resetFields()
-  }
-  if (passwordFormRef.value) {
-    passwordFormRef.value.resetFields()
+  
+  if (formType === 'password' || formType === 'all') {
+    // 重置修改密码表单
+    passwordForm.value = {
+      current_password: '',
+      new_password: '',
+      confirm_password: ''
+    }
+    
+    // 如果表单实例存在，重置验证状态
+    if (passwordFormRef.value) {
+      passwordFormRef.value.resetFields()
+    }
   }
 }
 
@@ -452,7 +462,7 @@ onMounted(() => {
         </div>
 
         <!-- 修改个人信息对话框 -->
-        <el-dialog v-model="dialogVisible.updateProfile" title="修改个人信息" width="500px" @close="resetForm">
+        <el-dialog v-model="dialogVisible.updateProfile" title="修改个人信息" width="500px" @close="() => resetForm('update')">
           <el-form ref="updateFormRef" :model="updateForm" :rules="updateRules" label-width="100px" status-icon>
             <el-form-item label="头像" prop="avatar_file">
               <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
@@ -490,7 +500,7 @@ onMounted(() => {
         </el-dialog>
 
         <!-- 修改密码对话框 -->
-        <el-dialog v-model="dialogVisible.changePassword" title="修改密码" width="500px" @close="resetForm">
+        <el-dialog v-model="dialogVisible.changePassword" title="修改密码" width="500px" @close="() => resetForm('password')">
           <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px" status-icon>
             <el-form-item label="当前密码" prop="current_password">
               <el-input v-model="passwordForm.current_password" type="password" show-password />
@@ -511,7 +521,7 @@ onMounted(() => {
         </el-dialog>
 
         <!-- 注销账户对话框 -->
-        <el-dialog v-model="dialogVisible.deleteAccount" title="注销账户" width="500px" @close="resetForm">
+        <el-dialog v-model="dialogVisible.deleteAccount" title="注销账户" width="500px" @close="() => resetForm('all')">
           <div class="delete-account-warning">
             <el-icon class="warning-icon">
               <Warning />

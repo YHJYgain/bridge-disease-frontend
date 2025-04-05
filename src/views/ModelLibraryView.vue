@@ -13,18 +13,18 @@ import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
+const loading = ref(false)
 const { userInfo, getUserInfo } = useUserStore()
 const resourceStore = useResourceStore()
 const modelList = ref([])
 const uploadDialogVisible = ref(false)
 const editDialogVisible = ref(false)
 const uploadFormRef = ref(null)
-const uploadLoading = ref(false)
 const editFormRef = ref(null)
 
-// 分页相关（默认每页 5 条）
+// 分页相关（默认每页 10 条）
 const currentPage = ref(1)
-const pageSize = ref(5)
+const pageSize = ref(10)
 const total = ref(0)
 
 // 判断用户角色
@@ -32,6 +32,26 @@ const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
 
 const uploadForm = ref({
   model_file: null,
+  disease_category: '',
+  augmentation: '原图',
+  layers: 0,
+  parameters: 0,
+  GFLOPs: 0.0,
+  box_p: 0.0,
+  box_r: 0.0,
+  box_mAP50: 0.0,
+  box_mAP50_95: 0.0,
+  mask_p: 0.0,
+  mask_r: 0.0,
+  mask_mAP50: 0.0,
+  mask_mAP50_95: 0.0,
+  fitness_score: 0.0,
+  f1_score: 0.0,
+})
+
+// 编辑模型表单
+const editForm = ref({
+  model_id: null,
   disease_category: '',
   augmentation: '原图',
   layers: 0,
@@ -184,7 +204,7 @@ const uploadModel = async () => {
 
   try {
     await uploadFormRef.value.validate()
-    uploadLoading.value = true
+    loading.value = true
 
     const formData = new FormData()
     formData.append('model_file', uploadForm.value.model_file)
@@ -236,7 +256,7 @@ const uploadModel = async () => {
         duration: 3000
       })
       uploadDialogVisible.value = false
-      resetForm()
+      resetForm('upload')
       getModelList()
     }
     // 上传模型失败情况已在响应拦截器中处理，这里不再重复
@@ -247,7 +267,7 @@ const uploadModel = async () => {
       duration: 5000
     })
   } finally {
-    uploadLoading.value = false
+    loading.value = false
   }
 }
 
@@ -268,10 +288,9 @@ const editFormRules = {
 
 // 编辑模型
 const editModel = (model) => {
-  // 设置当前编辑的模型数据
-  uploadForm.value = {
+  // 设置当前编辑的模型数据到 editForm 中
+  editForm.value = {
     ...model,
-    model_file: null // 不需要重新上传文件
   }
   editDialogVisible.value = true
 }
@@ -279,66 +298,121 @@ const editModel = (model) => {
 // 保存编辑的模型
 const saveEditModel = async () => {
   try {
-    uploadLoading.value = true
-    // 构建请求数据
-    const updateData = {
-      disease_category: uploadForm.value.disease_category,
-      augmentation: uploadForm.value.augmentation,
-      layers: uploadForm.value.layers,
-      parameters: uploadForm.value.parameters,
-      GFLOPs: uploadForm.value.GFLOPs,
-      box_p: uploadForm.value.box_p,
-      box_r: uploadForm.value.box_r,
-      box_mAP50: uploadForm.value.box_mAP50,
-      box_mAP50_95: uploadForm.value.box_mAP50_95,
-      mask_p: uploadForm.value.mask_p,
-      mask_r: uploadForm.value.mask_r,
-      mask_mAP50: uploadForm.value.mask_mAP50,
-      mask_mAP50_95: uploadForm.value.mask_mAP50_95,
-      f1_score: uploadForm.value.f1_score,
-      fitness_score: uploadForm.value.fitness_score,
-    }
+    await editFormRef.value.validate()
+    loading.value = true
 
-    // await request.put(`/model/${uploadForm.value.model_id}`, updateData)
-    ElMessage.success('模型信息更新成功')
-    editDialogVisible.value = false
-    // 重新获取列表
-    getModelList()
+    const formData = new FormData()
+    formData.append('disease_category', editForm.value.disease_category)
+    formData.append('augmentation', editForm.value.augmentation)
+    formData.append('layers', editForm.value.layers)
+    formData.append('parameters', editForm.value.parameters)
+    formData.append('GFLOPs', editForm.value.GFLOPs)
+    formData.append('box_p', editForm.value.box_p)
+    formData.append('box_r', editForm.value.box_r)
+    formData.append('box_mAP50', editForm.value.box_mAP50)
+    formData.append('box_mAP50_95', editForm.value.box_mAP50_95)
+    formData.append('mask_p', editForm.value.mask_p)
+    formData.append('mask_r', editForm.value.mask_r)
+    formData.append('mask_mAP50', editForm.value.mask_mAP50)
+    formData.append('mask_mAP50_95', editForm.value.mask_mAP50_95)
+    formData.append('f1_score', editForm.value.f1_score)
+    formData.append('fitness_score', editForm.value.fitness_score)
+
+    // 打印编辑表单数据
+    console.info('【编辑模型表单数据】', {
+      disease_category: editForm.value.disease_category,
+      augmentation: editForm.value.augmentation,
+      layers: editForm.value.layers,
+      parameters: editForm.value.parameters,
+      GFLOPs: editForm.value.GFLOPs,
+      box_p: editForm.value.box_p,
+      box_r: editForm.value.box_r,
+      box_mAP50: editForm.value.box_mAP50,
+      box_mAP50_95: editForm.value.box_mAP50_95,
+      mask_p: editForm.value.mask_p,
+      mask_r: editForm.value.mask_r,
+      mask_mAP50: editForm.value.mask_mAP50,
+      mask_mAP50_95: editForm.value.mask_mAP50_95,
+      f1_score: editForm.value.f1_score,
+      fitness_score: editForm.value.fitness_score, 
+    })
+
+    const data = await request.put(`/model/update/${editForm.value.model_id}`, formData)
+    console.info('【编辑模型响应数据】', data)
+    const operation = data.operation
+
+    // 根据后端操作状态判断编辑是否成功
+    if (operation && operation.status === 'SUCCESS') {
+      ElMessage.success({
+        message: '【编辑模型成功】',
+        duration: 3000
+      })
+      editDialogVisible.value = false
+      resetForm('edit')
+      getModelList()
+    }
+    // 编辑模型失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
     console.error('更新模型信息失败', error)
     ElMessage.error('更新模型信息失败，请重试')
   } finally {
-    uploadLoading.value = false
+    loading.value = false
   }
 }
 
 // 监听对话框关闭事件，重置表单
-const resetForm = () => {
-  uploadForm.value = {
-    model_file: null,
-    disease_category: '',
-    augmentation: '原图',
-    layers: 0,
-    parameters: 0,
-    GFLOPs: 0.0,
-    box_p: 0.0,
-    box_r: 0.0,
-    box_mAP50: 0.0,
-    box_mAP50_95: 0.0,
-    mask_p: 0.0,
-    mask_r: 0.0,
-    mask_mAP50: 0.0,
-    mask_mAP50_95: 0.0,
-    fitness_score: 0.0,
-    f1_score: 0.0,
+const resetForm = (formType = 'all') => {
+  if (formType === 'upload' || formType === 'all') {
+    uploadForm.value = {
+      model_file: null,
+      disease_category: '',
+      augmentation: '原图',
+      layers: 0,
+      parameters: 0,
+      GFLOPs: 0.0,
+      box_p: 0.0,
+      box_r: 0.0,
+      box_mAP50: 0.0,
+      box_mAP50_95: 0.0,
+      mask_p: 0.0,
+      mask_r: 0.0,
+      mask_mAP50: 0.0,
+      mask_mAP50_95: 0.0,
+      fitness_score: 0.0,
+      f1_score: 0.0,
+    }
+
+    // 如果表单引用存在，重置验证状态
+    if (uploadFormRef.value) {
+      uploadFormRef.value.resetFields()
+    }
   }
 
-  // 如果表单引用存在，重置验证状态
-  if (uploadFormRef.value) {
-    uploadFormRef.value.resetFields()
-  }
-  if (editFormRules.value) {
-    editFormRules.value.resetFields()
+  if (formType === 'edit' || formType === 'all') {
+    // 重置编辑表单数据
+    editForm.value = {
+      model_id: null,
+      disease_category: '',
+      augmentation: '原图',
+      layers: 0,
+      parameters: 0,
+      GFLOPs: 0.0,
+      box_p: 0.0,
+      box_r: 0.0,
+      box_mAP50: 0.0,
+      box_mAP50_95: 0.0,
+      mask_p: 0.0,
+      mask_r: 0.0,
+      mask_mAP50: 0.0,
+      mask_mAP50_95: 0.0,
+      fitness_score: 0.0,
+      f1_score: 0.0,
+    }
+
+    // 如果表单引用存在，重置验证状态
+    if (editFormRef.value) {
+      editFormRef.value.resetFields()
+    }
   }
 }
 
@@ -401,7 +475,8 @@ onMounted(() => {
                   </el-icon>
                   上传模型
                 </el-button>
-                <el-button type="primary" size="small" @click="getModelList" :loading="resourceStore.modelLoading.value">
+                <el-button type="primary" size="small" @click="getModelList"
+                  :loading="resourceStore.modelLoading.value">
                   刷新数据
                 </el-button>
               </div>
@@ -454,7 +529,8 @@ onMounted(() => {
     </div>
 
     <!-- 上传模型对话框 -->
-    <el-dialog v-model="uploadDialogVisible" title="上传模型文件" width="600px" @closed="resetForm" destroy-on-close>
+    <el-dialog v-model="uploadDialogVisible" title="上传模型文件" width="600px" @closed="() => resetForm('upload')"
+      destroy-on-close>
       <el-form ref="uploadFormRef" :model="uploadForm" :rules="uploadFormRules" label-width="100px" status-icon>
         <el-form-item label="病害类别" prop="disease_category">
           <el-input v-model="uploadForm.disease_category" placeholder="请输入病害类别" />
@@ -551,7 +627,7 @@ onMounted(() => {
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="uploadDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="uploadModel" :loading="uploadLoading">
+          <el-button type="primary" @click="uploadModel" :loading="loading">
             上传
           </el-button>
         </span>
@@ -559,82 +635,83 @@ onMounted(() => {
     </el-dialog>
 
     <!-- 编辑模型对话框 -->
-    <el-dialog v-model="editDialogVisible" title="编辑模型信息" width="600px" @closed="resetForm">
-      <el-form ref="editFormRef" :model="uploadForm" :rules="editFormRules" label-width="100px" status-icon>
+    <el-dialog v-model="editDialogVisible" title="编辑模型信息" width="600px" @closed="() => resetForm('edit')"
+      destroy-on-close>
+      <el-form ref="editFormRef" :model="editForm" :rules="editFormRules" label-width="100px" status-icon>
         <el-form-item label="病害类别" prop="disease_category">
-          <el-input v-model="uploadForm.disease_category" placeholder="请输入病害类别" />
+          <el-input v-model="editForm.disease_category" placeholder="请输入病害类别" />
         </el-form-item>
         <el-form-item label="数据增强方式" prop="augmentation">
-          <el-input v-model="uploadForm.augmentation" placeholder="请输入数据增强方式，默认为'原图'" />
+          <el-input v-model="editForm.augmentation" placeholder="请输入数据增强方式，默认为'原图'" />
         </el-form-item>
         <el-form-item label="layers">
-          <el-input-number v-model="uploadForm.layers" :min="0" placeholder="请输入模型层数" />
+          <el-input-number v-model="editForm.layers" :min="0" placeholder="请输入模型层数" />
         </el-form-item>
         <el-form-item label="parameters">
-          <el-input-number v-model="uploadForm.parameters" :min="0" placeholder="请输入参数量" />
+          <el-input-number v-model="editForm.parameters" :min="0" placeholder="请输入参数量" />
         </el-form-item>
         <el-form-item label="GFLOPs">
-          <el-input-number v-model="uploadForm.GFLOPs" :min="0" :precision="1" :step="0.1" placeholder="请输入计算量" />
+          <el-input-number v-model="editForm.GFLOPs" :min="0" :precision="1" :step="0.1" placeholder="请输入计算量" />
         </el-form-item>
         <el-collapse>
           <el-collapse-item title="性能指标（可选）">
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="box_p">
-                  <el-input-number v-model="uploadForm.box_p" :min="0" :max="1" :precision="3" :step="0.001" />
+                  <el-input-number v-model="editForm.box_p" :min="0" :max="1" :precision="3" :step="0.001" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="box_r">
-                  <el-input-number v-model="uploadForm.box_r" :min="0" :max="1" :precision="3" :step="0.001" />
+                  <el-input-number v-model="editForm.box_r" :min="0" :max="1" :precision="3" :step="0.001" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="box_mAP50">
-                  <el-input-number v-model="uploadForm.box_mAP50" :min="0" :max="1" :precision="3" :step="0.001" />
+                  <el-input-number v-model="editForm.box_mAP50" :min="0" :max="1" :precision="3" :step="0.001" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="box_mAP50_95">
-                  <el-input-number v-model="uploadForm.box_mAP50_95" :min="0" :max="1" :precision="3" :step="0.001" />
+                  <el-input-number v-model="editForm.box_mAP50_95" :min="0" :max="1" :precision="3" :step="0.001" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="mask_p">
-                  <el-input-number v-model="uploadForm.mask_p" :min="0" :max="1" :precision="3" :step="0.001" />
+                  <el-input-number v-model="editForm.mask_p" :min="0" :max="1" :precision="3" :step="0.001" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="mask_r">
-                  <el-input-number v-model="uploadForm.mask_r" :min="0" :max="1" :precision="3" :step="0.001" />
+                  <el-input-number v-model="editForm.mask_r" :min="0" :max="1" :precision="3" :step="0.001" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="mask_mAP50">
-                  <el-input-number v-model="uploadForm.mask_mAP50" :min="0" :max="1" :precision="3" :step="0.001" />
+                  <el-input-number v-model="editForm.mask_mAP50" :min="0" :max="1" :precision="3" :step="0.001" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="mask_mAP50_95">
-                  <el-input-number v-model="uploadForm.mask_mAP50_95" :min="0" :max="1" :precision="3" :step="0.001" />
+                  <el-input-number v-model="editForm.mask_mAP50_95" :min="0" :max="1" :precision="3" :step="0.001" />
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item label="fitness_score">
-                  <el-input-number v-model="uploadForm.fitness_score" :min="0" :precision="5" :step="0.00001" />
+                <el-form-item label="f1_score">
+                  <el-input-number v-model="editForm.f1_score" :min="0" :precision="5" :step="0.00001" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="f1_score">
-                  <el-input-number v-model="uploadForm.f1_score" :min="0" :precision="5" :step="0.00001" />
+                <el-form-item label="fitness_score">
+                  <el-input-number v-model="editForm.fitness_score" :min="0" :precision="5" :step="0.00001" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -644,7 +721,7 @@ onMounted(() => {
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="editDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveEditModel" :loading="uploadLoading">
+          <el-button type="primary" @click="saveEditModel" :loading="loading">
             保存
           </el-button>
         </span>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElLoading } from 'element-plus'
 import { Aim, Coin, Picture } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { useResourceStore } from '../stores/resourceStore'
@@ -187,8 +187,23 @@ const submitDetectionTask = async () => {
     activeStep.value = 2
   }
 
+  // 创建全屏加载
+  const isVideo = selectedMedia.value && ['mp4'].includes(selectedMedia.value.file_type.toLowerCase())
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: `检测分割进行中，正在加载模型和媒体数据...${isVideo ? '\n视频处理时间可能较长，请耐心等待' : ''}`,
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
+
   try {
     detectLoading.value = true
+
+    // 根据媒体类型显示不同的提示信息
+    ElMessage.warning({
+      message: `【检测分割进行中】正在加载模型和媒体数据，请稍等...${isVideo ? '视频处理时间可能较长，请耐心等待' : ''}`,
+      duration: 0,  // 不自动关闭
+      showClose: true
+    })
 
     const data = await request.post('/detection/detection_segmentation', {
       media_id: selectedMediaId.value,
@@ -197,16 +212,30 @@ const submitDetectionTask = async () => {
     console.info('【检测分割响应数据】', data)
     const operation = data.operation
 
+    // 关闭之前的提示
+    ElMessage.closeAll()
+
     if (operation && operation.status === 'SUCCESS') {
-      ElMessage.success({
-        message: '【检测分割成功】',
-        duration: 3000
-      })
+      if (data && data.is_new_detection === false) {
+        ElMessage.warning({
+          message: '【检测分割成功】同一媒体二次检测，已更新记录',
+          duration: 4000
+        });
+      } else {
+        ElMessage.success({
+          message: '【检测分割成功】',
+          duration: 3000
+        });
+      }
+
       // 跳转到检测分割记录页面
       router.push('/detection-records')
     }
     // 检测分割失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
+    // 关闭之前的提示
+    ElMessage.closeAll()
+
     console.error('【检测分割错误】', error)
     ElMessage.error({
       message: '【检测分割错误】' + (error?.message || '请重试'),
@@ -214,6 +243,8 @@ const submitDetectionTask = async () => {
     })
   } finally {
     detectLoading.value = false
+    // 关闭加载动画
+    loadingInstance.close()
   }
 }
 
@@ -339,8 +370,8 @@ onMounted(() => {
                   <el-image v-if="['png', 'jpg', 'jpeg'].includes(selectedMedia.file_type.toLowerCase())"
                     :src="mediaPreviewURL" fit="contain" class="preview-image" :preview-src-list="[mediaPreviewURL]">
                   </el-image>
-                  <video v-else-if="['mp4', 'avi', 'mov'].includes(selectedMedia.file_type.toLowerCase())"
-                    :src="mediaPreviewURL" controls class="preview-video">
+                  <video v-else-if="['mp4'].includes(selectedMedia.file_type.toLowerCase())" :src="mediaPreviewURL"
+                    controls class="preview-video">
                   </video>
                   <div v-else class="preview-placeholder">
                     无法预览该类型的媒体文件
@@ -389,8 +420,8 @@ onMounted(() => {
                   <el-image v-if="['png', 'jpg', 'jpeg'].includes(selectedMedia.file_type.toLowerCase())"
                     :src="mediaPreviewURL" fit="contain" class="preview-image" :preview-src-list="[mediaPreviewURL]">
                   </el-image>
-                  <video v-else-if="['mp4', 'avi', 'mov'].includes(selectedMedia.file_type.toLowerCase())"
-                    :src="mediaPreviewURL" controls class="preview-video">
+                  <video v-else-if="['mp4'].includes(selectedMedia.file_type.toLowerCase())" :src="mediaPreviewURL"
+                    controls class="preview-video">
                   </video>
                   <div v-else class="preview-placeholder">
                     无法预览该类型的媒体文件
@@ -576,10 +607,16 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.preview-image,
-.preview-video {
+.preview-image {
   max-width: 15%;
   max-height: 15%;
+  margin: 10px;
+  object-fit: contain;
+}
+
+.preview-video {
+  max-width: 20%;
+  max-height: 20%;
   margin: 10px;
   object-fit: contain;
 }

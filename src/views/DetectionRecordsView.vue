@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { ZoomIn } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/userStore'
 import { useResourceStore } from '../stores/resourceStore'
@@ -15,10 +16,12 @@ const router = useRouter()
 const { userInfo, getUserInfo } = useUserStore()
 const resourceStore = useResourceStore()
 const detectionList = ref([])
+const detailDialogVisible = ref(false)
+const currentDetection = ref(null)
 
-// 分页相关（默认每页 5 条）
+// 分页相关（默认每页 4 条）
 const currentPage = ref(1)
-const pageSize = ref(5)
+const pageSize = ref(4)
 const total = ref(0)
 
 // 获取检测分割记录
@@ -59,7 +62,7 @@ const getDetectionRecords = async () => {
         const { media, error: mediaError } = await getMediaDetail(detection.media_id);
         if (media && !mediaError) {
           processedDetection.media_name = media.media_name;
-          processedDetection.media_type = media.type; // 保存媒体类型信息
+          processedDetection.media_type = media.file_type; // 保存媒体类型信息
         }
       }
 
@@ -85,11 +88,6 @@ const getDetectionRecords = async () => {
   } finally {
     resourceStore.detectionLoading = false
   }
-}
-
-// 格式化日期时间
-const dataTimeFormatter = (row, column) => {
-  return formatDateTime(row.updated_at); // 使用通用的日期时间格式化工具函数
 }
 
 // 格式化任务状态
@@ -162,6 +160,11 @@ const filterDiseaseGrade = (value, row) => {
   return row.disease_grade === value
 }
 
+// 格式化日期时间
+const dataTimeFormatter = (row, column) => {
+  return formatDateTime(row.updated_at); // 使用通用的日期时间格式化工具函数
+}
+
 // 用户名筛选方法
 const filterOwnerUsername = (value, row) => {
   return row.owner_username === value
@@ -174,23 +177,17 @@ const ownerUsernameFilters = computed(() => {
   return uniqueOwners.map(owner => ({ text: owner, value: owner }))
 })
 
-// 获取所有模型名称作为筛选选项
-const modelNameFilters = computed(() => {
-  // 从检测记录列表中提取不重复的模型名称
-  const uniqueModels = [...new Set(detectionList.value.map(item => item.model_name))]
-  return uniqueModels.map(model => ({ text: model, value: model }))
-})
+// 查看病害指标详情
+const viewDetectionDetail = (detection) => {
+  currentDetection.value = detection
+  detailDialogVisible.value = true
+  console.info('【查看病害指标详情】', detection)
+}
 
-// 获取所有媒体名称作为筛选选项
-const mediaNameFilters = computed(() => {
-  // 从检测记录列表中提取不重复的媒体名称
-  const uniqueMedias = [...new Set(detectionList.value.map(item => item.media_name))]
-  return uniqueMedias.map(media => ({ text: media, value: media }))
-})
-
-// 查看检测结果详情
-const viewDetectionDetail = (detection_id) => {
-  // router.push(`/detection-detail/${detection_id}`)
+// 关闭详情对话框
+const closeDetailDialog = () => {
+  detailDialogVisible.value = false
+  currentDetection.value = null
 }
 
 // 删除检测记录
@@ -247,7 +244,7 @@ onMounted(() => {
           <el-table :data="detectionList" style="width: 100%" v-loading="resourceStore.detectionLoading.value">
             <el-table-column prop="detection_id" label="ID" width="63" />
             <el-table-column prop="model_name" label="使用模型" sortable show-overflow-tooltip />
-            <el-table-column prop="media_name" label="媒体文件" sortable show-overflow-tooltip />
+            <el-table-column prop="media_name" label="检测媒体" sortable show-overflow-tooltip />
             <el-table-column prop="status" label="任务状态" width="94" :filters="statusFilters"
               :filter-method="filterStatus">
               <template #default="scope">
@@ -265,27 +262,31 @@ onMounted(() => {
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="检测分割结果" width="140">
+            <el-table-column label="检测分割结果">
               <template #default="scope">
                 <!-- 图片结果 -->
-                <el-image v-if="scope.row.result_image_path && !scope.row.result_video_path"
-                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/${scope.row.result_image_path}`"
-                  :preview-src-list="[`${requestBaseURL}/${scope.row.result_image_path}`]" fit="contain" />
+                <el-image
+                  v-if="scope.row.result_path && ['png', 'jpg', 'jpeg'].includes(scope.row.media_type?.toLowerCase() || '')"
+                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/${scope.row.result_path}`"
+                  :preview-src-list="[`${requestBaseURL}/${scope.row.result_path}`]" fit="contain" />
                 <!-- 视频结果 -->
-                <video v-else-if="scope.row.result_video_path" style="width: 160px; height: 160px" controls
-                  :src="`${requestBaseURL}/${scope.row.result_video_path}`">
+                <video v-else-if="scope.row.result_path && ['mp4'].includes(scope.row.media_type?.toLowerCase() || '')"
+                  style="width: 140px; height: 140px" controls :src="`${requestBaseURL}/${scope.row.result_path}`">
                   您的浏览器不支持视频播放
                 </video>
                 <!-- 无结果 -->
                 <el-tag v-else type="info">暂无结果</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="detection_at" label="检测分割时间" width="180" sortable :formatter="dataTimeFormatter" />
+            <el-table-column prop="updated_at" label="检测分割时间" width="180" sortable :formatter="dataTimeFormatter" />
             <el-table-column prop="owner_username" label="所属用户" width="118" sortable :filters="ownerUsernameFilters"
               :filter-method="filterOwnerUsername" />
             <el-table-column label="操作" width="227" fixed="right">
               <template #default="scope">
-                <el-button type="primary" size="small" @click="viewDetectionDetail(scope.row.detection_id)">
+                <el-button type="primary" size="small" @click="viewDetectionDetail(scope.row)">
+                  <el-icon>
+                    <ZoomIn />
+                  </el-icon>
                   查看详情
                 </el-button>
                 <el-button type="danger" size="small" @click="deleteDetection(scope.row.detection_id)">
@@ -303,6 +304,33 @@ onMounted(() => {
         </el-card>
       </div>
     </div>
+
+    <!-- 病害指标详情对话框 -->
+    <el-dialog v-model="detailDialogVisible" title="病害指标详情" width="800px" @close="closeDetailDialog" destroy-on-close>
+      <div v-if="currentDetection" class="detection-detail">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="病害数量" :span="1">{{currentDetection.disease_count}}</el-descriptions-item>
+          <el-descriptions-item label="病害周长（像素）" :span="1">{{currentDetection.disease_perimeter}}</el-descriptions-item>
+          <el-descriptions-item label="病害面积（像素）" :span="1">{{currentDetection.disease_area}}</el-descriptions-item>
+          <el-descriptions-item label="形状复杂度" :span="1">{{currentDetection.shape_complexity}}</el-descriptions-item>
+          <el-descriptions-item label="纹理粗糙度" :span="1">{{currentDetection.texture_roughness}}</el-descriptions-item>
+          <el-descriptions-item label="严重性得分" :span="1">{{currentDetection.disease_severity_score}}</el-descriptions-item>
+          <el-descriptions-item label="病害等级" :span="1">
+            <el-tag :type="diseaseGradeType(currentDetection.disease_grade)">
+              {{ formatDiseaseGrade(currentDetection.disease_grade) }}
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 检测结果展示 -->
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="closeDetailDialog">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -375,5 +403,51 @@ onMounted(() => {
 /* 覆盖表格单元格的 z-index 设置，解决预览与表格层级冲突问题 */
 :deep(.el-table .el-table__cell) {
   z-index: auto !important;
+}
+
+/* 详情对话框样式 */
+.detection-detail {
+  padding: 10px;
+}
+
+.result-section,
+.stats-section {
+  margin-top: 20px;
+}
+
+.result-section h3,
+.stats-section h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #409EFF;
+  border-left: 3px solid #409EFF;
+  padding-left: 10px;
+}
+
+.result-content {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.detection-params,
+.detection-stats {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: monospace;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 </style>
