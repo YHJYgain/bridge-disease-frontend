@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload, Delete, Download, Edit } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { formatDateTime } from '../utils/dateTimeFormatter'
@@ -340,7 +340,7 @@ const updateMediaDescription = async () => {
   } catch (error) {
     console.error('【编辑媒体错误】', error)
     ElMessage.error({
-      message: '【更新媒体错误】' + (error?.message || '请重试'),
+      message: '【编辑媒体错误】' + (error?.message || '请重试'),
       duration: 5000
     })
   } finally {
@@ -351,13 +351,45 @@ const updateMediaDescription = async () => {
 // 删除媒体文件
 const deleteMedia = async (id) => {
   try {
-    // await request.delete(`/media/${id}`)
-    ElMessage.success('删除成功')
-    // 重新获取列表
-    getMediaList()
+    // 使用确认对话框防止误删除
+    await ElMessageBox.confirm(
+      '确定要删除该媒体吗？删除后将无法恢复！',
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+
+    loading.value = true
+    
+    // 发送删除请求
+    const data = await request.delete(`/media/delete/${id}`)
+    console.info('【删除媒体响应数据】', data)
+    const operation = data.operation
+    
+    // 根据后端操作状态判断删除是否成功
+    if (operation && operation.status === 'SUCCESS') {
+      ElMessage.success({
+        message: '【删除媒体成功】',
+        duration: 3000
+      })
+      getMediaList() // 重新获取列表
+    }
+    // 删除媒体失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
-    console.error('删除媒体文件失败', error)
-    ElMessage.error('删除媒体文件失败，请重试')
+    if (error === 'cancel') {
+      // 用户取消删除，不做任何操作
+      return
+    }
+    console.error('【删除媒体错误】', error)
+    ElMessage.error({
+      message: '【删除媒体错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+  } finally {
+    loading.value = false
   }
 }
 
