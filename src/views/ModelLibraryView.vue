@@ -181,12 +181,12 @@ const uploadFormRules = {
 // 文件上传变化处理
 const handleModelFileChange = (file) => {
   // 验证文件格式
-  const allowedTypes = ['.pt', '.engine']
+  const allowedTypes = ['.pt']
   const fileName = file.name.toLowerCase()
   const fileExtension = fileName.substring(fileName.lastIndexOf('.'))
 
   if (!allowedTypes.includes(fileExtension)) {
-    ElMessage.error('模型文件格式不正确，请上传 .pt/.engine 格式')
+    ElMessage.error('模型文件格式不正确，请上传 .pt 格式')
     return false
   }
 
@@ -467,7 +467,7 @@ onMounted(() => {
         <el-card class="model-card">
           <template #header>
             <div class="card-header">
-              <h2>模型库</h2>
+              <h2>模型库（名称升序/综合性能降序）</h2>
               <div>
                 <el-button type="primary" @click="uploadDialogVisible = true">
                   <el-icon>
@@ -545,7 +545,7 @@ onMounted(() => {
             </template>
             <template #tip>
               <div class="el-upload__tip">
-                仅支持 .pt/.engine 模型文件格式
+                仅支持 .pt 模型文件格式
               </div>
             </template>
           </el-upload>
