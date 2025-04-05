@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload, Delete, Download, Edit } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { formatDateTime } from '../utils/dateTimeFormatter'
@@ -419,13 +419,45 @@ const resetForm = (formType = 'all') => {
 // 删除模型
 const deleteModel = async (id) => {
   try {
-    // await request.delete(`/model/${id}`)
-    ElMessage.success('删除成功')
-    // 重新获取列表
-    getModelList()
+    // 使用确认对话框防止误删除
+    await ElMessageBox.confirm(
+      '确定要删除该模型吗？删除后将无法恢复！',
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+
+    loading.value = true
+    
+    // 发送删除请求
+    const data = await request.delete(`/model/delete/${id}`)
+    console.info('【删除模型响应数据】', data)
+    const operation = data.operation
+    
+    // 根据后端操作状态判断删除是否成功
+    if (operation && operation.status === 'SUCCESS') {
+      ElMessage.success({
+        message: '【删除模型成功】',
+        duration: 3000
+      })
+      getModelList() // 重新获取列表
+    }
+    // 删除失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
-    console.error('删除模型失败', error)
-    ElMessage.error('删除模型失败，请重试')
+    if (error === 'cancel') {
+      // 用户取消删除，不做任何操作
+      return
+    }
+    console.error('【删除模型错误】', error)
+    ElMessage.error({
+      message: '【删除模型错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+  } finally {
+    loading.value = false
   }
 }
 
