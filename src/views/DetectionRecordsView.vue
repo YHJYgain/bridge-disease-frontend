@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { ZoomIn } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/userStore'
@@ -193,13 +193,46 @@ const closeDetailDialog = () => {
 // 删除检测记录
 const deleteDetection = async (detection_id) => {
   try {
-    // await request.delete(`/detection/${detection_id}`)
-    ElMessage.success('删除成功')
-    // 重新获取列表
-    getDetectionRecords()
+    // 使用确认对话框防止误删除
+    await ElMessageBox.confirm(
+      '确定要删除该检测分割记录吗？删除后将无法恢复！',
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+
+    // 显示加载状态
+    resourceStore.detectionLoading = true
+
+    // 发送删除请求
+    const data = await request.get(`/detection/delete/${detection_id}`)
+    console.info('【删除检测分割记录响应数据】', data)
+    const operation = data.operation
+
+    // 根据后端操作状态判断删除是否成功
+    if (operation && operation.status === 'SUCCESS') {
+      ElMessage.success({
+        message: '【删除检测分割记录成功】',
+        duration: 3000
+      })
+      getDetectionRecords() // 重新获取列表
+    }
+    // 删除失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
-    console.error('删除检测记录失败', error)
-    ElMessage.error('删除检测记录失败，请重试')
+    if (error === 'cancel') {
+      // 用户取消删除，不做任何操作
+      return
+    }
+    console.error('【删除检测分割记录错误】', error)
+    ElMessage.error({
+      message: '【删除检测分割记录错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+  } finally {
+    resourceStore.detectionLoading = false
   }
 }
 
@@ -309,20 +342,21 @@ onMounted(() => {
     <el-dialog v-model="detailDialogVisible" title="病害指标详情" width="800px" @close="closeDetailDialog" destroy-on-close>
       <div v-if="currentDetection" class="detection-detail">
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="病害数量" :span="1">{{currentDetection.disease_count}}</el-descriptions-item>
-          <el-descriptions-item label="病害周长（像素）" :span="1">{{currentDetection.disease_perimeter}}</el-descriptions-item>
-          <el-descriptions-item label="病害面积（像素）" :span="1">{{currentDetection.disease_area}}</el-descriptions-item>
-          <el-descriptions-item label="形状复杂度" :span="1">{{currentDetection.shape_complexity}}</el-descriptions-item>
-          <el-descriptions-item label="纹理粗糙度" :span="1">{{currentDetection.texture_roughness}}</el-descriptions-item>
-          <el-descriptions-item label="严重性得分" :span="1">{{currentDetection.disease_severity_score}}</el-descriptions-item>
-          <el-descriptions-item label="病害等级" :span="1">
-            <el-tag :type="diseaseGradeType(currentDetection.disease_grade)">
-              {{ formatDiseaseGrade(currentDetection.disease_grade) }}
-            </el-tag>
-          </el-descriptions-item>
+          <el-descriptions-item label="病害数量" :span="1">{{ currentDetection.disease_count }}</el-descriptions-item>
+          <el-descriptions-item label="病害周长（像素）" :span="1">{{ currentDetection.disease_perimeter
+          }}</el-descriptions-item>
+          <el-descriptions-item label="病害面积（像素）" :span="1">{{ currentDetection.disease_area }}</el-descriptions-item>
+          <el-descriptions-item label="形状复杂度（0~1）" :span="1">{{ currentDetection.shape_complexity }}</el-descriptions-item>
+          <el-descriptions-item label="纹理粗糙度（0~65025）" :span="1">{{ currentDetection.texture_roughness }}</el-descriptions-item>
+          <el-descriptions-item label="裂缝宽度（像素）" :span="1">{{ currentDetection.crack_width }}</el-descriptions-item>
+          <el-descriptions-item label="平均色调（0~179）" :span="1">{{ currentDetection.avg_hue }}</el-descriptions-item>
+          <el-descriptions-item label="严重性得分（0~1）" :span="1">{{
+            currentDetection.disease_severity_score}}</el-descriptions-item>
+          <el-descriptions-item label="耗时（ms）" :span="1">{{
+            currentDetection.detection_duration}}</el-descriptions-item>
+          <el-descriptions-item label="帧平均耗时（ms）" :span="1">{{
+            currentDetection.avg_frame_detection_duration}}</el-descriptions-item>
         </el-descriptions>
-
-        <!-- 检测结果展示 -->
       </div>
 
       <template #footer>
