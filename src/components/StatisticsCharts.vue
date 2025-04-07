@@ -283,7 +283,7 @@ const initMediaChart = () => {
 
     const option = {
       title: {
-        text: '媒体文件统计',
+        text: '媒体统计',
         left: 'center'
       },
       tooltip: {
@@ -541,7 +541,7 @@ onBeforeUnmount(() => {
 
               <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
                 <el-card shadow="never" class="info-card">
-                  <div class="info-title">媒体文件总数</div>
+                  <div class="info-title">媒体总数</div>
                   <div class="info-value">{{ statistics.medias.total }}</div>
                 </el-card>
               </el-col>

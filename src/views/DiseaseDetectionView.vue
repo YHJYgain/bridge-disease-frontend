@@ -305,7 +305,7 @@ onMounted(() => {
           <div class="step-content">
             <!-- 步骤 1：选择模型 -->
             <div v-if="activeStep === 0" class="step-container">
-              <h3>选择检测模型（名称升序/综合性能降序）</h3>
+              <h3>选择检测模型</h3>
               <el-form label-position="top">
                 <el-form-item>
                   <el-select v-model="selectedModelId" placeholder="请选择检测模型" style="width: 100%">

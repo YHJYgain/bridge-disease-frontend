@@ -214,7 +214,8 @@ const handleRegister = async () => {
           <el-form-item prop="avatar_file" class="avatar-upload">
             <p class="upload-label">头像上传（可选）</p>
             <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
-              accept="image/png, image/jpg, image/jpeg" :on-change="handleAvatarChange" :auto-upload="false" :show-file-list="false">
+              accept="image/png, image/jpg, image/jpeg" :on-change="handleAvatarChange" :auto-upload="false"
+              :show-file-list="false">
               <img v-if="avatarPreviewUrl" :src="avatarPreviewUrl" class="avatar-preview" />
               <div v-else class="avatar-placeholder">
                 <el-icon class="avatar-icon">

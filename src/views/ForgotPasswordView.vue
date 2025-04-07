@@ -19,23 +19,29 @@ const goToLogin = () => {
       <h1>找回密码</h1>
       <div class="contact-info">
         <div class="info-icon">
-          <el-icon size="60"><ChatLineRound /></el-icon>
+          <el-icon size="60">
+            <ChatLineRound />
+          </el-icon>
         </div>
         <p class="info-title">请联系管理员重置密码</p>
         <p class="info-desc">如需重置密码，请通过以下方式联系系统管理员：</p>
-        
+
         <div class="contact-item">
-          <el-icon><Message /></el-icon>
+          <el-icon>
+            <Message />
+          </el-icon>
           <span>邮箱：1583952973@qq.com</span>
         </div>
-        
+
         <div class="contact-item">
-          <el-icon><Phone /></el-icon>
+          <el-icon>
+            <Phone />
+          </el-icon>
           <span>联系电话：13871941390</span>
         </div>
-        
+
         <p class="contact-note">联系时请提供您的用户名/注册邮箱，以便管理员核实您的身份</p>
-        
+
         <el-button type="primary" class="back-btn" @click="goToLogin">返回登录</el-button>
       </div>
     </div>

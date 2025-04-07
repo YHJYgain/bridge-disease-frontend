@@ -2,17 +2,28 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Plus, User } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/userStore'
+import { useResourceStore } from '../stores/resourceStore'
+import { formatDateTime } from '../utils/dateTimeFormatter'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
+const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
 const { userInfo, getUserInfo } = useUserStore()
+const resourceStore = useResourceStore()
 const formLoading = ref(false)
+const loading = ref(false)
 const userList = ref([])
 const dialogVisible = ref(false)
 const currentUser = ref(null)
+
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
 
 // 判断用户角色
 const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
@@ -27,23 +38,109 @@ const userForm = ref({
   role: 'USER',
   first_name: '',
   last_name: '',
-  phone: ''
+  phone: '',
 })
 
 // 获取用户列表
 const getUserList = async () => {
   try {
     loading.value = true
-    // const response = await request.get('/users')
-    // if (response && response.data) {
-    //   userList.value = response.data
-    // }
+
+    const { users, total: totalUsers, error } = await resourceStore.fetchUserList(userInfo.value, currentPage.value, pageSize.value)
+
+    if (error) {
+      return
+    }
+
+    userList.value = users
+    total.value = totalUsers
   } catch (error) {
-    console.error('获取用户列表失败', error)
-    ElMessage.error('获取用户列表失败，请重试')
+    console.error('【获取用户列表错误】', error)
+    ElMessage.error({
+      message: '【获取用户列表错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
   } finally {
     loading.value = false
   }
+}
+
+// 筛选表单
+const searchForm = ref({
+  role: '',
+  status: ''
+})
+
+// 角色筛选选项
+const roleFilters = [
+  { text: '管理员', value: 'ADMIN' },
+  { text: '开发人员', value: 'DEVELOPER' },
+  { text: '普通用户', value: 'USER' }
+]
+
+// 状态筛选选项
+const statusFilters = [
+  { text: '在线', value: 'ACTIVE' },
+  { text: '离线', value: 'INACTIVE' },
+  { text: '封禁', value: 'BANNED' },
+  { text: '注销', value: 'DELETED' }
+]
+
+// 格式化角色
+const formatRole = (role) => {
+  const roleMap = {
+    'ADMIN': '管理员',
+    'DEVELOPER': '开发人员',
+    'USER': '普通用户',
+  }
+  return roleMap[role] || role
+}
+
+// 角色标签类型
+const roleType = (role) => {
+  const typeMap = {
+    'ADMIN': 'danger',
+    'DEVELOPER': 'warning',
+    'USER': 'info',
+  }
+  return typeMap[role] || ''
+}
+
+// 角色筛选方法
+const filterRole = (value, row) => {
+  return row.role === value
+}
+
+// 格式化用户状态
+const formatStatus = (status) => {
+  const statusMap = {
+    'ACTIVE': '在线',
+    'INACTIVE': '离线',
+    'BANNED': '封禁',
+    'DELETED': '注销',
+  }
+  return statusMap[status] || status
+}
+
+// 角色标签类型
+const statusType = (status) => {
+  const typeMap = {
+    'ACTIVE': 'success',
+    'INACTIVE': 'info',
+    'BANNED': 'danger',
+    'DELETED': 'warning',
+  }
+  return typeMap[status] || ''
+}
+
+// 状态筛选方法
+const filterStatus = (value, row) => {
+  return row.status === value
+}
+
+// 格式化日期时间
+const dataTimeFormatter = (row, column) => {
+  return formatDateTime(row[column.property]) // 使用通用的日期时间格式化工具函数
 }
 
 // 打开添加用户对话框
@@ -141,26 +238,6 @@ const deleteUser = async (id) => {
   }
 }
 
-// 格式化角色
-const formatRole = (role) => {
-  const roleMap = {
-    'ADMIN': '管理员',
-    'DEVELOPER': '开发人员',
-    'USER': '普通用户'
-  }
-  return roleMap[role] || role
-}
-
-// 角色标签类型
-const roleType = (role) => {
-  const typeMap = {
-    'ADMIN': 'danger',
-    'DEVELOPER': 'warning',
-    'USER': 'info'
-  }
-  return typeMap[role] || ''
-}
-
 onMounted(() => {
   // 先获取用户信息，防止未登录/无权限用户能够直接访问该页面
   getUserInfo().then(() => {
@@ -202,6 +279,9 @@ onMounted(() => {
               <h2>用户管理</h2>
               <div>
                 <el-button type="primary" @click="openAddUserDialog">
+                  <el-icon>
+                    <Plus />
+                  </el-icon>
                   添加用户
                 </el-button>
                 <el-button type="primary" size="small" @click="getUserList" :loading="loading">
@@ -212,29 +292,58 @@ onMounted(() => {
           </template>
 
           <el-table :data="userList" style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="username" label="用户名" />
-            <el-table-column prop="email" label="邮箱" />
-            <el-table-column prop="role" label="角色" width="120">
+            <el-table-column prop="user_id" label="ID" width="63" sortable />
+            <el-table-column prop="username" label="用户名" width="90" sortable show-overflow-tooltip />
+            <el-table-column prop="email" label="邮箱" width="167" sortable show-overflow-tooltip />
+            <el-table-column prop="last_name" label="姓氏" width="76" sortable show-overflow-tooltip />
+            <el-table-column prop="first_name" label="名字" width="76" sortable show-overflow-tooltip />
+            <el-table-column prop="role" label="角色" width="110" sortable :filters="roleFilters"
+              :filter-method="filterRole" filter-placement="bottom">
               <template #default="scope">
                 <el-tag :type="roleType(scope.row.role)">
                   {{ formatRole(scope.row.role) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="created_at" label="创建时间" width="180" />
-            <el-table-column label="操作" width="180">
+            <el-table-column prop="avatar_path" label="头像" width="109">
+              <template #default="scope">
+                <el-avatar :size="85" :src="scope.row.avatar_path ? `${requestBaseURL}/${scope.row.avatar_path}` : ''">
+                  <el-icon :size="20">
+                    <User />
+                  </el-icon>
+                </el-avatar>
+              </template>
+            </el-table-column>
+            <el-table-column prop="phone" label="电话" width="110" sortable />
+            <el-table-column prop="status" label="用户状态" width="118" sortable :filters="statusFilters"
+              :filter-method="filterStatus" filter-placement="bottom">
+              <template #default="scope">
+                <el-tag :type="statusType(scope.row.status)">
+                  {{ formatStatus(scope.row.status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="created_at" label="注册时间" width="147" sortable :formatter="dataTimeFormatter" />
+            <el-table-column prop="last_login" label="最后登录时间" width="147" sortable :formatter="dataTimeFormatter" />
+            <el-table-column prop="updated_at" label="最后更新时间" width="147" sortable :formatter="dataTimeFormatter" />
+            <el-table-column prop="deleted_at" label="注销时间" width="147" sortable :formatter="dataTimeFormatter" />
+            <el-table-column label="操作" fixed="right" width="300">
               <template #default="scope">
                 <el-button type="primary" size="small" @click="openEditUserDialog(scope.row)">
                   编辑
                 </el-button>
-                <el-button type="danger" size="small" @click="deleteUser(scope.row.id)"
-                  :disabled="scope.row.id === userInfo.id">
+                <el-button type="danger" size="small" @click="deleteUser(scope.row.id)">
                   删除
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
+
+          <!-- 分页组件 -->
+          <div class="pagination-container">
+            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+              layout="total, prev, pager, next, jumper" :total="total" @current-change="getUserList" />
+          </div>
         </el-card>
       </div>
     </div>
@@ -352,5 +461,11 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   margin-top: 5px;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 </style>

@@ -162,7 +162,7 @@ const filterDiseaseGrade = (value, row) => {
 
 // 格式化日期时间
 const dataTimeFormatter = (row, column) => {
-  return formatDateTime(row.updated_at); // 使用通用的日期时间格式化工具函数
+  return formatDateTime(row.updated_at) // 使用通用的日期时间格式化工具函数
 }
 
 // 用户名筛选方法
@@ -278,7 +278,7 @@ onMounted(() => {
             <el-table-column prop="detection_id" label="ID" width="63" />
             <el-table-column prop="model_name" label="使用模型" sortable show-overflow-tooltip />
             <el-table-column prop="media_name" label="检测媒体" sortable show-overflow-tooltip />
-            <el-table-column prop="status" label="任务状态" width="94" :filters="statusFilters"
+            <el-table-column prop="status" label="任务状态" width="118" sortable :filters="statusFilters"
               :filter-method="filterStatus">
               <template #default="scope">
                 <el-tag :type="statusType(scope.row.status)">
@@ -287,7 +287,7 @@ onMounted(() => {
               </template>
             </el-table-column>
             <el-table-column prop="disease_severity_score" label="严重性得分" width="118" sortable />
-            <el-table-column prop="disease_grade" label="病害等级" width="94" :filters="diseaseGradeFilters"
+            <el-table-column prop="disease_grade" label="病害等级" width="118" sortable :filters="diseaseGradeFilters"
               :filter-method="filterDiseaseGrade">
               <template #default="scope">
                 <el-tag :type="diseaseGradeType(scope.row.disease_grade)">
@@ -346,16 +346,18 @@ onMounted(() => {
           <el-descriptions-item label="病害周长（像素）" :span="1">{{ currentDetection.disease_perimeter
           }}</el-descriptions-item>
           <el-descriptions-item label="病害面积（像素）" :span="1">{{ currentDetection.disease_area }}</el-descriptions-item>
-          <el-descriptions-item label="形状复杂度（0~1）" :span="1">{{ currentDetection.shape_complexity }}</el-descriptions-item>
-          <el-descriptions-item label="纹理粗糙度（0~65025）" :span="1">{{ currentDetection.texture_roughness }}</el-descriptions-item>
+          <el-descriptions-item label="形状复杂度（0~1）" :span="1">{{ currentDetection.shape_complexity
+          }}</el-descriptions-item>
+          <el-descriptions-item label="纹理粗糙度（0~65025）" :span="1">{{ currentDetection.texture_roughness
+          }}</el-descriptions-item>
           <el-descriptions-item label="裂缝宽度（像素）" :span="1">{{ currentDetection.crack_width }}</el-descriptions-item>
           <el-descriptions-item label="平均色调（0~179）" :span="1">{{ currentDetection.avg_hue }}</el-descriptions-item>
           <el-descriptions-item label="严重性得分（0~1）" :span="1">{{
-            currentDetection.disease_severity_score}}</el-descriptions-item>
+            currentDetection.disease_severity_score }}</el-descriptions-item>
           <el-descriptions-item label="耗时（ms）" :span="1">{{
-            currentDetection.detection_duration}}</el-descriptions-item>
+            currentDetection.detection_duration }}</el-descriptions-item>
           <el-descriptions-item label="帧平均耗时（ms）" :span="1">{{
-            currentDetection.avg_frame_detection_duration}}</el-descriptions-item>
+            currentDetection.avg_frame_detection_duration }}</el-descriptions-item>
         </el-descriptions>
       </div>
 

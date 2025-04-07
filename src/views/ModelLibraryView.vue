@@ -118,7 +118,7 @@ const getModelList = async () => {
 
 // 格式化日期时间
 const dataTimeFormatter = (row, column) => {
-  return formatDateTime(row.updated_at); // 使用通用的日期时间格式化工具函数
+  return formatDateTime(row.updated_at) // 使用通用的日期时间格式化工具函数
 }
 
 // 病害类别筛选方法
@@ -334,7 +334,7 @@ const saveEditModel = async () => {
       mask_mAP50: editForm.value.mask_mAP50,
       mask_mAP50_95: editForm.value.mask_mAP50_95,
       f1_score: editForm.value.f1_score,
-      fitness_score: editForm.value.fitness_score, 
+      fitness_score: editForm.value.fitness_score,
     })
 
     const data = await request.put(`/model/update/${editForm.value.model_id}`, formData)
@@ -431,12 +431,12 @@ const deleteModel = async (id) => {
     )
 
     loading.value = true
-    
+
     // 发送删除请求
     const data = await request.delete(`/model/delete/${id}`)
     console.info('【删除模型响应数据】', data)
     const operation = data.operation
-    
+
     // 根据后端操作状态判断删除是否成功
     if (operation && operation.status === 'SUCCESS') {
       ElMessage.success({

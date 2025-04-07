@@ -202,13 +202,13 @@ const resetForm = (formType = 'all') => {
       phone: userInfo.value.phone || '',
       avatar_file: null
     }
-    
+
     // 如果表单实例存在，重置验证状态
     if (updateFormRef.value) {
       updateFormRef.value.resetFields()
     }
   }
-  
+
   if (formType === 'password' || formType === 'all') {
     // 重置修改密码表单
     passwordForm.value = {
@@ -216,7 +216,7 @@ const resetForm = (formType = 'all') => {
       new_password: '',
       confirm_password: ''
     }
-    
+
     // 如果表单实例存在，重置验证状态
     if (passwordFormRef.value) {
       passwordFormRef.value.resetFields()
@@ -462,7 +462,8 @@ onMounted(() => {
         </div>
 
         <!-- 修改个人信息对话框 -->
-        <el-dialog v-model="dialogVisible.updateProfile" title="修改个人信息" width="500px" @close="() => resetForm('update')">
+        <el-dialog v-model="dialogVisible.updateProfile" title="修改个人信息" width="500px"
+          @close="() => resetForm('update')">
           <el-form ref="updateFormRef" :model="updateForm" :rules="updateRules" label-width="100px" status-icon>
             <el-form-item label="头像" prop="avatar_file">
               <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
@@ -500,7 +501,8 @@ onMounted(() => {
         </el-dialog>
 
         <!-- 修改密码对话框 -->
-        <el-dialog v-model="dialogVisible.changePassword" title="修改密码" width="500px" @close="() => resetForm('password')">
+        <el-dialog v-model="dialogVisible.changePassword" title="修改密码" width="500px"
+          @close="() => resetForm('password')">
           <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px" status-icon>
             <el-form-item label="当前密码" prop="current_password">
               <el-input v-model="passwordForm.current_password" type="password" show-password />

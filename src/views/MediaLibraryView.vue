@@ -125,7 +125,7 @@ const getFileTypeLabel = (fileType) => {
 
 // 格式化日期时间
 const dataTimeFormatter = (row, column) => {
-  return formatDateTime(row.updated_at); // 使用通用的日期时间格式化工具函数
+  return formatDateTime(row.updated_at) // 使用通用的日期时间格式化工具函数
 }
 
 // 文件类型筛选选项
@@ -188,7 +188,7 @@ const resetForm = (formType = 'upload') => {
       uploadMediaFormRef.value.resetFields()
     }
   }
-  
+
   if (formType === 'edit' || formType === 'all') {
     editForm.value = {
       media_id: null,
@@ -363,12 +363,12 @@ const deleteMedia = async (id) => {
     )
 
     loading.value = true
-    
+
     // 发送删除请求
     const data = await request.delete(`/media/delete/${id}`)
     console.info('【删除媒体响应数据】', data)
     const operation = data.operation
-    
+
     // 根据后端操作状态判断删除是否成功
     if (operation && operation.status === 'SUCCESS') {
       ElMessage.success({
@@ -502,7 +502,8 @@ onMounted(() => {
     </div>
 
     <!-- 上传媒体对话框 -->
-    <el-dialog v-model="uploadMediaDialogVisible" title="上传媒体" width="500px" @close="resetForm('upload')" destroy-on-close>
+    <el-dialog v-model="uploadMediaDialogVisible" title="上传媒体" width="500px" @close="resetForm('upload')"
+      destroy-on-close>
       <el-form ref="uploadMediaFormRef" :model="uploadForm" :rules="uploadFormRules" label-width="100px" status-icon>
         <el-form-item label="媒体描述">
           <el-input v-model="uploadForm.description" type="textarea" placeholder="请输入媒体描述" />
@@ -551,7 +552,8 @@ onMounted(() => {
     </el-dialog>
 
     <!-- 编辑媒体对话框 -->
-    <el-dialog v-model="editMediaDialogVisible" title="编辑媒体" width="500px" @close="() => resetForm('edit')" destroy-on-close>
+    <el-dialog v-model="editMediaDialogVisible" title="编辑媒体" width="500px" @close="() => resetForm('edit')"
+      destroy-on-close>
       <el-form ref="editMediaFormRef" :model="editForm" label-width="100px" status-icon>
         <el-form-item label="媒体 ID">
           <el-input v-model="editForm.media_id" disabled />

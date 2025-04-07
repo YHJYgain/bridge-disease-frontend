@@ -1,19 +1,23 @@
 import { ref, readonly } from 'vue'
 import request from '../utils/request'
 
-// 创建一个简单的状态存储，用于缓存媒体列表、模型列表和检测分割记录数据
+// 创建一个简单的状态存储，用于缓存媒体列表、模型列表、检测分割记录数据和用户列表数据
 const mediaList = ref([])
 const modelList = ref([])
 const detectionList = ref([])
+const userList = ref([])
 const mediaTotal = ref(0)
 const modelTotal = ref(0)
 const detectionTotal = ref(0)
+const userTotal = ref(0)
 const mediaLoading = ref(false)
 const modelLoading = ref(false)
 const detectionLoading = ref(false)
+const userLoading = ref(false)
 const lastMediaFetchTime = ref(null)
 const lastModelFetchTime = ref(null)
 const lastDetectionFetchTime = ref(null)
+const lastUserFetchTime = ref(null)
 
 // 缓存过期时间（毫秒）
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000 // 5 分钟
@@ -152,17 +156,62 @@ const fetchDetectionList = async (userInfo, currentPage = 1, pageSize = 5, force
   }
 }
 
+// 用户列表获取函数
+const fetchUserList = async (userInfo, currentPage = 1, pageSize = 5, forceRefresh = false) => {
+  // 检查用户权限，只有管理员或开发人员才能获取用户列表
+  const isAdmin = userInfo?.role === 'ADMIN'
+  const isDeveloper = userInfo?.role === 'DEVELOPER'
+  const isAdminOrDeveloper = isAdmin || isDeveloper
+
+  // 如果不是管理员或开发人员，拒绝请求
+  if (!isAdminOrDeveloper) {
+    return { users: [], total: 0, error: '权限不足，只有管理员或开发人员才能查看用户列表' }
+  }
+
+  // 如果数据已加载且缓存未过期，则直接返回缓存的数据
+  if (userList.value.length > 0 && !forceRefresh && !isCacheExpired(lastUserFetchTime)) {
+    return { users: userList.value, total: userTotal.value }
+  }
+
+  try {
+    userLoading.value = true
+
+    // 发送获取用户列表请求
+    const data = await request.get('/user/users/all', {
+      params: {
+        page: currentPage,
+        per_page: pageSize
+      }
+    })
+
+    if (data && !data.failure_message) {
+      userList.value = data.users
+      userTotal.value = data.total
+      lastUserFetchTime.value = Date.now()
+      return { users: data.users, total: data.total }
+    }
+    return { users: [], total: 0 }
+  } catch (error) {
+    return { users: [], total: 0, error }
+  } finally {
+    userLoading.value = false
+  }
+}
+
 // 清除缓存
 const clearCache = () => {
   mediaList.value = []
   modelList.value = []
   detectionList.value = []
+  userList.value = []
   mediaTotal.value = 0
   modelTotal.value = 0
   detectionTotal.value = 0
+  userTotal.value = 0
   lastMediaFetchTime.value = null
   lastModelFetchTime.value = null
   lastDetectionFetchTime.value = null
+  lastUserFetchTime.value = null
 }
 
 // 导出 composable 函数
@@ -172,17 +221,21 @@ export function useResourceStore() {
     mediaList: readonly(mediaList),
     modelList: readonly(modelList),
     detectionList: readonly(detectionList),
+    userList: readonly(userList),
     mediaTotal: readonly(mediaTotal),
     modelTotal: readonly(modelTotal),
     detectionTotal: readonly(detectionTotal),
+    userTotal: readonly(userTotal),
     mediaLoading: readonly(mediaLoading),
     modelLoading: readonly(modelLoading),
     detectionLoading: readonly(detectionLoading),
+    userLoading: readonly(userLoading),
     
     // 方法
     fetchMediaList,
     fetchModelList,
     fetchDetectionList,
+    fetchUserList,
     clearCache
   }
 }
