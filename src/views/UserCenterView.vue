@@ -138,40 +138,7 @@ const updateRules = {
     { validator: validateAvatar, trigger: ['blur', 'change'] },
   ],
   phone: [
-    { validator: validatePhone, trigger: 'change' },
-  ]
-}
-
-// 新密码验证规则
-const validateNewPassword = (rule, value, callback) => {
-  if (value === passwordForm.value.current_password) {
-    callback(new Error('新密码不能与当前密码相同'))
-  } else {
-    callback()
-  }
-}
-
-// 确认密码验证规则
-const validateConfirmPassword = (rule, value, callback) => {
-  if (value !== passwordForm.value.new_password) {
-    callback(new Error('两次输入的密码不一致'))
-  } else {
-    callback()
-  }
-}
-
-// 修改密码表单验证规则
-const passwordRules = {
-  current_password: [
-    { required: true, message: '请输入当前密码', trigger: 'blur' }
-  ],
-  new_password: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { validator: validateNewPassword, trigger: ['blur', 'change'] }
-  ],
-  confirm_password: [
-    { required: true, message: '请确认新密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: ['blur', 'change'] }
+    { validator: validatePhone, trigger: ['blur', 'change'] },
   ]
 }
 
@@ -189,42 +156,7 @@ const handleAvatarChange = (file) => {
   })
 }
 
-// 重置表单
-const resetForm = (formType = 'all') => {
-  // 根据表单类型选择性地重置表单
-  if (formType === 'update' || formType === 'all') {
-    // 重置修改个人信息表单
-    updateForm.value = {
-      username: userInfo.value.username,
-      email: userInfo.value.email,
-      first_name: userInfo.value.first_name || '',
-      last_name: userInfo.value.last_name || '',
-      phone: userInfo.value.phone || '',
-      avatar_file: null
-    }
-
-    // 如果表单实例存在，重置验证状态
-    if (updateFormRef.value) {
-      updateFormRef.value.resetFields()
-    }
-  }
-
-  if (formType === 'password' || formType === 'all') {
-    // 重置修改密码表单
-    passwordForm.value = {
-      current_password: '',
-      new_password: '',
-      confirm_password: ''
-    }
-
-    // 如果表单实例存在，重置验证状态
-    if (passwordFormRef.value) {
-      passwordFormRef.value.resetFields()
-    }
-  }
-}
-
-// 提交修改个人信息
+// 修改个人信息
 const submitUpdateProfile = async () => {
   if (!updateFormRef.value) {
     ElMessage.error('【修改个人信息错误】表单实例不存在')
@@ -260,7 +192,7 @@ const submitUpdateProfile = async () => {
     console.info('【修改个人信息响应数据】', data)
     const operation = data.operation
 
-    if (operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【修改个人信息成功】',
         duration: 3000
@@ -279,6 +211,39 @@ const submitUpdateProfile = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 新密码验证规则
+const validateNewPassword = (rule, value, callback) => {
+  if (value === passwordForm.value.current_password) {
+    callback(new Error('新密码不能与当前密码相同'))
+  } else {
+    callback()
+  }
+}
+
+// 确认密码验证规则
+const validateConfirmPassword = (rule, value, callback) => {
+  if (value !== passwordForm.value.new_password) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+// 修改密码表单验证规则
+const passwordRules = {
+  current_password: [
+    { required: true, message: '请输入当前密码', trigger: 'blur' }
+  ],
+  new_password: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { validator: validateNewPassword, trigger: ['blur', 'change'] }
+  ],
+  confirm_password: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { validator: validateConfirmPassword, trigger: ['blur', 'change'] }
+  ]
 }
 
 // 提交修改密码
@@ -300,7 +265,7 @@ const submitChangePassword = async () => {
     console.info('【修改密码响应数据】', data)
     const operation = data.operation
 
-    if (operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【修改密码成功】请重新登录',
         duration: 3000
@@ -332,7 +297,7 @@ const submitDeleteAccount = async () => {
     console.info('【注销账户响应数据】', data)
     const operation = data.operation
 
-    if (operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【注销账户成功】',
         duration: 3000
@@ -352,6 +317,41 @@ const submitDeleteAccount = async () => {
     })
   } finally {
     loading.value = false
+  }
+}
+
+// 重置表单
+const resetForm = (formType = 'all') => {
+  // 根据表单类型选择性地重置表单
+  if (formType === 'update' || formType === 'all') {
+    // 重置修改个人信息表单
+    updateForm.value = {
+      username: userInfo.value.username,
+      email: userInfo.value.email,
+      first_name: userInfo.value.first_name || '',
+      last_name: userInfo.value.last_name || '',
+      phone: userInfo.value.phone || '',
+      avatar_file: null
+    }
+
+    // 如果表单实例存在，重置验证状态
+    if (updateFormRef.value) {
+      updateFormRef.value.resetFields()
+    }
+  }
+
+  if (formType === 'password' || formType === 'all') {
+    // 重置修改密码表单
+    passwordForm.value = {
+      current_password: '',
+      new_password: '',
+      confirm_password: ''
+    }
+
+    // 如果表单实例存在，重置验证状态
+    if (passwordFormRef.value) {
+      passwordFormRef.value.resetFields()
+    }
   }
 }
 

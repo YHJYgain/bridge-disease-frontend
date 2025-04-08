@@ -19,6 +19,11 @@ const detectionList = ref([])
 const detailDialogVisible = ref(false)
 const currentDetection = ref(null)
 
+// 判断用户角色
+const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
+const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
+const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
+
 // 分页相关（默认每页 4 条）
 const currentPage = ref(1)
 const pageSize = ref(4)
@@ -139,9 +144,9 @@ const formatDiseaseGrade = (grade) => {
 // 病害等级标签类型
 const diseaseGradeType = (grade) => {
   const typeMap = {
-    'MILD': 'success',
-    'MODERATE': 'warning',
-    'SEVERE': 'danger',
+    'MILD': 'info',
+    'MODERATE': 'success',
+    'SEVERE': 'warning',
     'CRITICAL': 'danger'
   }
   return typeMap[grade] || ''
@@ -213,7 +218,7 @@ const deleteDetection = async (detection_id) => {
     const operation = data.operation
 
     // 根据后端操作状态判断删除是否成功
-    if (operation && operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【删除检测分割记录成功】',
         duration: 3000
@@ -322,7 +327,7 @@ onMounted(() => {
                   </el-icon>
                   查看详情
                 </el-button>
-                <el-button type="danger" size="small" @click="deleteDetection(scope.row.detection_id)">
+                <el-button type="danger" size="small" @click="deleteDetection(scope.row.detection_id)" v-if="isAdminOrDeveloper">
                   删除
                 </el-button>
               </template>

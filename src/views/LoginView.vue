@@ -64,7 +64,7 @@ const handleLogin = async () => {
     const operation = data.operation
 
     // 根据后端操作状态判断登录是否成功
-    if (operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       // 保存信息到 localStorage
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('refresh_token', data.refresh_token)

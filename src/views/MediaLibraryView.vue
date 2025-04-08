@@ -174,35 +174,6 @@ const uploadFormRules = {
   ]
 }
 
-// 监听对话框关闭事件，重置表单
-const resetForm = (formType = 'upload') => {
-  if (formType === 'upload' || formType === 'all') {
-    uploadForm.value = {
-      description: '',
-      type: 'image',
-      file: null
-    }
-
-    // 如果表单引用存在，重置验证状态
-    if (uploadMediaFormRef.value) {
-      uploadMediaFormRef.value.resetFields()
-    }
-  }
-
-  if (formType === 'edit' || formType === 'all') {
-    editForm.value = {
-      media_id: null,
-      description: ''
-    }
-    currentEditMedia.value = null
-
-    // 如果表单引用存在，重置验证状态
-    if (editMediaFormRef.value) {
-      editMediaFormRef.value.resetFields()
-    }
-  }
-}
-
 // 创建媒体文件预览 URL 的计算属性
 const mediaPreviewUrl = computed(() => {
   if (uploadForm.value.file) {
@@ -268,7 +239,7 @@ const uploadMedia = async () => {
     const operation = data.operation
 
     // 根据后端操作状态判断上传是否成功
-    if (operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【上传媒体成功】',
         duration: 3000
@@ -327,7 +298,7 @@ const updateMediaDescription = async () => {
     const operation = data.operation
 
     // 根据后端操作状态判断编辑媒体是否成功
-    if (operation && operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【编辑媒体成功】',
         duration: 3000
@@ -370,7 +341,7 @@ const deleteMedia = async (id) => {
     const operation = data.operation
 
     // 根据后端操作状态判断删除是否成功
-    if (operation && operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【删除媒体成功】',
         duration: 3000
@@ -390,6 +361,35 @@ const deleteMedia = async (id) => {
     })
   } finally {
     loading.value = false
+  }
+}
+
+// 监听对话框关闭事件，重置表单
+const resetForm = (formType = 'upload') => {
+  if (formType === 'upload' || formType === 'all') {
+    uploadForm.value = {
+      description: '',
+      type: 'image',
+      file: null
+    }
+
+    // 如果表单引用存在，重置验证状态
+    if (uploadMediaFormRef.value) {
+      uploadMediaFormRef.value.resetFields()
+    }
+  }
+
+  if (formType === 'edit' || formType === 'all') {
+    editForm.value = {
+      media_id: null,
+      description: ''
+    }
+    currentEditMedia.value = null
+
+    // 如果表单引用存在，重置验证状态
+    if (editMediaFormRef.value) {
+      editMediaFormRef.value.resetFields()
+    }
   }
 }
 

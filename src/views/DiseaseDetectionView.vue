@@ -215,7 +215,7 @@ const submitDetectionTask = async () => {
     // 关闭之前的提示
     ElMessage.closeAll()
 
-    if (operation && operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       if (data && data.is_new_detection === false) {
         ElMessage.warning({
           message: '【检测分割成功】同一媒体二次检测，已更新记录',

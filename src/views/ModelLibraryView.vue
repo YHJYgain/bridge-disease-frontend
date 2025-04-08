@@ -250,7 +250,7 @@ const uploadModel = async () => {
     const operation = data.operation
 
     // 根据后端操作状态判断上传是否成功
-    if (operation && operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【上传模型成功】',
         duration: 3000
@@ -342,7 +342,7 @@ const saveEditModel = async () => {
     const operation = data.operation
 
     // 根据后端操作状态判断编辑是否成功
-    if (operation && operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【编辑模型成功】',
         duration: 3000
@@ -438,7 +438,7 @@ const deleteModel = async (id) => {
     const operation = data.operation
 
     // 根据后端操作状态判断删除是否成功
-    if (operation && operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【删除模型成功】',
         duration: 3000
@@ -499,13 +499,13 @@ onMounted(() => {
         <el-card class="model-card">
           <template #header>
             <div class="card-header">
-              <h2>模型库（名称升序/综合性能降序）</h2>
+              <h2>模型库</h2>
               <div>
                 <el-button type="primary" @click="uploadDialogVisible = true">
                   <el-icon>
                     <Upload />
                   </el-icon>
-                  上传模型
+                  部署模型
                 </el-button>
                 <el-button type="primary" size="small" @click="getModelList"
                   :loading="resourceStore.modelLoading.value">
@@ -560,8 +560,8 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 上传模型对话框 -->
-    <el-dialog v-model="uploadDialogVisible" title="上传模型文件" width="600px" @closed="() => resetForm('upload')"
+    <!-- 部署模型对话框 -->
+    <el-dialog v-model="uploadDialogVisible" title="部署模型" width="600px" @closed="() => resetForm('upload')"
       destroy-on-close>
       <el-form ref="uploadFormRef" :model="uploadForm" :rules="uploadFormRules" label-width="100px" status-icon>
         <el-form-item label="病害类别" prop="disease_category">

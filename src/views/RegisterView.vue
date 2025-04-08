@@ -111,8 +111,8 @@ const formRules = {
     { validator: validateAvatar, trigger: ['blur', 'change'] },
   ],
   phone: [
-    { validator: validatePhone, trigger: 'change' },
-  ]
+    { validator: validatePhone, trigger: ['blur', 'change'] },
+  ],
 }
 
 // 创建头像预览 URL 的计算属性
@@ -179,7 +179,7 @@ const handleRegister = async () => {
     const operation = data.operation
 
     // 根据后端操作状态判断注册是否成功
-    if (operation.status === 'SUCCESS') {
+    if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【注册成功】',
         duration: 3000
