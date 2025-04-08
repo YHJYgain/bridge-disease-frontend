@@ -127,7 +127,7 @@ onMounted(() => {
 
         <div class="form-footer">
           <el-button link type="primary" @click="router.push('/register')" class="text-btn">注册账号</el-button>
-          <el-button link type="primary" @click="router.push('/forgot-password')" class="text-btn">找回密码/管理员联系方式</el-button>
+          <el-button link type="primary" @click="router.push('/forgot-password')" class="text-btn">忘记密码/管理员联系方式</el-button>
         </div>
       </el-form>
     </div>

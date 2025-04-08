@@ -1,14 +1,46 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Message, Phone, ChatLineRound } from '@element-plus/icons-vue'
+import { Message, Phone, ChatLineRound, Loading } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import ParticleBackground from '../components/ParticleBackground.vue'
+import request from '../utils/request'
 
 const router = useRouter()
+const adminInfo = ref(null)
+const loading = ref(false)
+
+// 获取管理员信息
+const getAdminInfo = async () => {
+  try {
+    loading.value = true
+
+    const data = await request.get('/user/admin_info')
+    console.info('【随机获取管理员信息响应数据】', data)
+    
+    if (data && data.admin_info) {
+      adminInfo.value = data.admin_info
+    }
+  } catch (error) {
+    console.error('【随机获取管理员信息错误】', error)
+    ElMessage.error({
+      message: '【随机获取管理员信息错误】' + (error?.message || '请稍后重试'),
+      duration: 5000
+    })
+  } finally {
+    loading.value = false
+  }
+}
 
 // 返回登录页面
 const goToLogin = () => {
   router.push('/')
 }
+
+// 组件挂载时获取管理员信息
+onMounted(() => {
+  getAdminInfo()
+})
 </script>
 
 <template>
@@ -16,7 +48,7 @@ const goToLogin = () => {
     <ParticleBackground />
 
     <div class="forgot-password-card">
-      <h1>找回密码</h1>
+      <h1>忘记密码</h1>
       <div class="contact-info">
         <div class="info-icon">
           <el-icon size="60">
@@ -25,19 +57,34 @@ const goToLogin = () => {
         </div>
         <p class="info-title">请联系管理员重置密码</p>
         <p class="info-desc">如需重置密码，请通过以下方式联系系统管理员：</p>
-
-        <div class="contact-item">
-          <el-icon>
-            <Message />
+        
+        <div v-if="loading" class="loading-container">
+          <el-icon class="is-loading" size="24">
+            <Loading />
           </el-icon>
-          <span>邮箱：1583952973@qq.com</span>
+          <span>正在加载管理员信息...</span>
         </div>
-
-        <div class="contact-item">
-          <el-icon>
-            <Phone />
-          </el-icon>
-          <span>联系电话：13871941390</span>
+        
+        <div v-else-if="!adminInfo" class="no-admin-info">
+          <p>暂无可用的管理员联系信息，请稍后再试</p>
+        </div>
+        
+        <div v-else class="admin-contact-group">
+          <div class="admin-title">{{ adminInfo.role === 'ADMIN' ? '管理员' : '开发人员' }}: {{ adminInfo.last_name }}{{ adminInfo.first_name }}</div>
+          
+          <div v-if="adminInfo.email" class="contact-item">
+            <el-icon>
+              <Message />
+            </el-icon>
+            <span>邮箱：{{ adminInfo.email }}</span>
+          </div>
+          
+          <div v-if="adminInfo.phone" class="contact-item">
+            <el-icon>
+              <Phone />
+            </el-icon>
+            <span>联系电话：{{ adminInfo.phone }}</span>
+          </div>
         </div>
 
         <p class="contact-note">联系时请提供您的用户名/注册邮箱，以便管理员核实您的身份</p>
@@ -190,5 +237,47 @@ h1 {
   transform: scale(1.02);
   box-shadow: 0 0 20px rgba(96, 165, 250, 0.4);
   background-position: 100% 0;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.loading-container .el-icon {
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
+.no-admin-info {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  width: 90%;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.admin-contact-group {
+  width: 90%;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-title {
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  text-align: left;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 </style>
