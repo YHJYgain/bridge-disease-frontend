@@ -288,7 +288,7 @@ const submitChangePassword = async () => {
   }
 }
 
-// 提交注销账户
+// 注销账户
 const submitDeleteAccount = async () => {
   try {
     loading.value = true

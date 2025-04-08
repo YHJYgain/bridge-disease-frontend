@@ -116,8 +116,8 @@ const formatRole = (role) => {
 // 角色标签类型
 const roleType = (role) => {
   const typeMap = {
-    'ADMIN': 'danger',
-    'DEVELOPER': 'warning',
+    'ADMIN': 'warning',
+    'DEVELOPER': 'danger',
     'USER': 'info',
   }
   return typeMap[role] || ''
@@ -490,26 +490,27 @@ const banUser = async (user) => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning'
+        type: 'danger'
       }
     ).then(async () => {
       formLoading.value = true
-      // 调用封禁用户接口
-      // 实际项目中应该使用真实的API
-      // const data = await request.put(`/user/ban/${user.user_id}`)
-      // console.info('【封禁用户响应数据】', data)
-      // const operation = data.operation
 
-      // 模拟成功响应
-      ElMessage.success({
-        message: `【封禁用户成功】已封禁用户 ${user.username}`,
-        duration: 3000
-      })
-      // 重新获取列表
-      getUserList()
-      formLoading.value = false
+      const data = await request.put(`/user/ban/${user.user_id}`)
+      console.info('【封禁用户响应数据】', data)
+      const operation = data.operation
+
+      if (data && operation && operation.status === 'SUCCESS') {
+        ElMessage.success({
+          message: `【封禁用户成功】已封禁用户 ${user.username}`,
+          duration: 3000
+        })
+        getUserList()
+      }
     }).catch(() => {
-      ElMessage.info('已取消封禁操作')
+      ElMessage.info({
+        message: '【已取消封禁操作】',
+        duration: 2000
+      })
     })
   } catch (error) {
     console.error('【封禁用户错误】', error)
@@ -517,11 +518,12 @@ const banUser = async (user) => {
       message: '【封禁用户错误】' + (error?.message || '请重试'),
       duration: 5000
     })
+  } finally {
     formLoading.value = false
   }
 }
 
-// 解除封禁用户
+// 解禁用户
 const unbanUser = async (user) => {
   try {
     ElMessageBox.confirm(
@@ -534,22 +536,23 @@ const unbanUser = async (user) => {
       }
     ).then(async () => {
       formLoading.value = true
-      // 调用解除封禁用户接口
-      // 实际项目中应该使用真实的API
-      // const data = await request.put(`/user/unban/${user.user_id}`)
-      // console.info('【解除封禁用户响应数据】', data)
-      // const operation = data.operation
 
-      // 模拟成功响应
-      ElMessage.success({
-        message: `【解除封禁成功】已解除用户 ${user.username} 的封禁状态`,
-        duration: 3000
-      })
-      // 重新获取列表
-      getUserList()
-      formLoading.value = false
+      const data = await request.put(`/user/unban/${user.user_id}`)
+      console.info('【解禁用户响应数据】', data)
+      const operation = data.operation
+
+      if (data && operation && operation.status === 'SUCCESS') {
+        ElMessage.success({
+          message: `【解禁成功】已解除用户 ${user.username} 的封禁状态`,
+          duration: 3000
+        })
+        getUserList()
+      }
     }).catch(() => {
-      ElMessage.info('已取消解除封禁操作')
+      ElMessage.info({
+        message: '【已取消解禁操作】',
+        duration: 2000
+      })
     })
   } catch (error) {
     console.error('【解除封禁用户错误】', error)
@@ -557,12 +560,13 @@ const unbanUser = async (user) => {
       message: '【解除封禁用户错误】' + (error?.message || '请重试'),
       duration: 5000
     })
+  } finally {
     formLoading.value = false
   }
 }
 
 // 注销用户
-const deactivateUser = async (user) => {
+const deleteUser = async (user) => {
   try {
     ElMessageBox.confirm(
       `确定要注销用户 ${user.username} 吗？注销后该用户将无法登录系统`,
@@ -574,35 +578,37 @@ const deactivateUser = async (user) => {
       }
     ).then(async () => {
       formLoading.value = true
-      // 调用注销用户接口
-      // 实际项目中应该使用真实的API
-      // const data = await request.put(`/user/deactivate/${user.user_id}`)
-      // console.info('【注销用户响应数据】', data)
-      // const operation = data.operation
 
-      // 模拟成功响应
-      ElMessage.success({
-        message: `【注销用户成功】已注销用户 ${user.username}`,
-        duration: 3000
-      })
-      // 重新获取列表
-      getUserList()
-      formLoading.value = false
+      const data = await request.delete(`/user/delete/${user.user_id}`)
+      console.info('【注销用户响应数据】', data)
+      const operation = data.operation
+
+      if (data && operation && operation.status === 'SUCCESS') {
+        ElMessage.success({
+          message: `【注销用户成功】已注销用户 ${user.username}`,
+          duration: 3000
+        })
+        getUserList()
+      }
     }).catch(() => {
-      ElMessage.info('已取消注销操作')
+      ElMessage.info({
+        message: '【已取消注销操作】',
+        duration: 2000
+      })
     })
   } catch (error) {
-    console.error('【注销用户失败】', error)
+    console.error('【注销用户错误】', error)
     ElMessage.error({
-      message: '【注销用户失败】' + (error?.message || '请重试'),
+      message: '【注销用户错误】' + (error?.message || '请重试'),
       duration: 5000
     })
+  } finally {
     formLoading.value = false
   }
 }
 
 // 恢复已注销用户
-const reactivateUser = async (user) => {
+const undeleteUser = async (user) => {
   try {
     ElMessageBox.confirm(
       `确定要恢复已注销的用户 ${user.username} 吗？恢复后该用户将可以正常登录系统`,
@@ -614,29 +620,31 @@ const reactivateUser = async (user) => {
       }
     ).then(async () => {
       formLoading.value = true
-      // 调用恢复注销用户接口
-      // 实际项目中应该使用真实的API
-      // const data = await request.put(`/user/reactivate/${user.user_id}`)
-      // console.info('【恢复注销用户响应数据】', data)
-      // const operation = data.operation
 
-      // 模拟成功响应
-      ElMessage.success({
-        message: `【恢复注销用户成功】已恢复用户 ${user.username}`,
-        duration: 3000
-      })
-      // 重新获取列表
-      getUserList()
-      formLoading.value = false
+      const data = await request.put(`/user/undelete/${user.user_id}`)
+      console.info('【恢复注销用户响应数据】', data)
+      const operation = data.operation
+
+      if (data && operation && operation.status === 'SUCCESS') {
+        ElMessage.success({
+          message: `【恢复注销用户成功】已恢复用户 ${user.username}`,
+          duration: 3000
+        })
+        getUserList()
+      }
     }).catch(() => {
-      ElMessage.info('已取消恢复操作')
+      ElMessage.info({
+        message: '【已取消恢复注销操作】',
+        duration: 2000
+      })
     })
   } catch (error) {
-    console.error('【恢复注销用户失败】', error)
+    console.error('【恢复注销用户错误】', error)
     ElMessage.error({
-      message: '【恢复注销用户失败】' + (error?.message || '请重试'),
+      message: '【恢复注销用户错误】' + (error?.message || '请重试'),
       duration: 5000
     })
+  } finally {
     formLoading.value = false
   }
 }
@@ -730,7 +738,7 @@ onMounted(() => {
             <el-table-column prop="last_login" label="最后登录时间" width="147" sortable :formatter="dataTimeFormatter" />
             <el-table-column prop="updated_at" label="最后更新时间" width="147" sortable :formatter="dataTimeFormatter" />
             <el-table-column prop="deleted_at" label="注销时间" width="147" sortable :formatter="dataTimeFormatter" />
-            <el-table-column label="操作" fixed="right" width="227">
+            <el-table-column label="操作" fixed="right" width="251">
               <template #default="scope">
                 <!-- 编辑按钮 -->
                 <el-button type="primary" size="small" @click="openEditUserDialog(scope.row)">
@@ -742,13 +750,13 @@ onMounted(() => {
 
                 <!-- 注销/恢复注销按钮 -->
                 <el-button v-if="scope.row.status !== 'DELETED'" type="warning" size="small"
-                  @click="deactivateUser(scope.row)">
+                  @click="deleteUser(scope.row)">
                   <el-icon>
                     <Delete />
                   </el-icon>
                   注销
                 </el-button>
-                <el-button v-else type="success" size="small" @click="reactivateUser(scope.row)">
+                <el-button v-else type="success" size="small" @click="undeleteUser(scope.row)">
                   <el-icon>
                     <RefreshRight />
                   </el-icon>
@@ -865,8 +873,8 @@ onMounted(() => {
         <el-form-item label="姓氏" prop="last_name">
           <el-input v-model="editUserForm.last_name" placeholder="请输入姓氏" />
         </el-form-item>
-        <el-form-item label="名" prop="first_name">
-          <el-input v-model="editUserForm.first_name" placeholder="请输入名" />
+        <el-form-item label="名字" prop="first_name">
+          <el-input v-model="editUserForm.first_name" placeholder="请输入名字" />
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="editUserForm.phone" placeholder="请输入手机号" />
