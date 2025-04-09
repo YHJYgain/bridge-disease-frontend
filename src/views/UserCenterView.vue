@@ -7,6 +7,7 @@ import request from '../utils/request'
 import { useUserStore } from '../stores/userStore'
 import { formatDateTime } from '../utils/dateTimeFormatter'
 import { handleAvatarUpload } from '../utils/avatarUtils'
+import ContactSupportCard from '../components/ContactSupportCard.vue'
 
 const requestBaseURL = request.defaults.baseURL
 const router = useRouter()
@@ -439,6 +440,14 @@ onMounted(() => {
           </el-descriptions>
         </div>
 
+        <!-- 联系支持卡片 -->
+        <div class="support-section">
+          <ContactSupportCard 
+            :title="userInfo.role === 'ADMIN' ? '联系开发人员' : '联系管理员'"
+            :description="userInfo.role === 'ADMIN' ? '如需技术支持，请联系以下开发人员：' : '如需帮助，请联系以下管理员：'"
+          />
+        </div>
+
         <!-- 更多用户相关功能 -->
         <div class="user-actions">
           <h3>账户操作</h3>
@@ -655,6 +664,10 @@ onMounted(() => {
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.support-section {
+  margin-top: 20px;
 }
 
 .user-actions {
