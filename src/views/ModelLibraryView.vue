@@ -118,7 +118,7 @@ const getModelList = async () => {
 
 // 格式化日期时间
 const dataTimeFormatter = (row, column) => {
-  return formatDateTime(row.updated_at) // 使用通用的日期时间格式化工具函数
+  return formatDateTime(row[column.property]) // 使用通用的日期时间格式化工具函数
 }
 
 // 病害类别筛选方法

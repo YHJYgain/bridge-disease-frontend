@@ -125,7 +125,7 @@ const getFileTypeLabel = (fileType) => {
 
 // 格式化日期时间
 const dataTimeFormatter = (row, column) => {
-  return formatDateTime(row.updated_at) // 使用通用的日期时间格式化工具函数
+  return formatDateTime(row[column.property]) // 使用通用的日期时间格式化工具函数
 }
 
 // 文件类型筛选选项
@@ -465,7 +465,7 @@ onMounted(() => {
                 <el-tag v-else :type="'info'">其他文件</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="updated_at" label="最后更新时间" width="180" sortable :formatter="dataTimeFormatter" />
+            <el-table-column prop="updated_at" label="更新时间" width="180" sortable :formatter="dataTimeFormatter" />
             <el-table-column prop="owner_username" label="所属用户" width="120" sortable show-overflow-tooltip
               :filters="ownerFilters" :filter-method="filterOwner" filter-placement="bottom" />
             <el-table-column label="操作" fixed="right" width="300">

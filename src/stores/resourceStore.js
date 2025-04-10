@@ -6,18 +6,22 @@ const mediaList = ref([])
 const modelList = ref([])
 const detectionList = ref([])
 const userList = ref([])
+const operationList = ref([])
 const mediaTotal = ref(0)
 const modelTotal = ref(0)
 const detectionTotal = ref(0)
 const userTotal = ref(0)
+const operationTotal = ref(0)
 const mediaLoading = ref(false)
 const modelLoading = ref(false)
 const detectionLoading = ref(false)
 const userLoading = ref(false)
+const operationLoading = ref(false)
 const lastMediaFetchTime = ref(null)
 const lastModelFetchTime = ref(null)
 const lastDetectionFetchTime = ref(null)
 const lastUserFetchTime = ref(null)
+const lastOperationFetchTime = ref(null)
 
 // 缓存过期时间（毫秒）
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000 // 5 分钟
@@ -198,20 +202,66 @@ const fetchUserList = async (userInfo, currentPage = 1, pageSize = 5, forceRefre
   }
 }
 
+// 操作日志列表获取函数
+const fetchOperationList = async (userInfo, currentPage = 1, pageSize = 5, forceRefresh = false) => {
+  // 检查用户权限，只有管理员或开发人员才能获取操作日志列表
+  const isAdmin = userInfo?.role === 'ADMIN'
+  const isDeveloper = userInfo?.role === 'DEVELOPER'
+  const isAdminOrDeveloper = isAdmin || isDeveloper
+
+  // 如果不是管理员或开发人员，拒绝请求
+  if (!isAdminOrDeveloper) {
+    return { operations: [], total: 0, error: '权限不足，只有管理员或开发人员才能查看操作日志' }
+  }
+
+  // 如果数据已加载且缓存未过期，则直接返回缓存的数据
+  if (operationList.value.length > 0 && !forceRefresh && !isCacheExpired(lastOperationFetchTime)) {
+    return { operations: operationList.value, total: operationTotal.value }
+  }
+
+  try {
+    operationLoading.value = true
+    let data = null
+
+    // 获取当前用户的操作日志列表
+    data = await request.get(`/operation/operations/all`, {
+      params: {
+        page: currentPage,
+        per_page: pageSize
+      }
+    })
+
+    if (data && !data.failure_message) {
+      operationList.value = data.operations
+      operationTotal.value = data.total
+      lastOperationFetchTime.value = Date.now()
+      return { operations: data.operations, total: data.total }
+    }
+    return { operations: [], total: 0 }
+  } catch (error) {
+    return { operations: [], total: 0, error }
+  } finally {
+    operationLoading.value = false
+  }
+}
+
 // 清除缓存
 const clearCache = () => {
   mediaList.value = []
   modelList.value = []
   detectionList.value = []
   userList.value = []
+  operationList.value = []
   mediaTotal.value = 0
   modelTotal.value = 0
   detectionTotal.value = 0
   userTotal.value = 0
+  operationTotal.value = 0
   lastMediaFetchTime.value = null
   lastModelFetchTime.value = null
   lastDetectionFetchTime.value = null
   lastUserFetchTime.value = null
+  lastOperationFetchTime.value = null
 }
 
 // 导出 composable 函数
@@ -222,20 +272,24 @@ export function useResourceStore() {
     modelList: readonly(modelList),
     detectionList: readonly(detectionList),
     userList: readonly(userList),
+    operationList: readonly(operationList),
     mediaTotal: readonly(mediaTotal),
     modelTotal: readonly(modelTotal),
     detectionTotal: readonly(detectionTotal),
     userTotal: readonly(userTotal),
+    operationTotal: readonly(operationTotal),
     mediaLoading: readonly(mediaLoading),
     modelLoading: readonly(modelLoading),
     detectionLoading: readonly(detectionLoading),
     userLoading: readonly(userLoading),
+    operationLoading: readonly(operationLoading),
     
     // 方法
     fetchMediaList,
     fetchModelList,
     fetchDetectionList,
     fetchUserList,
+    fetchOperationList,
     clearCache
   }
 }

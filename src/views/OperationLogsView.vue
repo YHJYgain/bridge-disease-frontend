@@ -1,15 +1,25 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Delete, Document, Delete as DeleteIcon } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/userStore'
+import { useResourceStore } from '../stores/resourceStore'
+import { formatDateTime } from '../utils/dateTimeFormatter'
+import { getUserDetail } from '../utils/detailFetcher'
 import SidebarMenu from '../components/SidebarMenu.vue'
 import BreadcrumbNav from '../components/BreadcrumbNav.vue'
 
 const router = useRouter()
 const { userInfo, getUserInfo } = useUserStore()
+const resourceStore = useResourceStore()
 const operationLogs = ref([])
+
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(12)
+const total = ref(0)
 
 // 判断用户角色
 const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
@@ -17,9 +27,7 @@ const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
 const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
 
 const searchForm = ref({
-  user_id: '',
-  operation_type: '',
-  status: '',
+  keyword: '',
   start_date: '',
   end_date: ''
 })
@@ -27,19 +35,92 @@ const searchForm = ref({
 // 获取操作日志
 const getOperationLogs = async () => {
   try {
-    loading.value = true
-    // 构建查询参数
-    const params = {}
-    if (searchForm.value.user_id) params.user_id = searchForm.value.user_id
-    if (searchForm.value.operation_type) params.operation_type = searchForm.value.operation_type
-    if (searchForm.value.status) params.status = searchForm.value.status
-    if (searchForm.value.start_date) params.start_date = searchForm.value.start_date
-    if (searchForm.value.end_date) params.end_date = searchForm.value.end_date
+    resourceStore.operationLoading = true
 
-    // const response = await request.get('/operations', { params })
-    // if (response && response.data) {
-    //   operationLogs.value = response.data
-    // }
+    // 使用 resourceStore 获取操作日志
+    const { operations, total: totalCount, error } = await resourceStore.fetchOperationList(
+      userInfo.value,
+      currentPage.value,
+      pageSize.value,
+      true // 强制刷新，确保获取最新数据
+    )
+
+    if (error) {
+      throw error
+    }
+
+    console.info('【获取操作日志响应数据】', { operations, total: totalCount })
+
+    // 处理操作日志数据，获取用户的详细信息
+    const processedOperations = [];
+    for (const operation of operations) {
+      // 创建操作记录的副本
+      const processedOperation = { ...operation };
+
+      // 获取用户详情
+      if (operation.owner_id) {
+        const { user, error: userError } = await getUserDetail(operation.owner_id);
+        if (user && !userError) {
+          processedOperation.owner_username = user.username;
+        }
+      }
+
+      processedOperations.push(processedOperation);
+    }
+
+    // 应用搜索过滤
+    let filteredOperations = processedOperations;
+
+    // 关键词搜索（模糊搜索多个字段）
+    if (searchForm.value.keyword) {
+      const keyword = searchForm.value.keyword.toLowerCase();
+      filteredOperations = filteredOperations.filter(op => {
+        // 确保每个字段在比较前转换为字符串并转为小写
+        const opId = op.operation_id ? op.operation_id.toString().toLowerCase() : '';
+        const ownerId = op.owner_id ? op.owner_id.toString().toLowerCase() : '';
+        const ownerName = op.owner_username ? op.owner_username.toLowerCase() : '';
+        const desc = op.description ? op.description.toLowerCase() : '';
+        const opType = op.operation_type ? op.operation_type.toLowerCase() : '';
+        const failMsg = op.failure_message ? op.failure_message.toLowerCase() : '';
+        const ipAddr = op.ip_address ? op.ip_address.toLowerCase() : '';
+        const deviceInfo = op.device_info ? op.device_info.toLowerCase() : '';
+        
+        // 检查每个字段是否包含关键词
+        return (
+          opId.includes(keyword) ||
+          ownerId.includes(keyword) ||
+          ownerName.includes(keyword) ||
+          desc.includes(keyword) ||
+          opType.includes(keyword) ||
+          failMsg.includes(keyword) ||
+          ipAddr.includes(keyword) ||
+          deviceInfo.includes(keyword)
+        );
+      });
+    }
+
+    // 日期范围过滤
+    if (searchForm.value.start_date) {
+      const startDate = new Date(searchForm.value.start_date)
+      // 直接使用用户选择的完整时间（包含时分秒）
+      filteredOperations = filteredOperations.filter(op => {
+        const opDate = new Date(op.created_at)
+        const adjustedOpDate = new Date(opDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedOpDate >= startDate
+      });
+    }
+    if (searchForm.value.end_date) {
+      const endDate = new Date(searchForm.value.end_date)
+      // 直接使用用户选择的完整时间（包含时分秒）
+      filteredOperations = filteredOperations.filter(op => {
+        const opDate = new Date(op.created_at)
+        const adjustedOpDate = new Date(opDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedOpDate <= endDate
+      });
+    }
+
+    operationLogs.value = filteredOperations
+    total.value = filteredOperations.length
   } catch (error) {
     console.error('【获取操作日志错误】', error)
     ElMessage.error({
@@ -47,16 +128,162 @@ const getOperationLogs = async () => {
       duration: 5000
     })
   } finally {
-    loading.value = false
+    resourceStore.operationLoading = false
   }
+}
+
+// 删除单条操作日志
+const deleteLog = async (operationId) => {
+  try {
+    resourceStore.operationLoading = true
+
+    const data = await request.delete(`/operation/delete/${operationId}`)
+
+    if (data && !data.failure_message) {
+      ElMessage.success({
+        message: '【删除操作日志成功】',
+        duration: 3000
+      })
+      getOperationLogs()
+    }
+  } catch (error) {
+    console.error('【删除操作日志错误】', error)
+    ElMessage.error({
+      message: '【删除操作错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+  } finally {
+    resourceStore.operationLoading = false
+  }
+}
+
+// 确认删除单条操作日志
+const confirmDeleteLog = (log) => {
+  ElMessageBox.confirm(
+    `确定要删除 ID 为 ${log.operation_id} 的操作日志吗？此操作不可恢复！`,
+    '删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    deleteLog(log.operation_id)
+  }).catch(() => {
+    ElMessage.info({
+      message: '【已取消删除操作日志】',
+      duration: 2000
+    })
+  })
+}
+
+// 导出操作日志（直接使用前端导出功能）
+const exportLogs = async () => {
+  try {
+    resourceStore.operationLoading = true
+
+    // 创建一个工作簿
+    const XLSX = await import('xlsx');
+    const wb = XLSX.utils.book_new();
+
+    // 准备数据
+    const exportData = operationLogs.value.map(log => ({
+      '操作ID': log.operation_id,
+      '用户ID': log.owner_id,
+      '操作者': log.owner_username || '',
+      '操作类型': formatOperationType(log.operation_type),
+      '操作描述': log.description,
+      '操作状态': formatStatus(log.status),
+      '失败原因': log.failure_message || '',
+      '操作IP': log.ip_address,
+      '操作设备': log.device_info,
+      '操作时间': formatDateTime(log.created_at)
+    }));
+
+    // 创建工作表
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // 将工作表添加到工作簿
+    XLSX.utils.book_append_sheet(wb, ws, "操作日志");
+
+    // 生成带年月日时分秒的文件名
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+
+    // 导出Excel文件
+    XLSX.writeFile(wb, `桥梁病害检测与分割系统操作日志_${timestamp}.xlsx`);
+
+    ElMessage.success({
+      message: '【导出操作日志成功】',
+      duration: 3000
+    });
+  } catch (error) {
+    console.error('【导出操作日志错误】', error)
+    ElMessage.error({
+      message: '【导出操作日志错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+  } finally {
+    resourceStore.operationLoading = false
+  }
+}
+
+// 清空所有操作日志
+const clearLogs = async () => {
+  try {
+    resourceStore.operationLoading = true
+
+    const data = await request.delete('/operation/clear')
+
+    if (data && !data.failure_message) {
+      ElMessage.success({
+        message: '【清空操作日志成功】',
+        duration: 3000
+      })
+      // 刷新日志列表
+      getOperationLogs()
+    }
+  } catch (error) {
+    console.error('【清空操作日志错误】', error)
+    ElMessage.error({
+      message: '【清空操作日志错误】' + (error?.message || '请重试'),
+      duration: 5000
+    })
+  } finally {
+    resourceStore.operationLoading = false
+  }
+}
+
+// 确认清空所有操作日志
+const confirmClearLogs = () => {
+  ElMessageBox.confirm(
+    '确定要清空所有操作日志吗？此操作不可恢复！',
+    '清空确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    clearLogs()
+  }).catch(() => {
+    ElMessage.info({
+      message: '【已取消清空操作日志】',
+      duration: 2000
+    })
+  })
 }
 
 // 重置搜索表单
 const resetSearchForm = () => {
   searchForm.value = {
-    user_id: '',
-    operation_type: '',
-    status: '',
+    keyword: '',
     start_date: '',
     end_date: ''
   }
@@ -93,6 +320,11 @@ const statusType = (status) => {
     'FAILURE': 'danger'
   }
   return typeMap[status] || ''
+}
+
+// 格式化日期时间
+const dataTimeFormatter = (row, column) => {
+  return formatDateTime(row[column.property]) // 使用通用的日期时间格式化工具函数
 }
 
 onMounted(() => {
@@ -134,41 +366,32 @@ onMounted(() => {
           <template #header>
             <div class="card-header">
               <h2>系统操作日志</h2>
-              <el-button type="primary" size="small" @click="getOperationLogs" :loading="loading">
-                刷新数据
-              </el-button>
+              <div>
+                <el-button type="success" @click="exportLogs" :icon="Document">
+                  导出日志
+                </el-button>
+                <el-button type="danger" @click="confirmClearLogs" :icon="Delete">
+                  清空日志
+                </el-button>
+                <el-button type="primary" size="small" @click="getOperationLogs"
+                  :loading="resourceStore.operationLoading.value">
+                  刷新数据
+                </el-button>
+              </div>
             </div>
           </template>
 
           <!-- 搜索表单 -->
           <el-form :model="searchForm" inline class="search-form">
-            <el-form-item label="用户ID">
-              <el-input v-model="searchForm.user_id" placeholder="请输入用户ID" clearable />
+            <el-form-item label="关键词搜索">
+              <el-input v-model="searchForm.keyword" placeholder="搜索操作者/ID/描述/失败原因等" clearable style="width: 300px" />
             </el-form-item>
-            <el-form-item label="操作类型">
-              <el-select v-model="searchForm.operation_type" placeholder="请选择操作类型" clearable>
-                <el-option label="鉴权" value="authenticate" />
-                <el-option label="创建" value="create" />
-                <el-option label="读取" value="read" />
-                <el-option label="更新" value="update" />
-                <el-option label="删除" value="delete" />
-                <el-option label="执行任务" value="execute" />
-                <el-option label="管理操作" value="manage" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="状态">
-              <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
-                <el-option label="成功" value="SUCCESS" />
-                <el-option label="失败" value="FAILURE" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="开始日期">
-              <el-date-picker v-model="searchForm.start_date" type="date" placeholder="选择开始日期" format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD" clearable />
-            </el-form-item>
-            <el-form-item label="结束日期">
-              <el-date-picker v-model="searchForm.end_date" type="date" placeholder="选择结束日期" format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD" clearable />
+            <el-form-item label="日期范围">
+              <el-date-picker v-model="searchForm.start_date" type="datetime" placeholder="开始日期时间" format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+              <span class="date-separator">至</span>
+              <el-date-picker v-model="searchForm.end_date" type="datetime" placeholder="结束日期时间" format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="getOperationLogs">搜索</el-button>
@@ -177,26 +400,39 @@ onMounted(() => {
           </el-form>
 
           <!-- 日志表格 -->
-          <el-table :data="operationLogs" style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="user_id" label="用户ID" width="80" />
-            <el-table-column prop="username" label="用户名" />
-            <el-table-column prop="operation_type" label="操作类型" width="100">
+          <el-table :data="operationLogs" style="width: 100%" v-loading="resourceStore.operationLoading.value">
+            <el-table-column prop="operation_id" label="ID" width="63" sortable />
+            <el-table-column prop="owner_id" label="操作者ID" sortable />
+            <el-table-column prop="owner_username" label="操作者" sortable show-overflow-tooltip />
+            <el-table-column prop="operation_type" label="操作类型" sortable>
               <template #default="scope">
                 {{ formatOperationType(scope.row.operation_type) }}
               </template>
             </el-table-column>
-            <el-table-column prop="operation_detail" label="操作详情" />
-            <el-table-column prop="status" label="状态" width="100">
+            <el-table-column prop="description" label="操作描述" sortable show-overflow-tooltip />
+            <el-table-column prop="status" label="操作状态" sortable>
               <template #default="scope">
                 <el-tag :type="statusType(scope.row.status)">
                   {{ formatStatus(scope.row.status) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="failure_message" label="失败原因" />
-            <el-table-column prop="created_at" label="操作时间" width="180" />
+            <el-table-column prop="failure_message" label="失败原因" sortable show-overflow-tooltip />
+            <el-table-column prop="ip_address" label="操作IP" sortable show-overflow-tooltip />
+            <el-table-column prop="device_info" label="操作设备" sortable show-overflow-tooltip />
+            <el-table-column prop="created_at" label="操作时间" sortable :formatter="dataTimeFormatter" />
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="scope">
+                <el-button type="danger" size="small" :icon="DeleteIcon" circle @click="confirmDeleteLog(scope.row)" />
+              </template>
+            </el-table-column>
           </el-table>
+
+          <!-- 分页控件 -->
+          <div class="pagination-container">
+            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+              layout="total, prev, pager, next, jumper" :total="total" @current-change="getOperationLogs" />
+          </div>
         </el-card>
       </div>
     </div>
@@ -269,5 +505,22 @@ onMounted(() => {
   padding: 15px;
   background-color: #f8f9fa;
   border-radius: 4px;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.date-separator {
+  margin: 0 5px;
+  line-height: 32px;
+}
+
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
 }
 </style>
