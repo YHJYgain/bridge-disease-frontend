@@ -22,6 +22,13 @@ const selectedUser = ref(null)
 const addFormRef = ref(null)
 const editFormRef = ref(null)
 
+// 搜索表单
+const searchForm = ref({
+  keyword: '',
+  start_date: '',
+  end_date: ''
+})
+
 // 分页相关
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -75,8 +82,59 @@ const getUserList = async () => {
 
     console.info('【获取用户列表响应数据】', { users, total: totalUsers })
 
-    userList.value = users
-    total.value = totalUsers
+    // 应用搜索过滤
+    let filteredUsers = users;
+
+    // 关键词搜索（模糊搜索多个字段）
+    if (searchForm.value.keyword) {
+      const keyword = searchForm.value.keyword.toLowerCase();
+      filteredUsers = filteredUsers.filter(user => {
+        // 确保每个字段在比较前转换为字符串并转为小写
+        const userId = user.user_id ? user.user_id.toString().toLowerCase() : '';
+        const username = user.username ? user.username.toLowerCase() : '';
+        const email = user.email ? user.email.toLowerCase() : '';
+        const firstName = user.first_name ? user.first_name.toLowerCase() : '';
+        const lastName = user.last_name ? user.last_name.toLowerCase() : '';
+        const role = user.role ? user.role.toLowerCase() : '';
+        const status = user.status ? user.status.toLowerCase() : '';
+        const phone = user.phone ? user.phone.toLowerCase() : '';
+        
+        // 检查每个字段是否包含关键词
+        return (
+          userId.includes(keyword) ||
+          username.includes(keyword) ||
+          email.includes(keyword) ||
+          firstName.includes(keyword) ||
+          lastName.includes(keyword) ||
+          role.includes(keyword) ||
+          status.includes(keyword) ||
+          phone.includes(keyword)
+        );
+      });
+    }
+
+    // 日期范围过滤
+    if (searchForm.value.start_date) {
+      const startDate = new Date(searchForm.value.start_date);
+      // 直接使用用户选择的完整时间（包含时分秒）
+      filteredUsers = filteredUsers.filter(user => {
+        const userDate = new Date(user.updated_at);
+        const adjustedUserDate = new Date(userDate.getTime() - 8 * 60 * 60 * 1000);
+        return adjustedUserDate >= startDate;
+      });
+    }
+    if (searchForm.value.end_date) {
+      const endDate = new Date(searchForm.value.end_date);
+      // 直接使用用户选择的完整时间（包含时分秒）
+      filteredUsers = filteredUsers.filter(user => {
+        const userDate = new Date(user.updated_at);
+        const adjustedUserDate = new Date(userDate.getTime() - 8 * 60 * 60 * 1000);
+        return adjustedUserDate <= endDate;
+      });
+    }
+
+    userList.value = filteredUsers
+    total.value = filteredUsers.length
   } catch (error) {
     console.error('【获取用户列表错误】', error)
     ElMessage.error({
@@ -607,6 +665,16 @@ const deleteUser = async (user) => {
   }
 }
 
+// 重置搜索表单
+const resetSearchForm = () => {
+  searchForm.value = {
+    keyword: '',
+    start_date: '',
+    end_date: ''
+  }
+  getUserList()
+}
+
 // 恢复已注销用户
 const undeleteUser = async (user) => {
   try {
@@ -701,6 +769,24 @@ onMounted(() => {
               </div>
             </div>
           </template>
+
+          <!-- 搜索表单 -->
+          <el-form :model="searchForm" inline class="search-form">
+            <el-form-item label="关键词搜索">
+              <el-input v-model="searchForm.keyword" placeholder="搜索ID/用户名/邮箱/角色等" clearable style="width: 300px" />
+            </el-form-item>
+            <el-form-item label="日期范围">
+              <el-date-picker v-model="searchForm.start_date" type="datetime" placeholder="开始日期时间" format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+              <span class="date-separator">至</span>
+              <el-date-picker v-model="searchForm.end_date" type="datetime" placeholder="结束日期时间" format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="getUserList">搜索</el-button>
+              <el-button @click="resetSearchForm">重置</el-button>
+            </el-form-item>
+          </el-form>
 
           <el-table :data="userList" style="width: 100%" v-loading="resourceStore.userLoading.value">
             <el-table-column prop="user_id" label="ID" width="63" sortable />
@@ -971,6 +1057,21 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+.search-form {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.date-separator {
+  margin: 0 5px;
+  line-height: 32px;
 }
 
 .avatar-upload {

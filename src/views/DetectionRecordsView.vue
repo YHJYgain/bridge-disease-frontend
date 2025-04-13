@@ -19,6 +19,13 @@ const detectionList = ref([])
 const detailDialogVisible = ref(false)
 const currentDetection = ref(null)
 
+// 搜索表单
+const searchForm = ref({
+  keyword: '',
+  start_date: '',
+  end_date: ''
+})
+
 // 判断用户角色
 const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
 const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
@@ -82,8 +89,61 @@ const getDetectionRecords = async () => {
       processedDetections.push(processedDetection);
     }
 
-    detectionList.value = processedDetections;
-    total.value = totalCount;
+    // 应用搜索过滤
+    let filteredDetections = processedDetections;
+
+    // 关键词搜索（模糊搜索多个字段）
+    if (searchForm.value.keyword) {
+      const keyword = searchForm.value.keyword.toLowerCase();
+      filteredDetections = filteredDetections.filter(detection => {
+        // 确保每个字段在比较前转换为字符串并转为小写
+        const detectionId = detection.detection_id ? detection.detection_id.toString().toLowerCase() : '';
+        const modelId = detection.model_id ? detection.model_id.toString().toLowerCase() : '';
+        const modelName = detection.model_name ? detection.model_name.toLowerCase() : '';
+        const mediaId = detection.media_id ? detection.media_id.toString().toLowerCase() : '';
+        const mediaName = detection.media_name ? detection.media_name.toLowerCase() : '';
+        const ownerId = detection.owner_id ? detection.owner_id.toString().toLowerCase() : '';
+        const ownerName = detection.owner_username ? detection.owner_username.toLowerCase() : '';
+        const status = detection.status ? detection.status.toLowerCase() : '';
+        const diseaseGrade = detection.disease_grade ? detection.disease_grade.toLowerCase() : '';
+        
+        // 检查每个字段是否包含关键词
+        return (
+          detectionId.includes(keyword) ||
+          modelId.includes(keyword) ||
+          modelName.includes(keyword) ||
+          mediaId.includes(keyword) ||
+          mediaName.includes(keyword) ||
+          ownerId.includes(keyword) ||
+          ownerName.includes(keyword) ||
+          status.includes(keyword) ||
+          diseaseGrade.includes(keyword)
+        );
+      });
+    }
+
+    // 日期范围过滤
+    if (searchForm.value.start_date) {
+      const startDate = new Date(searchForm.value.start_date);
+      // 直接使用用户选择的完整时间（包含时分秒）
+      filteredDetections = filteredDetections.filter(detection => {
+        const detectionDate = new Date(detection.updated_at);
+        const adjustedDetectionDate = new Date(detectionDate.getTime() - 8 * 60 * 60 * 1000);
+        return adjustedDetectionDate >= startDate;
+      });
+    }
+    if (searchForm.value.end_date) {
+      const endDate = new Date(searchForm.value.end_date);
+      // 直接使用用户选择的完整时间（包含时分秒）
+      filteredDetections = filteredDetections.filter(detection => {
+        const detectionDate = new Date(detection.updated_at);
+        const adjustedDetectionDate = new Date(detectionDate.getTime() - 8 * 60 * 60 * 1000);
+        return adjustedDetectionDate <= endDate;
+      });
+    }
+
+    detectionList.value = filteredDetections;
+    total.value = filteredDetections.length;
   } catch (error) {
     console.error('【获取检测分割记录错误】', error)
     ElMessage.error({
@@ -241,6 +301,16 @@ const deleteDetection = async (detection_id) => {
   }
 }
 
+// 重置搜索表单
+const resetSearchForm = () => {
+  searchForm.value = {
+    keyword: '',
+    start_date: '',
+    end_date: ''
+  }
+  getDetectionRecords()
+}
+
 onMounted(() => {
   // 先获取用户信息，防止未登录用户能够直接访问该页面
   getUserInfo().then(() => {
@@ -278,6 +348,24 @@ onMounted(() => {
               </el-button>
             </div>
           </template>
+
+          <!-- 搜索表单 -->
+          <el-form :model="searchForm" inline class="search-form">
+            <el-form-item label="关键词搜索">
+              <el-input v-model="searchForm.keyword" placeholder="搜索ID/模型/媒体/用户等" clearable style="width: 300px" />
+            </el-form-item>
+            <el-form-item label="日期范围">
+              <el-date-picker v-model="searchForm.start_date" type="datetime" placeholder="开始日期时间" format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+              <span class="date-separator">至</span>
+              <el-date-picker v-model="searchForm.end_date" type="datetime" placeholder="结束日期时间" format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="getDetectionRecords">搜索</el-button>
+              <el-button @click="resetSearchForm">重置</el-button>
+            </el-form-item>
+          </el-form>
 
           <el-table :data="detectionList" style="width: 100%" v-loading="resourceStore.detectionLoading.value">
             <el-table-column prop="detection_id" label="ID" width="63" />
@@ -491,4 +579,30 @@ onMounted(() => {
   justify-content: flex-end;
   gap: 10px;
 }
+
+/* 搜索表单样式 */
+.search-form {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.date-separator {
+  margin: 0 5px;
+  line-height: 32px;
+}
 </style>
+
+// 重置搜索表单
+const resetSearchForm = () => {
+  searchForm.value = {
+    keyword: '',
+    start_date: '',
+    end_date: ''
+  }
+  getDetectionRecords()
+}

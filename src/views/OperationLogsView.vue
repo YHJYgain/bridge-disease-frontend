@@ -304,6 +304,24 @@ const formatOperationType = (type) => {
   return typeMap[type] || type
 }
 
+// 操作类型筛选选项
+const operationTypeFilters = computed(() => {
+  return [
+    { text: 'AUTHENTICATE', value: 'AUTHENTICATE' },
+    { text: 'CREATE', value: 'CREATE' },
+    { text: 'READ', value: 'READ' },
+    { text: 'UPDATE', value: 'UPDATE' },
+    { text: 'DELETE', value: 'DELETE' },
+    { text: 'EXECUTE', value: 'EXECUTE' },
+    { text: 'MANAGE', value: 'MANAGE' }
+  ]
+})
+
+// 操作类型筛选方法
+const filterOperationType = (value, row) => {
+  return row.operation_type === value
+}
+
 // 格式化状态
 const formatStatus = (status) => {
   const statusMap = {
@@ -313,6 +331,19 @@ const formatStatus = (status) => {
   return statusMap[status] || status
 }
 
+// 操作状态筛选选项
+const statusFilters = computed(() => {
+  return [
+    { text: '成功', value: 'SUCCESS' },
+    { text: '失败', value: 'FAILURE' }
+  ]
+})
+
+// 操作状态筛选方法
+const filterStatus = (value, row) => {
+  return row.status === value
+}
+
 // 状态标签类型
 const statusType = (status) => {
   const typeMap = {
@@ -320,6 +351,18 @@ const statusType = (status) => {
     'FAILURE': 'danger'
   }
   return typeMap[status] || ''
+}
+
+// 获取所有用户名作为筛选选项
+const ownerFilters = computed(() => {
+  // 从操作日志列表中提取不重复的用户名
+  const uniqueOwners = [...new Set(operationLogs.value.map(item => item.owner_username).filter(Boolean))]
+  return uniqueOwners.map(owner => ({ text: owner, value: owner }))
+})
+
+// 用户筛选方法
+const filterOwner = (value, row) => {
+  return row.owner_username === value
 }
 
 // 格式化日期时间
@@ -402,15 +445,18 @@ onMounted(() => {
           <!-- 日志表格 -->
           <el-table :data="operationLogs" style="width: 100%" v-loading="resourceStore.operationLoading.value">
             <el-table-column prop="operation_id" label="ID" width="63" sortable />
-            <el-table-column prop="owner_id" label="操作者ID" sortable />
-            <el-table-column prop="owner_username" label="操作者" sortable show-overflow-tooltip />
-            <el-table-column prop="operation_type" label="操作类型" sortable>
+            <el-table-column prop="owner_id" label="操作者ID" width="105" sortable />
+            <el-table-column prop="owner_username" label="操作者" width="104" sortable show-overflow-tooltip
+              :filters="ownerFilters" :filter-method="filterOwner" filter-placement="bottom" />
+            <el-table-column prop="operation_type" label="操作类型" width="125" sortable
+              :filters="operationTypeFilters" :filter-method="filterOperationType" filter-placement="bottom">
               <template #default="scope">
                 {{ formatOperationType(scope.row.operation_type) }}
               </template>
             </el-table-column>
             <el-table-column prop="description" label="操作描述" sortable show-overflow-tooltip />
-            <el-table-column prop="status" label="操作状态" sortable>
+            <el-table-column prop="status" label="操作状态" width="118" sortable
+              :filters="statusFilters" :filter-method="filterStatus" filter-placement="bottom">
               <template #default="scope">
                 <el-tag :type="statusType(scope.row.status)">
                   {{ formatStatus(scope.row.status) }}
@@ -420,8 +466,8 @@ onMounted(() => {
             <el-table-column prop="failure_message" label="失败原因" sortable show-overflow-tooltip />
             <el-table-column prop="ip_address" label="操作IP" sortable show-overflow-tooltip />
             <el-table-column prop="device_info" label="操作设备" sortable show-overflow-tooltip />
-            <el-table-column prop="created_at" label="操作时间" sortable :formatter="dataTimeFormatter" />
-            <el-table-column label="操作" width="120" fixed="right">
+            <el-table-column prop="created_at" label="操作时间" width="147" sortable :formatter="dataTimeFormatter" />
+            <el-table-column label="操作" width="52" fixed="right">
               <template #default="scope">
                 <el-button type="danger" size="small" :icon="DeleteIcon" circle @click="confirmDeleteLog(scope.row)" />
               </template>
