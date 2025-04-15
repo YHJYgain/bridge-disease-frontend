@@ -4,7 +4,7 @@ import router from '../router'
 
 const request = axios.create({
   baseURL: 'https://composed-unicorn-honestly.ngrok-free.app',
-  timeout: 600000
+  timeout: 600000,
 })
 
 // 是否正在刷新 token
