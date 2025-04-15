@@ -49,6 +49,7 @@ const handleLogout = async () => {
 <template>
   <div class="header">
     <div class="logo">
+      <img src="/bridge-disease.svg" alt="系统图标" class="logo-icon" />
       <h1>桥梁病害检测与分割系统</h1>
     </div>
 
@@ -100,6 +101,17 @@ const handleLogout = async () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   z-index: 10;
   border-radius: 0 0 12px 12px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
 }
 
 .logo h1 {
