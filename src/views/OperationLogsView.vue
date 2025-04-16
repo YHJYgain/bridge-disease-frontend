@@ -29,7 +29,7 @@ const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
 const searchForm = ref({
   keyword: '',
   start_date: '',
-  end_date: ''
+  end_date: '',
 })
 
 // 获取操作日志
@@ -42,7 +42,7 @@ const getOperationLogs = async () => {
       userInfo.value,
       currentPage.value,
       pageSize.value,
-      true // 强制刷新，确保获取最新数据
+      true, // 强制刷新，确保获取最新数据
     )
 
     if (error) {
@@ -52,38 +52,41 @@ const getOperationLogs = async () => {
     console.info('【获取操作日志响应数据】', { operations, total: totalCount })
 
     // 处理操作日志数据，获取用户的详细信息
-    const processedOperations = [];
+    const processedOperations = []
     for (const operation of operations) {
       // 创建操作记录的副本
-      const processedOperation = { ...operation };
+      const processedOperation = { ...operation }
 
       // 获取用户详情
       if (operation.owner_id) {
-        const { user, error: userError } = await getUserDetail(operation.owner_id);
+        const { user, error: userError } = await getUserDetail(operation.owner_id)
         if (user && !userError) {
-          processedOperation.owner_username = user.username;
+          processedOperation.owner_username = user.username
         }
       }
 
-      processedOperations.push(processedOperation);
+      processedOperations.push(processedOperation)
     }
 
     // 应用搜索过滤
-    let filteredOperations = processedOperations;
+    let filteredOperations = processedOperations
+
+    // 判断是否有筛选条件
+    const hasFilters = searchForm.value.keyword || searchForm.value.start_date || searchForm.value.end_date
 
     // 关键词搜索（模糊搜索多个字段）
     if (searchForm.value.keyword) {
-      const keyword = searchForm.value.keyword.toLowerCase();
+      const keyword = searchForm.value.keyword.toLowerCase()
       filteredOperations = filteredOperations.filter(op => {
         // 确保每个字段在比较前转换为字符串并转为小写
-        const opId = op.operation_id ? op.operation_id.toString().toLowerCase() : '';
-        const ownerId = op.owner_id ? op.owner_id.toString().toLowerCase() : '';
-        const ownerName = op.owner_username ? op.owner_username.toLowerCase() : '';
-        const desc = op.description ? op.description.toLowerCase() : '';
-        const opType = op.operation_type ? op.operation_type.toLowerCase() : '';
-        const failMsg = op.failure_message ? op.failure_message.toLowerCase() : '';
-        const ipAddr = op.ip_address ? op.ip_address.toLowerCase() : '';
-        const deviceInfo = op.device_info ? op.device_info.toLowerCase() : '';
+        const opId = op.operation_id ? op.operation_id.toString().toLowerCase() : ''
+        const ownerId = op.owner_id ? op.owner_id.toString().toLowerCase() : ''
+        const ownerName = op.owner_username ? op.owner_username.toLowerCase() : ''
+        const desc = op.description ? op.description.toLowerCase() : ''
+        const opType = op.operation_type ? op.operation_type.toLowerCase() : ''
+        const failMsg = op.failure_message ? op.failure_message.toLowerCase() : ''
+        const ipAddr = op.ip_address ? op.ip_address.toLowerCase() : ''
+        const deviceInfo = op.device_info ? op.device_info.toLowerCase() : ''
         
         // 检查每个字段是否包含关键词
         return (
@@ -95,8 +98,8 @@ const getOperationLogs = async () => {
           failMsg.includes(keyword) ||
           ipAddr.includes(keyword) ||
           deviceInfo.includes(keyword)
-        );
-      });
+        )
+      })
     }
 
     // 日期范围过滤
@@ -107,7 +110,7 @@ const getOperationLogs = async () => {
         const opDate = new Date(op.created_at)
         const adjustedOpDate = new Date(opDate.getTime() - 8 * 60 * 60 * 1000)
         return adjustedOpDate >= startDate
-      });
+      })
     }
     if (searchForm.value.end_date) {
       const endDate = new Date(searchForm.value.end_date)
@@ -116,16 +119,16 @@ const getOperationLogs = async () => {
         const opDate = new Date(op.created_at)
         const adjustedOpDate = new Date(opDate.getTime() - 8 * 60 * 60 * 1000)
         return adjustedOpDate <= endDate
-      });
+      })
     }
 
     operationLogs.value = filteredOperations
-    total.value = filteredOperations.length
+    total.value = hasFilters ? filteredOperations.length : totalCount
   } catch (error) {
     console.error('【获取操作日志错误】', error)
     ElMessage.error({
       message: '【获取操作日志错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     resourceStore.operationLoading = false
@@ -142,15 +145,15 @@ const deleteLog = async (operationId) => {
     if (data && !data.failure_message) {
       ElMessage.success({
         message: '【删除操作日志成功】',
-        duration: 3000
+        duration: 3000,
       })
       getOperationLogs()
     }
   } catch (error) {
     console.error('【删除操作日志错误】', error)
     ElMessage.error({
-      message: '【删除操作错误】' + (error?.message || '请重试'),
-      duration: 5000
+      message: '【删除操作日志错误】' + (error?.message || '请重试'),
+      duration: 5000,
     })
   } finally {
     resourceStore.operationLoading = false
@@ -165,14 +168,14 @@ const confirmDeleteLog = (log) => {
     {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning'
-    }
+      type: 'warning',
+    },
   ).then(() => {
     deleteLog(log.operation_id)
   }).catch(() => {
     ElMessage.info({
       message: '【已取消删除操作日志】',
-      duration: 2000
+      duration: 2000,
     })
   })
 }
@@ -183,8 +186,8 @@ const exportLogs = async () => {
     resourceStore.operationLoading = true
 
     // 创建一个工作簿
-    const XLSX = await import('xlsx');
-    const wb = XLSX.utils.book_new();
+    const XLSX = await import('xlsx')
+    const wb = XLSX.utils.book_new()
 
     // 准备数据
     const exportData = operationLogs.value.map(log => ({
@@ -197,37 +200,37 @@ const exportLogs = async () => {
       '失败原因': log.failure_message || '',
       '操作IP': log.ip_address,
       '操作设备': log.device_info,
-      '操作时间': formatDateTime(log.created_at)
-    }));
+      '操作时间': formatDateTime(log.created_at),
+    }))
 
     // 创建工作表
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    const ws = XLSX.utils.json_to_sheet(exportData)
 
     // 将工作表添加到工作簿
-    XLSX.utils.book_append_sheet(wb, ws, "操作日志");
+    XLSX.utils.book_append_sheet(wb, ws, "操作日志")
 
     // 生成带年月日时分秒的文件名
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    const seconds = String(now.getSeconds()).padStart(2, '0')
+    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`
 
     // 导出Excel文件
-    XLSX.writeFile(wb, `桥梁病害检测与分割系统操作日志_${timestamp}.xlsx`);
+    XLSX.writeFile(wb, `桥梁病害检测与分割系统操作日志_${timestamp}.xlsx`)
 
     ElMessage.success({
       message: '【导出操作日志成功】',
-      duration: 3000
-    });
+      duration: 3000,
+    })
   } catch (error) {
     console.error('【导出操作日志错误】', error)
     ElMessage.error({
       message: '【导出操作日志错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     resourceStore.operationLoading = false
@@ -244,7 +247,7 @@ const clearLogs = async () => {
     if (data && !data.failure_message) {
       ElMessage.success({
         message: '【清空操作日志成功】',
-        duration: 3000
+        duration: 3000,
       })
       // 刷新日志列表
       getOperationLogs()
@@ -253,7 +256,7 @@ const clearLogs = async () => {
     console.error('【清空操作日志错误】', error)
     ElMessage.error({
       message: '【清空操作日志错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     resourceStore.operationLoading = false
@@ -268,14 +271,14 @@ const confirmClearLogs = () => {
     {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: 'warning'
-    }
+      type: 'warning',
+    },
   ).then(() => {
     clearLogs()
   }).catch(() => {
     ElMessage.info({
       message: '【已取消清空操作日志】',
-      duration: 2000
+      duration: 2000,
     })
   })
 }
@@ -285,7 +288,7 @@ const resetSearchForm = () => {
   searchForm.value = {
     keyword: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
   }
   getOperationLogs()
 }
@@ -299,7 +302,7 @@ const formatOperationType = (type) => {
     'update': '更新',
     'delete': '删除',
     'execute': '执行任务',
-    'manage': '管理操作'
+    'manage': '管理操作',
   }
   return typeMap[type] || type
 }
@@ -313,7 +316,7 @@ const operationTypeFilters = computed(() => {
     { text: 'UPDATE', value: 'UPDATE' },
     { text: 'DELETE', value: 'DELETE' },
     { text: 'EXECUTE', value: 'EXECUTE' },
-    { text: 'MANAGE', value: 'MANAGE' }
+    { text: 'MANAGE', value: 'MANAGE' },
   ]
 })
 
@@ -326,7 +329,7 @@ const filterOperationType = (value, row) => {
 const formatStatus = (status) => {
   const statusMap = {
     'SUCCESS': '成功',
-    'FAILURE': '失败'
+    'FAILURE': '失败',
   }
   return statusMap[status] || status
 }
@@ -335,7 +338,7 @@ const formatStatus = (status) => {
 const statusFilters = computed(() => {
   return [
     { text: '成功', value: 'SUCCESS' },
-    { text: '失败', value: 'FAILURE' }
+    { text: '失败', value: 'FAILURE' },
   ]
 })
 
@@ -348,7 +351,7 @@ const filterStatus = (value, row) => {
 const statusType = (status) => {
   const typeMap = {
     'SUCCESS': 'success',
-    'FAILURE': 'danger'
+    'FAILURE': 'danger',
   }
   return typeMap[status] || ''
 }
@@ -379,7 +382,7 @@ onMounted(() => {
       } else {
         ElMessage.warning({
           message: '【访问页面失败】您非管理员/开发人员，没有权限访问此页面',
-          duration: 4000
+          duration: 4000,
         })
         router.push('/home')
       }

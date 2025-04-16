@@ -20,8 +20,26 @@ const activeStep = ref(0)
 const steps = [
   { title: 'Step 1：选择模型', icon: Coin },
   { title: 'Step 2：选择媒体', icon: Picture },
-  { title: 'Step 3：开始检测分割', icon: Aim }
+  { title: 'Step 3：开始检测分割', icon: Aim },
 ]
+
+// 分页相关
+const currentMediaPage = ref(1)
+const currentModelPage = ref(1)
+const modelPageSize = ref(9)
+const mediaPageSize = ref(9)
+const modelTotal = ref(0)
+const mediaTotal = ref(0)
+const modelLoading = ref(false)
+const mediaLoading = ref(false)
+
+// 选中的模型
+const selectedModelId = ref(null)
+const selectedModel = ref(null)
+
+// 选中的媒体
+const selectedMediaId = ref(null)
+const selectedMedia = ref(null)
 
 // 上一步
 const prevStep = () => {
@@ -35,14 +53,14 @@ const nextStep = () => {
   if (activeStep.value === 0 && !selectedModelId.value) {
     ElMessage.warning({
       message: '【下一步失败】请先选择一个模型',
-      duration: 4000
+      duration: 4000,
     })
     return
   }
   if (activeStep.value === 1 && !selectedMediaId.value) {
     ElMessage.warning({
       message: '【下一步失败】请先选择一个媒体',
-      duration: 4000
+      duration: 4000,
     })
     return
   }
@@ -51,82 +69,54 @@ const nextStep = () => {
   }
 }
 
-// 滚动加载相关状态
-const loadingMoreMedia = ref(false)
-const loadingMoreModel = ref(false)
-const hasMoreMedia = ref(true)
-const hasMoreModel = ref(true)
-const currentMediaPage = ref(1)
-const currentModelPage = ref(1)
-
-// 加载更多媒体数据
-const loadMoreMedia = async () => {
-  if (loadingMoreMedia.value || !hasMoreMedia.value) return
-
-  loadingMoreMedia.value = true
-  currentMediaPage.value++
-
+// 加载模型数据
+const loadModelData = async (page = 1) => {
   try {
-    const { medias, total } = await fetchMediaList(userInfo.value, currentMediaPage.value, 5)
-    if (medias.length === 0) {
-      hasMoreMedia.value = false
-    }
+    modelLoading.value = true
+
+    const { models, total } = await fetchModelList(page, modelPageSize.value, true)
+
+    modelTotal.value = total
+    currentModelPage.value = page
   } catch (error) {
-    console.error('【加载更多媒体错误】', error)
+    console.error('【加载模型数据错误】', error)
     ElMessage.error({
-      message: '【加载更多媒体错误】' + (error?.message || '请重试'),
-      duration: 5000
+      message: '【加载模型数据错误】' + (error?.message || '请重试'),
+      duration: 5000,
     })
   } finally {
-    loadingMoreMedia.value = false
+    modelLoading.value = false
   }
 }
 
-// 加载更多模型数据
-const loadMoreModel = async () => {
-  if (loadingMoreModel.value || !hasMoreModel.value) return
-
-  loadingMoreModel.value = true
-  currentModelPage.value++
-
+// 加载媒体数据
+const loadMediaData = async (page = 1) => {
   try {
-    const { models, total } = await fetchModelList(currentModelPage.value, 5)
-    if (models.length === 0) {
-      hasMoreModel.value = false
-    }
+mediaLoading.value = true
+
+    const { medias, total } = await fetchMediaList(userInfo.value, page, mediaPageSize.value, true)
+    mediaTotal.value = total
+    currentMediaPage.value = page
   } catch (error) {
-    console.error('【加载更多模型错误】', error)
+    console.error('【加载媒体数据错误】', error)
     ElMessage.error({
-      message: '【加载更多模型错误】' + (error?.message || '请重试'),
-      duration: 5000
+      message: '【加载媒体数据错误】' + (error?.message || '请重试'),
+      duration: 5000,
     })
   } finally {
-    loadingMoreModel.value = false
+    mediaLoading.value = false
   }
 }
 
-// 滚动事件处理
-const handleScroll = () => {
-  const el = document.querySelector('.el-select-dropdown__wrap')
-  if (!el) return
-
-  const { scrollTop, scrollHeight, clientHeight } = el
-  if (scrollHeight - (scrollTop + clientHeight) < 50) {
-    if (activeStep.value === 0) {
-      loadMoreModel()
-    } else if (activeStep.value === 1) {
-      loadMoreMedia()
-    }
-  }
+// 媒体分页变化
+const handleMediaPageChange = (page) => {
+  loadMediaData(page)
 }
 
-// 选中的模型
-const selectedModelId = ref(null)
-const selectedModel = ref(null)
-
-// 选中的媒体
-const selectedMediaId = ref(null)
-const selectedMedia = ref(null)
+// 模型分页变化
+const handleModelPageChange = (page) => {
+  loadModelData(page)
+}
 
 // 选择模型时更新模型详情
 const updateSelectedModel = () => {
@@ -161,7 +151,7 @@ watch(selectedModelId, watchSelectedModel)
 watch(selectedMediaId, watchSelectedMedia)
 
 const mediaPreviewURL = computed(() => {
-  return selectedMedia ? `${requestBaseURL}/${selectedMedia.value.media_path}` : '';
+  return selectedMedia ? `${requestBaseURL}/${selectedMedia.value.media_path}` : ''
 })
 
 // 检测分割
@@ -169,7 +159,7 @@ const submitDetectionTask = async () => {
   if (!selectedModelId.value) {
     ElMessage.warning({
       message: '【检测分割失败】请选择要使用的检测模型',
-      duration: 4000
+      duration: 4000,
     })
     return
   }
@@ -177,7 +167,7 @@ const submitDetectionTask = async () => {
   if (!selectedMediaId.value) {
     ElMessage.warning({
       message: '【检测分割失败】请选择要检测的媒体',
-      duration: 4000
+      duration: 4000,
     })
     return
   }
@@ -202,12 +192,12 @@ const submitDetectionTask = async () => {
     ElMessage.warning({
       message: `【检测分割进行中】正在加载模型和媒体数据，请稍等...${isVideo ? '视频处理时间可能较长，请耐心等待' : ''}`,
       duration: 0,  // 不自动关闭
-      showClose: true
+      showClose: true,
     })
 
     const data = await request.post('/detection/detection_segmentation', {
       media_id: selectedMediaId.value,
-      model_id: selectedModelId.value
+      model_id: selectedModelId.value,
     })
     console.info('【检测分割响应数据】', data)
     const operation = data.operation
@@ -219,13 +209,13 @@ const submitDetectionTask = async () => {
       if (data && data.is_new_detection === false) {
         ElMessage.warning({
           message: '【检测分割成功】同一媒体二次检测，已更新记录',
-          duration: 4000
-        });
+          duration: 4000,
+        })
       } else {
         ElMessage.success({
           message: '【检测分割成功】',
-          duration: 3000
-        });
+          duration: 3000,
+        })
       }
 
       // 跳转到检测分割记录页面
@@ -239,7 +229,7 @@ const submitDetectionTask = async () => {
     console.error('【检测分割错误】', error)
     ElMessage.error({
       message: '【检测分割错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     detectLoading.value = false
@@ -253,14 +243,8 @@ onMounted(() => {
   getUserInfo().then(() => {
     if (userInfo.value) {
       // 初始加载第一页数据
-      fetchMediaList(userInfo.value, 1, 5)
-      fetchModelList(1, 5)
-
-      // 添加滚动事件监听
-      const el = document.querySelector('.el-select-dropdown__wrap')
-      if (el) {
-        el.addEventListener('scroll', handleScroll)
-      }
+      loadMediaData(1)
+      loadModelData(1)
     } else {
       router.push('/login')
     }
@@ -308,7 +292,7 @@ onMounted(() => {
               <h3>选择检测模型</h3>
               <el-form label-position="top">
                 <el-form-item>
-                  <el-select v-model="selectedModelId" placeholder="请选择检测模型" style="width: 100%">
+                  <el-select v-model="selectedModelId" placeholder="请选择检测模型" style="width: 100%" filterable>
                     <el-option v-for="item in modelList" :key="item.model_id" :label="item.model_name"
                       :value="item.model_id">
                       <div class="model-option">
@@ -339,6 +323,13 @@ onMounted(() => {
                 </div>
               </div>
 
+              <!-- 分页控件 -->
+              <div class="pagination-container">
+                <el-pagination v-model:current-page="currentModelPage" :page-size="modelPageSize"
+                  layout="prev, pager, next" :total="modelTotal" @current-change="handleModelPageChange"
+                  :disabled="modelLoading" />
+              </div>
+
               <div class="step-actions">
                 <el-button type="primary" @click="nextStep">下一步</el-button>
               </div>
@@ -349,7 +340,7 @@ onMounted(() => {
               <h3>选择媒体文件</h3>
               <el-form label-position="top">
                 <el-form-item>
-                  <el-select v-model="selectedMediaId" placeholder="请选择媒体文件" style="width: 100%">
+                  <el-select v-model="selectedMediaId" placeholder="请选择媒体文件" style="width: 100%" filterable>
                     <el-option v-for="item in mediaList" :key="item.media_id" :label="item.media_name"
                       :value="item.media_id">
                       <div class="media-option">
@@ -377,6 +368,13 @@ onMounted(() => {
                     无法预览该类型的媒体文件
                   </div>
                 </div>
+              </div>
+
+              <!-- 分页控件 -->
+              <div class="pagination-container">
+                <el-pagination v-model:current-page="currentMediaPage" :page-size="mediaPageSize"
+                  layout="prev, pager, next" :total="mediaTotal" @current-change="handleMediaPageChange"
+                  :disabled="mediaLoading" />
               </div>
 
               <div class="step-actions">
@@ -519,7 +517,30 @@ onMounted(() => {
 
 /* 步骤条样式 */
 .detection-steps {
-  margin: 20px 0 30px;
+  margin: 30px 0 40px;
+}
+
+/* 自定义步骤条样式，使其更加醒目 */
+.detection-steps :deep(.el-step__icon) {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+
+.detection-steps :deep(.el-step__title) {
+  font-size: 16px;
+  font-weight: 600;
+  color: #606266;
+}
+
+.detection-steps :deep(.el-step__title.is-process) {
+  color: #409EFF;
+  font-weight: 700;
+}
+
+.detection-steps :deep(.el-step__title.is-success) {
+  color: #67C23A;
+  font-weight: 600;
 }
 
 .step-content {
@@ -533,7 +554,7 @@ onMounted(() => {
 .step-container h3 {
   margin-top: 0;
   margin-bottom: 20px;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 500;
   color: #303133;
 }
@@ -608,15 +629,15 @@ onMounted(() => {
 }
 
 .preview-image {
-  max-width: 15%;
-  max-height: 15%;
+  max-width: 13%;
+  max-height: 13%;
   margin: 10px;
   object-fit: contain;
 }
 
 .preview-video {
-  max-width: 20%;
-  max-height: 20%;
+  max-width: 16%;
+  max-height: 16%;
   margin: 10px;
   object-fit: contain;
 }
@@ -624,6 +645,12 @@ onMounted(() => {
 .preview-placeholder {
   color: #909399;
   font-size: 14px;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
 }
 
 .detection-summary {

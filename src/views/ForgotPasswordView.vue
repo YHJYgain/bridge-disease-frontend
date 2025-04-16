@@ -25,7 +25,7 @@ const getAdminInfo = async () => {
     console.error('【随机获取管理员信息错误】', error)
     ElMessage.error({
       message: '【随机获取管理员信息错误】' + (error?.message || '请稍后重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     loading.value = false

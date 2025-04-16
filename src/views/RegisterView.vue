@@ -134,7 +134,7 @@ const handleRegister = async () => {
   if (!formRef.value) {
     ElMessage.error({
       message: '【注册错误】表单实例不存在',
-      duration: 5000
+      duration: 5000,
     })
     return
   }
@@ -169,7 +169,7 @@ const handleRegister = async () => {
       has_first_name: first_name.value ? '已设置' : '未设置',
       has_last_name: last_name.value ? '已设置' : '未设置',
       has_avatar: avatar_file.value ? '已设置' : '未设置',
-      has_phone: phone.value ? '已设置' : '未设置'
+      has_phone: phone.value ? '已设置' : '未设置',
     }
     console.info('【注册表单数据】', safeFormData)
 
@@ -182,7 +182,7 @@ const handleRegister = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【注册成功】',
-        duration: 3000
+        duration: 3000,
       })
 
       // 注册成功后自动跳转到登录页面
@@ -193,7 +193,7 @@ const handleRegister = async () => {
     console.error('【注册错误】', error)
     ElMessage.error({
       message: '【注册错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     isRegistering.value = false

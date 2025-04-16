@@ -29,7 +29,7 @@ const formRules = {
     { validator: validateEmail, trigger: ['blur', 'change'] },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: ['blur', 'change'] }
+    { required: true, message: '请输入密码', trigger: ['blur', 'change'] },
   ]
 }
 
@@ -38,7 +38,7 @@ const handleLogin = async () => {
   if (!formRef.value) {
     ElMessage.error({
       message: '【登录错误】表单实例不存在',
-      duration: 5000
+      duration: 5000,
     })
     return
   }
@@ -54,7 +54,7 @@ const handleLogin = async () => {
     // 打印登录表单数据，过滤敏感信息
     const safeFormData = {
       username_or_email: username_or_email.value,
-      has_password: password.value ? '已设置' : '未设置'
+      has_password: password.value ? '已设置' : '未设置',
     }
     console.info('【登录表单数据】', safeFormData)
 
@@ -73,7 +73,7 @@ const handleLogin = async () => {
 
       ElMessage.success({
         message: '【登录成功】',
-        duration: 3000
+        duration: 3000,
       })
 
       // 登录成功后跳转到首页
@@ -84,7 +84,7 @@ const handleLogin = async () => {
     console.error('【登录错误】', error)
     ElMessage.error({
       message: '【登录错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     isLogining.value = false
@@ -98,7 +98,7 @@ onMounted(() => {
   if (token) {
     ElMessage.success({
       message: '【登录成功】您已登录，正在跳转到首页...',
-      duration: 3000
+      duration: 3000,
     })
     router.push('/home')
   }

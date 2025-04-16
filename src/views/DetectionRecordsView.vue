@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ZoomIn } from '@element-plus/icons-vue'
+import { ZoomIn, Delete, Document } from '@element-plus/icons-vue'
 import request from '../utils/request'
 import { useUserStore } from '../stores/userStore'
 import { useResourceStore } from '../stores/resourceStore'
@@ -23,7 +23,7 @@ const currentDetection = ref(null)
 const searchForm = ref({
   keyword: '',
   start_date: '',
-  end_date: ''
+  end_date: '',
 })
 
 // 判断用户角色
@@ -46,7 +46,7 @@ const getDetectionRecords = async () => {
       userInfo.value,
       currentPage.value,
       pageSize.value,
-      true // 强制刷新，确保获取最新数据
+      true, // 强制刷新，确保获取最新数据
     )
 
     if (error) {
@@ -56,56 +56,59 @@ const getDetectionRecords = async () => {
     console.info('【获取检测分割记录响应数据】', { detections, total: totalCount })
 
     // 处理检测记录数据，获取模型、媒体和用户的详细信息
-    const processedDetections = [];
+    const processedDetections = []
     for (const detection of detections) {
       // 创建检测记录的副本
-      const processedDetection = { ...detection };
+      const processedDetection = { ...detection }
 
       // 获取模型详情
       if (detection.model_id) {
-        const { model, error: modelError } = await getModelDetail(detection.model_id);
+        const { model, error: modelError } = await getModelDetail(detection.model_id)
         if (model && !modelError) {
-          processedDetection.model_name = model.model_name;
+          processedDetection.model_name = model.model_name
         }
       }
 
       // 获取媒体详情
       if (detection.media_id) {
-        const { media, error: mediaError } = await getMediaDetail(detection.media_id);
+        const { media, error: mediaError } = await getMediaDetail(detection.media_id)
         if (media && !mediaError) {
-          processedDetection.media_name = media.media_name;
-          processedDetection.media_type = media.file_type; // 保存媒体类型信息
+          processedDetection.media_name = media.media_name
+          processedDetection.media_type = media.file_type // 保存媒体类型信息
         }
       }
 
       // 获取用户详情
       if (detection.owner_id) {
-        const { user, error: userError } = await getUserDetail(detection.owner_id);
+        const { user, error: userError } = await getUserDetail(detection.owner_id)
         if (user && !userError) {
-          processedDetection.owner_username = user.username;
+          processedDetection.owner_username = user.username
         }
       }
 
-      processedDetections.push(processedDetection);
+      processedDetections.push(processedDetection)
     }
 
     // 应用搜索过滤
-    let filteredDetections = processedDetections;
+    let filteredDetections = processedDetections
+
+    // 判断是否有筛选条件
+    const hasFilters = searchForm.value.keyword || searchForm.value.start_date || searchForm.value.end_date
 
     // 关键词搜索（模糊搜索多个字段）
     if (searchForm.value.keyword) {
-      const keyword = searchForm.value.keyword.toLowerCase();
+      const keyword = searchForm.value.keyword.toLowerCase()
       filteredDetections = filteredDetections.filter(detection => {
         // 确保每个字段在比较前转换为字符串并转为小写
-        const detectionId = detection.detection_id ? detection.detection_id.toString().toLowerCase() : '';
-        const modelId = detection.model_id ? detection.model_id.toString().toLowerCase() : '';
-        const modelName = detection.model_name ? detection.model_name.toLowerCase() : '';
-        const mediaId = detection.media_id ? detection.media_id.toString().toLowerCase() : '';
-        const mediaName = detection.media_name ? detection.media_name.toLowerCase() : '';
-        const ownerId = detection.owner_id ? detection.owner_id.toString().toLowerCase() : '';
-        const ownerName = detection.owner_username ? detection.owner_username.toLowerCase() : '';
-        const status = detection.status ? detection.status.toLowerCase() : '';
-        const diseaseGrade = detection.disease_grade ? detection.disease_grade.toLowerCase() : '';
+        const detectionId = detection.detection_id ? detection.detection_id.toString().toLowerCase() : ''
+        const modelId = detection.model_id ? detection.model_id.toString().toLowerCase() : ''
+        const modelName = detection.model_name ? detection.model_name.toLowerCase() : ''
+        const mediaId = detection.media_id ? detection.media_id.toString().toLowerCase() : ''
+        const mediaName = detection.media_name ? detection.media_name.toLowerCase() : ''
+        const ownerId = detection.owner_id ? detection.owner_id.toString().toLowerCase() : ''
+        const ownerName = detection.owner_username ? detection.owner_username.toLowerCase() : ''
+        const status = detection.status ? detection.status.toLowerCase() : ''
+        const diseaseGrade = detection.disease_grade ? detection.disease_grade.toLowerCase() : ''
         
         // 检查每个字段是否包含关键词
         return (
@@ -118,37 +121,37 @@ const getDetectionRecords = async () => {
           ownerName.includes(keyword) ||
           status.includes(keyword) ||
           diseaseGrade.includes(keyword)
-        );
-      });
+        )
+      })
     }
 
     // 日期范围过滤
     if (searchForm.value.start_date) {
-      const startDate = new Date(searchForm.value.start_date);
+      const startDate = new Date(searchForm.value.start_date)
       // 直接使用用户选择的完整时间（包含时分秒）
       filteredDetections = filteredDetections.filter(detection => {
-        const detectionDate = new Date(detection.updated_at);
-        const adjustedDetectionDate = new Date(detectionDate.getTime() - 8 * 60 * 60 * 1000);
-        return adjustedDetectionDate >= startDate;
-      });
+        const detectionDate = new Date(detection.updated_at)
+        const adjustedDetectionDate = new Date(detectionDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedDetectionDate >= startDate
+      })
     }
     if (searchForm.value.end_date) {
-      const endDate = new Date(searchForm.value.end_date);
+      const endDate = new Date(searchForm.value.end_date)
       // 直接使用用户选择的完整时间（包含时分秒）
       filteredDetections = filteredDetections.filter(detection => {
-        const detectionDate = new Date(detection.updated_at);
-        const adjustedDetectionDate = new Date(detectionDate.getTime() - 8 * 60 * 60 * 1000);
-        return adjustedDetectionDate <= endDate;
-      });
+        const detectionDate = new Date(detection.updated_at)
+        const adjustedDetectionDate = new Date(detectionDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedDetectionDate <= endDate
+      })
     }
 
-    detectionList.value = filteredDetections;
-    total.value = filteredDetections.length;
+    detectionList.value = filteredDetections
+    total.value = hasFilters ? filteredDetections.length : totalCount
   } catch (error) {
     console.error('【获取检测分割记录错误】', error)
     ElMessage.error({
       message: '【获取检测分割记录错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     resourceStore.detectionLoading = false
@@ -161,7 +164,7 @@ const formatStatus = (status) => {
     'PENDING': '待处理',
     'IN_PROGRESS': '处理中',
     'COMPLETED': '已完成',
-    'FAILED': '失败'
+    'FAILED': '失败',
   }
   return statusMap[status] || status
 }
@@ -172,7 +175,7 @@ const statusType = (status) => {
     'PENDING': 'warning',
     'IN_PROGRESS': 'info',
     'COMPLETED': 'success',
-    'FAILED': 'danger'
+    'FAILED': 'danger',
   }
   return typeMap[status] || ''
 }
@@ -187,7 +190,7 @@ const statusFilters = [
   { text: '待处理', value: 'PENDING' },
   { text: '处理中', value: 'IN_PROGRESS' },
   { text: '已完成', value: 'COMPLETED' },
-  { text: '失败', value: 'FAILED' }
+  { text: '失败', value: 'FAILED' },
 ]
 
 // 格式化病害等级
@@ -196,7 +199,7 @@ const formatDiseaseGrade = (grade) => {
     'MILD': '轻度',
     'MODERATE': '中度',
     'SEVERE': '重度',
-    'CRITICAL': '严重'
+    'CRITICAL': '严重',
   }
   return gradeMap[grade] || grade
 }
@@ -207,7 +210,7 @@ const diseaseGradeType = (grade) => {
     'MILD': 'info',
     'MODERATE': 'success',
     'SEVERE': 'warning',
-    'CRITICAL': 'danger'
+    'CRITICAL': 'danger',
   }
   return typeMap[grade] || ''
 }
@@ -217,7 +220,7 @@ const diseaseGradeFilters = [
   { text: '轻度', value: 'MILD' },
   { text: '中度', value: 'MODERATE' },
   { text: '重度', value: 'SEVERE' },
-  { text: '严重', value: 'CRITICAL' }
+  { text: '严重', value: 'CRITICAL' },
 ]
 
 // 病害等级筛选方法
@@ -266,7 +269,7 @@ const deleteDetection = async (detection_id) => {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
-      }
+      },
     )
 
     // 显示加载状态
@@ -281,7 +284,7 @@ const deleteDetection = async (detection_id) => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【删除检测分割记录成功】',
-        duration: 3000
+        duration: 3000,
       })
       getDetectionRecords() // 重新获取列表
     }
@@ -294,11 +297,123 @@ const deleteDetection = async (detection_id) => {
     console.error('【删除检测分割记录错误】', error)
     ElMessage.error({
       message: '【删除检测分割记录错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     resourceStore.detectionLoading = false
   }
+}
+
+// 导出检测分割记录
+const exportDetections = async () => {
+  try {
+    resourceStore.detectionLoading = true
+
+    // 创建一个工作簿
+    const XLSX = await import('xlsx')
+    const wb = XLSX.utils.book_new()
+
+    // 准备数据
+    const exportData = detectionList.value.map(detection => ({
+      'ID': detection.detection_id,
+      '使用模型': detection.model_name || '',
+      '检测媒体': detection.media_name || '',
+      '任务状态': formatStatus(detection.status),
+      '严重性得分': detection.disease_severity_score,
+      '病害等级': formatDiseaseGrade(detection.disease_grade),
+      '病害数量': detection.disease_count,
+      '病害周长': detection.disease_perimeter,
+      '病害面积': detection.disease_area,
+      '形状复杂度': detection.shape_complexity,
+      '纹理粗糙度': detection.texture_roughness,
+      '裂缝宽度': detection.crack_width,
+      '平均色调': detection.avg_hue,
+      '检测耗时（ms）': detection.detection_duration,
+      '帧平均耗时（）ms）': detection.avg_frame_detection_duration,
+      '所属用户': detection.owner_username || '',
+      '检测分割时间': formatDateTime(detection.updated_at),
+    }))
+
+    // 创建工作表
+    const ws = XLSX.utils.json_to_sheet(exportData)
+
+    // 将工作表添加到工作簿
+    XLSX.utils.book_append_sheet(wb, ws, "检测分割记录")
+
+    // 生成带年月日时分秒的文件名
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    const seconds = String(now.getSeconds()).padStart(2, '0')
+    const timestamp = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`
+
+    // 导出 Excel 文件
+    XLSX.writeFile(wb, `桥梁病害检测与分割系统检测记录_${timestamp}.xlsx`)
+
+    ElMessage.success({
+      message: '【导出检测分割记录成功】',
+      duration: 3000,
+    })
+  } catch (error) {
+    console.error('【导出检测分割记录错误】', error)
+    ElMessage.error({
+      message: '【导出检测分割记录错误】' + (error?.message || '请重试'),
+      duration: 5000,
+    })
+  } finally {
+    resourceStore.detectionLoading = false
+  }
+}
+
+// 清空所有检测记录
+const clearDetections = async () => {
+  try {
+    resourceStore.detectionLoading = true
+
+    const data = await request.get('/detection/clear')
+    console.info('【清空检测分割记录响应数据】', data)
+    const operation = data.operation
+
+    // 根据后端操作状态判断清空是否成功
+    if (data && operation && operation.status === 'SUCCESS') {
+      ElMessage.success({
+        message: '【清空检测分割记录成功】',
+        duration: 3000,
+      })
+      getDetectionRecords()
+    }
+  } catch (error) {
+    console.error('【清空检测分割记录错误】', error)
+    ElMessage.error({
+      message: '【清空检测分割记录错误】' + (error?.message || '请重试'),
+      duration: 5000,
+    })
+  } finally {
+    resourceStore.detectionLoading = false
+  }
+}
+
+// 确认清空所有检测记录
+const confirmClearDetections = () => {
+  ElMessageBox.confirm(
+    '确定要清空所有检测分割记录吗？此操作不可恢复！',
+    '清空确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    },
+  ).then(() => {
+    clearDetections()
+  }).catch(() => {
+    ElMessage.info({
+      message: '【已取消清空检测分割记录】',
+      duration: 2000,
+    })
+  })
 }
 
 // 重置搜索表单
@@ -306,7 +421,7 @@ const resetSearchForm = () => {
   searchForm.value = {
     keyword: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
   }
   getDetectionRecords()
 }
@@ -342,10 +457,18 @@ onMounted(() => {
           <template #header>
             <div class="card-header">
               <h2>检测分割记录</h2>
-              <el-button type="primary" size="small" @click="getDetectionRecords"
-                :loading="resourceStore.detectionLoading.value">
-                刷新数据
-              </el-button>
+              <div>
+                <el-button type="success" @click="exportDetections" :icon="Document">
+                  导出记录
+                </el-button>
+                <el-button type="danger" @click="confirmClearDetections" :icon="Delete" v-if="isAdminOrDeveloper">
+                  清空记录
+                </el-button>
+                <el-button type="primary" size="small" @click="getDetectionRecords"
+                  :loading="resourceStore.detectionLoading.value">
+                  刷新数据
+                </el-button>
+              </div>
             </div>
           </template>
 

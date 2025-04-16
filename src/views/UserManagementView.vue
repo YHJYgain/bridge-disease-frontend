@@ -26,7 +26,7 @@ const editFormRef = ref(null)
 const searchForm = ref({
   keyword: '',
   start_date: '',
-  end_date: ''
+  end_date: '',
 })
 
 // 分页相关
@@ -48,7 +48,7 @@ const addUserForm = ref({
   first_name: '',
   last_name: '',
   phone: '',
-  avatar_file: null
+  avatar_file: null,
 })
 
 // 编辑用户表单数据
@@ -60,7 +60,7 @@ const editUserForm = ref({
   first_name: '',
   last_name: '',
   phone: '',
-  avatar_file: null
+  avatar_file: null,
 })
 
 // 获取用户列表
@@ -73,7 +73,7 @@ const getUserList = async () => {
       userInfo.value,
       currentPage.value,
       pageSize.value,
-      true // 强制刷新，确保获取最新数据
+      true, // 强制刷新，确保获取最新数据
     )
 
     if (error) {
@@ -83,22 +83,25 @@ const getUserList = async () => {
     console.info('【获取用户列表响应数据】', { users, total: totalUsers })
 
     // 应用搜索过滤
-    let filteredUsers = users;
+    let filteredUsers = users
+
+    // 判断是否有筛选条件
+    const hasFilters = searchForm.value.keyword || searchForm.value.start_date || searchForm.value.end_date
 
     // 关键词搜索（模糊搜索多个字段）
     if (searchForm.value.keyword) {
-      const keyword = searchForm.value.keyword.toLowerCase();
+      const keyword = searchForm.value.keyword.toLowerCase()
       filteredUsers = filteredUsers.filter(user => {
         // 确保每个字段在比较前转换为字符串并转为小写
-        const userId = user.user_id ? user.user_id.toString().toLowerCase() : '';
-        const username = user.username ? user.username.toLowerCase() : '';
-        const email = user.email ? user.email.toLowerCase() : '';
-        const firstName = user.first_name ? user.first_name.toLowerCase() : '';
-        const lastName = user.last_name ? user.last_name.toLowerCase() : '';
-        const role = user.role ? user.role.toLowerCase() : '';
-        const status = user.status ? user.status.toLowerCase() : '';
-        const phone = user.phone ? user.phone.toLowerCase() : '';
-        
+        const userId = user.user_id ? user.user_id.toString().toLowerCase() : ''
+        const username = user.username ? user.username.toLowerCase() : ''
+        const email = user.email ? user.email.toLowerCase() : ''
+        const firstName = user.first_name ? user.first_name.toLowerCase() : ''
+        const lastName = user.last_name ? user.last_name.toLowerCase() : ''
+        const role = user.role ? user.role.toLowerCase() : ''
+        const status = user.status ? user.status.toLowerCase() : ''
+        const phone = user.phone ? user.phone.toLowerCase() : ''
+
         // 检查每个字段是否包含关键词
         return (
           userId.includes(keyword) ||
@@ -109,37 +112,37 @@ const getUserList = async () => {
           role.includes(keyword) ||
           status.includes(keyword) ||
           phone.includes(keyword)
-        );
-      });
+        )
+      })
     }
 
     // 日期范围过滤
     if (searchForm.value.start_date) {
-      const startDate = new Date(searchForm.value.start_date);
+      const startDate = new Date(searchForm.value.start_date)
       // 直接使用用户选择的完整时间（包含时分秒）
       filteredUsers = filteredUsers.filter(user => {
-        const userDate = new Date(user.updated_at);
-        const adjustedUserDate = new Date(userDate.getTime() - 8 * 60 * 60 * 1000);
-        return adjustedUserDate >= startDate;
-      });
+        const userDate = new Date(user.updated_at)
+        const adjustedUserDate = new Date(userDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedUserDate >= startDate
+      })
     }
     if (searchForm.value.end_date) {
-      const endDate = new Date(searchForm.value.end_date);
+      const endDate = new Date(searchForm.value.end_date)
       // 直接使用用户选择的完整时间（包含时分秒）
       filteredUsers = filteredUsers.filter(user => {
-        const userDate = new Date(user.updated_at);
-        const adjustedUserDate = new Date(userDate.getTime() - 8 * 60 * 60 * 1000);
-        return adjustedUserDate <= endDate;
-      });
+        const userDate = new Date(user.updated_at)
+        const adjustedUserDate = new Date(userDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedUserDate <= endDate
+      })
     }
 
     userList.value = filteredUsers
-    total.value = filteredUsers.length
+    total.value = hasFilters ? filteredUsers.length : totalCount
   } catch (error) {
     console.error('【获取用户列表错误】', error)
     ElMessage.error({
       message: '【获取用户列表错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     resourceStore.userLoading = false
@@ -150,7 +153,7 @@ const getUserList = async () => {
 const roleFilters = [
   { text: '管理员', value: 'ADMIN' },
   { text: '开发人员', value: 'DEVELOPER' },
-  { text: '普通用户', value: 'USER' }
+  { text: '普通用户', value: 'USER' },
 ]
 
 // 状态筛选选项
@@ -158,7 +161,7 @@ const statusFilters = [
   { text: '在线', value: 'ACTIVE' },
   { text: '离线', value: 'INACTIVE' },
   { text: '封禁', value: 'BANNED' },
-  { text: '注销', value: 'DELETED' }
+  { text: '注销', value: 'DELETED' },
 ]
 
 // 格式化角色
@@ -370,7 +373,7 @@ const openAddUserDialog = () => {
     first_name: '',
     last_name: '',
     phone: '',
-    avatar_file: null
+    avatar_file: null,
   }
   dialogVisible.value = true
 
@@ -383,7 +386,10 @@ const openAddUserDialog = () => {
 // 添加用户
 const submitAddUserForm = async () => {
   if (!addFormRef.value) {
-    ElMessage.error('【添加用户错误】表单实例不存在')
+    ElMessage.error({
+      message: '【添加用户错误】表单实例不存在',
+      duration: 5000,
+    })
     return
   }
 
@@ -420,7 +426,7 @@ const submitAddUserForm = async () => {
       has_first_name: addUserForm.value.first_name ? '已设置' : '未设置',
       has_last_name: addUserForm.value.last_name ? '已设置' : '未设置',
       has_avatar: addUserForm.value.avatar_file ? '已设置' : '未设置',
-      has_phone: addUserForm.value.phone ? '已设置' : '未设置'
+      has_phone: addUserForm.value.phone ? '已设置' : '未设置',
     }
     console.info('【添加用户表单数据】', safeFormData)
 
@@ -432,7 +438,7 @@ const submitAddUserForm = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【添加用户成功】',
-        duration: 3000
+        duration: 3000,
       })
       dialogVisible.value = false
       getUserList()
@@ -441,7 +447,7 @@ const submitAddUserForm = async () => {
     console.error('【添加用户错误】', error)
     ElMessage.error({
       message: '【添加用户错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     formLoading.value = false
@@ -459,7 +465,7 @@ const openEditUserDialog = (user) => {
     first_name: user.first_name || '',
     last_name: user.last_name || '',
     phone: user.phone || '',
-    avatar_file: null
+    avatar_file: null,
   }
   dialogVisible.value = true
 
@@ -472,7 +478,10 @@ const openEditUserDialog = (user) => {
 // 编辑用户
 const submitEditUserForm = async () => {
   if (!editFormRef.value) {
-    ElMessage.error('【编辑用户错误】表单实例不存在')
+    ElMessage.error({
+      message: '【编辑用户错误】表单实例不存在',
+      duration: 5000,
+    })
     return
   }
 
@@ -511,7 +520,7 @@ const submitEditUserForm = async () => {
       has_first_name: editUserForm.value.first_name ? '已设置' : '未设置',
       has_last_name: editUserForm.value.last_name ? '已设置' : '未设置',
       has_avatar: editUserForm.value.avatar_file ? '已设置' : '未设置',
-      has_phone: editUserForm.value.phone ? '已设置' : '未设置'
+      has_phone: editUserForm.value.phone ? '已设置' : '未设置',
     }
     console.info('【编辑用户表单数据】', safeFormData)
 
@@ -523,7 +532,7 @@ const submitEditUserForm = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【编辑用户成功】',
-        duration: 3000
+        duration: 3000,
       })
       dialogVisible.value = false
       getUserList()
@@ -532,7 +541,7 @@ const submitEditUserForm = async () => {
     console.error('【编辑用户错误】', error)
     ElMessage.error({
       message: '【编辑用户错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     formLoading.value = false
@@ -548,8 +557,8 @@ const banUser = async (user) => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'danger'
-      }
+        type: 'danger',
+      },
     ).then(async () => {
       formLoading.value = true
 
@@ -560,21 +569,21 @@ const banUser = async (user) => {
       if (data && operation && operation.status === 'SUCCESS') {
         ElMessage.success({
           message: `【封禁用户成功】已封禁用户 ${user.username}`,
-          duration: 3000
+          duration: 3000,
         })
         getUserList()
       }
     }).catch(() => {
       ElMessage.info({
         message: '【已取消封禁操作】',
-        duration: 2000
+        duration: 2000,
       })
     })
   } catch (error) {
     console.error('【封禁用户错误】', error)
     ElMessage.error({
       message: '【封禁用户错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     formLoading.value = false
@@ -590,8 +599,8 @@ const unbanUser = async (user) => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'info'
-      }
+        type: 'info',
+      },
     ).then(async () => {
       formLoading.value = true
 
@@ -602,21 +611,21 @@ const unbanUser = async (user) => {
       if (data && operation && operation.status === 'SUCCESS') {
         ElMessage.success({
           message: `【解禁成功】已解除用户 ${user.username} 的封禁状态`,
-          duration: 3000
+          duration: 3000,
         })
         getUserList()
       }
     }).catch(() => {
       ElMessage.info({
         message: '【已取消解禁操作】',
-        duration: 2000
+        duration: 2000,
       })
     })
   } catch (error) {
     console.error('【解除封禁用户错误】', error)
     ElMessage.error({
       message: '【解除封禁用户错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     formLoading.value = false
@@ -632,8 +641,8 @@ const deleteUser = async (user) => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'warning'
-      }
+        type: 'warning',
+      },
     ).then(async () => {
       formLoading.value = true
 
@@ -644,21 +653,21 @@ const deleteUser = async (user) => {
       if (data && operation && operation.status === 'SUCCESS') {
         ElMessage.success({
           message: `【注销用户成功】已注销用户 ${user.username}`,
-          duration: 3000
+          duration: 3000,
         })
         getUserList()
       }
     }).catch(() => {
       ElMessage.info({
         message: '【已取消注销操作】',
-        duration: 2000
+        duration: 2000,
       })
     })
   } catch (error) {
     console.error('【注销用户错误】', error)
     ElMessage.error({
       message: '【注销用户错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     formLoading.value = false
@@ -670,7 +679,7 @@ const resetSearchForm = () => {
   searchForm.value = {
     keyword: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
   }
   getUserList()
 }
@@ -684,8 +693,8 @@ const undeleteUser = async (user) => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
-        type: 'info'
-      }
+        type: 'info',
+      },
     ).then(async () => {
       formLoading.value = true
 
@@ -696,21 +705,21 @@ const undeleteUser = async (user) => {
       if (data && operation && operation.status === 'SUCCESS') {
         ElMessage.success({
           message: `【恢复注销用户成功】已恢复用户 ${user.username}`,
-          duration: 3000
+          duration: 3000,
         })
         getUserList()
       }
     }).catch(() => {
       ElMessage.info({
         message: '【已取消恢复注销操作】',
-        duration: 2000
+        duration: 2000,
       })
     })
   } catch (error) {
     console.error('【恢复注销用户错误】', error)
     ElMessage.error({
       message: '【恢复注销用户错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     formLoading.value = false
@@ -726,7 +735,7 @@ onMounted(() => {
       } else {
         ElMessage.warning({
           message: '【访问页面失败】您非管理员/开发人员，没有权限访问此页面',
-          duration: 4000
+          duration: 4000,
         })
         router.push('/home')
       }
@@ -776,11 +785,11 @@ onMounted(() => {
               <el-input v-model="searchForm.keyword" placeholder="搜索ID/用户名/邮箱/角色等" clearable style="width: 300px" />
             </el-form-item>
             <el-form-item label="日期范围">
-              <el-date-picker v-model="searchForm.start_date" type="datetime" placeholder="开始日期时间" format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+              <el-date-picker v-model="searchForm.start_date" type="datetime" placeholder="开始日期时间"
+                format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
               <span class="date-separator">至</span>
-              <el-date-picker v-model="searchForm.end_date" type="datetime" placeholder="结束日期时间" format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+              <el-date-picker v-model="searchForm.end_date" type="datetime" placeholder="结束日期时间"
+                format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="getUserList">搜索</el-button>

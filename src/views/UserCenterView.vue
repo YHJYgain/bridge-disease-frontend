@@ -44,7 +44,7 @@ const statusInfo = computed(() => {
 const dialogVisible = reactive({
   updateProfile: false,
   changePassword: false,
-  deleteAccount: false
+  deleteAccount: false,
 })
 
 // 打开修改个人信息对话框
@@ -69,14 +69,14 @@ const updateForm = ref({
   first_name: '',
   last_name: '',
   phone: '',
-  avatar_file: null
+  avatar_file: null,
 })
 
 // 修改密码表单数据
 const passwordForm = ref({
   current_password: '',
   new_password: '',
-  confirm_password: ''
+  confirm_password: '',
 })
 
 // 名字验证规则
@@ -123,11 +123,11 @@ const validatePhone = (rule, value, callback) => {
 // 修改个人信息表单验证规则
 const updateRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
+    { required: true, message: '请输入用户名', trigger: 'blur' },
   ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change'] }
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change'] },
   ],
   first_name: [
     { validator: validateFirstName, trigger: ['blur', 'change'] },
@@ -185,7 +185,7 @@ const submitUpdateProfile = async () => {
       has_first_name: updateForm.value.first_name ? '已设置' : '未设置',
       has_last_name: updateForm.value.last_name ? '已设置' : '未设置',
       has_avatar: updateForm.value.avatar_file ? '已设置' : '未设置',
-      has_phone: updateForm.value.phone ? '已设置' : '未设置'
+      has_phone: updateForm.value.phone ? '已设置' : '未设置',
     }
     console.info('【修改个人信息表单数据】', safeFormData)
 
@@ -196,7 +196,7 @@ const submitUpdateProfile = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【修改个人信息成功】',
-        duration: 3000
+        duration: 3000,
       })
       dialogVisible.updateProfile = false
       localStorage.setItem('login_user', JSON.stringify(data.updated_user))
@@ -207,7 +207,7 @@ const submitUpdateProfile = async () => {
     console.error('【修改个人信息错误】', error)
     ElMessage.error({
       message: '【修改个人信息错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     loading.value = false
@@ -235,15 +235,15 @@ const validateConfirmPassword = (rule, value, callback) => {
 // 修改密码表单验证规则
 const passwordRules = {
   current_password: [
-    { required: true, message: '请输入当前密码', trigger: 'blur' }
+    { required: true, message: '请输入当前密码', trigger: 'blur' },
   ],
   new_password: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { validator: validateNewPassword, trigger: ['blur', 'change'] }
+    { validator: validateNewPassword, trigger: ['blur', 'change'] },
   ],
   confirm_password: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: ['blur', 'change'] }
+    { validator: validateConfirmPassword, trigger: ['blur', 'change'] },
   ]
 }
 
@@ -269,7 +269,7 @@ const submitChangePassword = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【修改密码成功】请重新登录',
-        duration: 3000
+        duration: 3000,
       })
       dialogVisible.changePassword = false
       // 清除信息并跳转到登录页
@@ -282,7 +282,7 @@ const submitChangePassword = async () => {
     console.error('【修改密码错误】', error)
     ElMessage.error({
       message: '【修改密码错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     loading.value = false
@@ -301,7 +301,7 @@ const submitDeleteAccount = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【注销账户成功】',
-        duration: 3000
+        duration: 3000,
       })
       dialogVisible.deleteAccount = false
       // 清除信息并跳转到登录页
@@ -314,7 +314,7 @@ const submitDeleteAccount = async () => {
     console.error('【注销账户错误】', error)
     ElMessage.error({
       message: '【注销账户错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     loading.value = false
@@ -332,7 +332,7 @@ const resetForm = (formType = 'all') => {
       first_name: userInfo.value.first_name || '',
       last_name: userInfo.value.last_name || '',
       phone: userInfo.value.phone || '',
-      avatar_file: null
+      avatar_file: null,
     }
 
     // 如果表单实例存在，重置验证状态
@@ -346,7 +346,7 @@ const resetForm = (formType = 'all') => {
     passwordForm.value = {
       current_password: '',
       new_password: '',
-      confirm_password: ''
+      confirm_password: '',
     }
 
     // 如果表单实例存在，重置验证状态
@@ -367,7 +367,7 @@ onMounted(() => {
         first_name: userInfo.value.first_name || '',
         last_name: userInfo.value.last_name || '',
         phone: userInfo.value.phone || '',
-        avatar_file: null // 保持为 null，通过 avatarPreviewUrl 计算属性显示当前头像
+        avatar_file: null, // 保持为 null，通过 avatarPreviewUrl 计算属性显示当前头像
       }
 
       // 注意：这里不需要设置 avatar_file 为当前头像文件，因为：

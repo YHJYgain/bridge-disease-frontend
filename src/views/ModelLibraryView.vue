@@ -26,7 +26,7 @@ const editFormRef = ref(null)
 const searchForm = ref({
   keyword: '',
   start_date: '',
-  end_date: ''
+  end_date: '',
 })
 
 // 分页相关（默认每页 10 条）
@@ -84,7 +84,7 @@ const getModelList = async () => {
     const { models, total: totalCount, error } = await resourceStore.fetchModelList(
       currentPage.value,
       pageSize.value,
-      true // 强制刷新，确保获取最新数据
+      true, // 强制刷新，确保获取最新数据
     )
 
     if (error) {
@@ -94,37 +94,40 @@ const getModelList = async () => {
     console.info('【获取模型列表响应数据】', { models, total: totalCount })
 
     // 处理模型列表数据，获取用户的详细信息
-    const processedModels = [];
+    const processedModels = []
     for (const model of models) {
       // 创建模型记录的副本
-      const processedModel = { ...model };
+      const processedModel = { ...model }
 
       // 获取用户详情
       if (model.owner_id) {
-        const { user, error: userError } = await getUserDetail(model.owner_id);
+        const { user, error: userError } = await getUserDetail(model.owner_id)
         if (user && !userError) {
-          processedModel.owner_username = user.username;
+          processedModel.owner_username = user.username
         }
       }
 
-      processedModels.push(processedModel);
+      processedModels.push(processedModel)
     }
 
     // 应用搜索过滤
-    let filteredModels = processedModels;
+    let filteredModels = processedModels
+
+    // 判断是否有筛选条件
+    const hasFilters = searchForm.value.keyword || searchForm.value.start_date || searchForm.value.end_date
 
     // 关键词搜索（模糊搜索多个字段）
     if (searchForm.value.keyword) {
-      const keyword = searchForm.value.keyword.toLowerCase();
+      const keyword = searchForm.value.keyword.toLowerCase()
       filteredModels = filteredModels.filter(model => {
         // 确保每个字段在比较前转换为字符串并转为小写
-        const modelId = model.model_id ? model.model_id.toString().toLowerCase() : '';
-        const modelName = model.model_name ? model.model_name.toLowerCase() : '';
-        const diseaseCategory = model.disease_category ? model.disease_category.toLowerCase() : '';
-        const augmentation = model.augmentation ? model.augmentation.toLowerCase() : '';
-        const ownerId = model.owner_id ? model.owner_id.toString().toLowerCase() : '';
-        const ownerName = model.owner_username ? model.owner_username.toLowerCase() : '';
-        
+        const modelId = model.model_id ? model.model_id.toString().toLowerCase() : ''
+        const modelName = model.model_name ? model.model_name.toLowerCase() : ''
+        const diseaseCategory = model.disease_category ? model.disease_category.toLowerCase() : ''
+        const augmentation = model.augmentation ? model.augmentation.toLowerCase() : ''
+        const ownerId = model.owner_id ? model.owner_id.toString().toLowerCase() : ''
+        const ownerName = model.owner_username ? model.owner_username.toLowerCase() : ''
+
         // 检查每个字段是否包含关键词
         return (
           modelId.includes(keyword) ||
@@ -133,37 +136,37 @@ const getModelList = async () => {
           augmentation.includes(keyword) ||
           ownerId.includes(keyword) ||
           ownerName.includes(keyword)
-        );
-      });
+        )
+      })
     }
 
     // 日期范围过滤
     if (searchForm.value.start_date) {
-      const startDate = new Date(searchForm.value.start_date);
+      const startDate = new Date(searchForm.value.start_date)
       // 直接使用用户选择的完整时间（包含时分秒）
       filteredModels = filteredModels.filter(model => {
-        const modelDate = new Date(model.updated_at);
-        const adjustedModelDate = new Date(modelDate.getTime() - 8 * 60 * 60 * 1000);
-        return adjustedModelDate >= startDate;
-      });
+        const modelDate = new Date(model.updated_at)
+        const adjustedModelDate = new Date(modelDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedModelDate >= startDate
+      })
     }
     if (searchForm.value.end_date) {
-      const endDate = new Date(searchForm.value.end_date);
+      const endDate = new Date(searchForm.value.end_date)
       // 直接使用用户选择的完整时间（包含时分秒）
       filteredModels = filteredModels.filter(model => {
-        const modelDate = new Date(model.updated_at);
-        const adjustedModelDate = new Date(modelDate.getTime() - 8 * 60 * 60 * 1000);
-        return adjustedModelDate <= endDate;
-      });
+        const modelDate = new Date(model.updated_at)
+        const adjustedModelDate = new Date(modelDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedModelDate <= endDate
+      })
     }
 
     modelList.value = filteredModels
-    total.value = filteredModels.length
+    total.value = hasFilters ? filteredModels.length : totalCount
   } catch (error) {
     console.error('【获取模型列表错误】', error)
     ElMessage.error({
       message: '【获取模型列表错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     resourceStore.modelLoading = false
@@ -177,38 +180,38 @@ const dataTimeFormatter = (row, column) => {
 
 // 病害类别筛选方法
 const filterDiseaseCategory = (value, row) => {
-  return row.disease_category === value;
+  return row.disease_category === value
 }
 
 // 数据增强方式筛选方法
 const filterAugmentation = (value, row) => {
-  return row.augmentation === value;
+  return row.augmentation === value
 }
 
 // 用户名筛选方法
 const filterOwnerUsername = (value, row) => {
-  return row.owner_username === value;
+  return row.owner_username === value
 }
 
 // 获取所有病害类别作为筛选选项
 const diseaseCategoryFilters = computed(() => {
   // 从模型列表中提取不重复的病害类别
-  const uniqueCategories = [...new Set(modelList.value.map(item => item.disease_category))];
-  return uniqueCategories.map(category => ({ text: category, value: category }));
+  const uniqueCategories = [...new Set(modelList.value.map(item => item.disease_category))]
+  return uniqueCategories.map(category => ({ text: category, value: category }))
 })
 
 // 获取所有数据增强方式作为筛选选项
 const augmentationFilters = computed(() => {
   // 从模型列表中提取不重复的数据增强方式
-  const uniqueAugmentations = [...new Set(modelList.value.map(item => item.augmentation))];
-  return uniqueAugmentations.map(augmentation => ({ text: augmentation, value: augmentation }));
+  const uniqueAugmentations = [...new Set(modelList.value.map(item => item.augmentation))]
+  return uniqueAugmentations.map(augmentation => ({ text: augmentation, value: augmentation }))
 })
 
 // 获取所有用户名作为筛选选项
 const ownerUsernameFilters = computed(() => {
   // 从模型列表中提取不重复的用户名
-  const uniqueOwners = [...new Set(modelList.value.map(item => item.owner_username).filter(Boolean))];
-  return uniqueOwners.map(owner => ({ text: owner, value: owner }));
+  const uniqueOwners = [...new Set(modelList.value.map(item => item.owner_username).filter(Boolean))]
+  return uniqueOwners.map(owner => ({ text: owner, value: owner }))
 })
 
 const validateAugmentation = (rule, value, callback) => {
@@ -222,10 +225,10 @@ const validateAugmentation = (rule, value, callback) => {
 // 上传模型表单验证规则
 const uploadFormRules = {
   model_file: [
-    { required: true, message: '请选择要上传的模型文件', trigger: 'blur' }
+    { required: true, message: '请选择要上传的模型文件', trigger: 'blur' },
   ],
   disease_category: [
-    { required: true, message: '请输入病害类别', trigger: 'blur' }
+    { required: true, message: '请输入病害类别', trigger: 'blur' },
   ],
   augmentation: [
     { validator: validateAugmentation, trigger: ['blur', 'change'] },
@@ -240,7 +243,10 @@ const handleModelFileChange = (file) => {
   const fileExtension = fileName.substring(fileName.lastIndexOf('.'))
 
   if (!allowedTypes.includes(fileExtension)) {
-    ElMessage.error('模型文件格式不正确，请上传 .pt 格式')
+    ElMessage.error({
+      message: '【模型文件选择失败】模型文件格式不正确，请上传 .pt 格式',
+      duration: 5000,
+    })
     return false
   }
 
@@ -252,7 +258,10 @@ const handleModelFileChange = (file) => {
 // 上传模型
 const uploadModel = async () => {
   if (!uploadFormRef.value) {
-    ElMessage.error('【上传模型错误】表单实例不存在')
+    ElMessage.error({
+      message: '【上传模型错误】表单实例不存在',
+      duration: 5000,
+    })
     return
   }
 
@@ -307,7 +316,7 @@ const uploadModel = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【上传模型成功】',
-        duration: 3000
+        duration: 3000,
       })
       uploadDialogVisible.value = false
       resetForm('upload')
@@ -318,7 +327,7 @@ const uploadModel = async () => {
     console.error('上传模型错误', error)
     ElMessage.error({
       message: '【上传模型错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     loading.value = false
@@ -333,7 +342,7 @@ const downloadModel = (file_path) => {
 // 编辑模型表单验证规则
 const editFormRules = {
   disease_category: [
-    { required: true, message: '请输入病害类别', trigger: ['blur', 'change'] }
+    { required: true, message: '请输入病害类别', trigger: ['blur', 'change'] },
   ],
   augmentation: [
     { validator: validateAugmentation, trigger: ['blur', 'change'] },
@@ -399,7 +408,7 @@ const saveEditModel = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【编辑模型成功】',
-        duration: 3000
+        duration: 3000,
       })
       editDialogVisible.value = false
       resetForm('edit')
@@ -407,8 +416,11 @@ const saveEditModel = async () => {
     }
     // 编辑模型失败情况已在响应拦截器中处理，这里不再重复
   } catch (error) {
-    console.error('更新模型信息失败', error)
-    ElMessage.error('更新模型信息失败，请重试')
+    console.error('【编辑模型信息错误】', error)
+    ElMessage.error({
+      message: '【编辑模型信息错误】' + (error?.message || '请重试'),
+      duration: 5000,
+    })
   } finally {
     loading.value = false
   }
@@ -475,7 +487,7 @@ const resetSearchForm = () => {
   searchForm.value = {
     keyword: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
   }
   getModelList()
 }
@@ -491,7 +503,7 @@ const deleteModel = async (id) => {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
-      }
+      },
     )
 
     loading.value = true
@@ -505,7 +517,7 @@ const deleteModel = async (id) => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【删除模型成功】',
-        duration: 3000
+        duration: 3000,
       })
       getModelList() // 重新获取列表
     }
@@ -518,7 +530,7 @@ const deleteModel = async (id) => {
     console.error('【删除模型错误】', error)
     ElMessage.error({
       message: '【删除模型错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     loading.value = false
@@ -534,7 +546,7 @@ onMounted(() => {
       } else {
         ElMessage.warning({
           message: '【访问页面失败】您非开发人员，没有权限访问此页面',
-          duration: 4000
+          duration: 4000,
         })
         router.push('/home')
       }
@@ -585,11 +597,11 @@ onMounted(() => {
               <el-input v-model="searchForm.keyword" placeholder="搜索ID/名称/病害类别/用户等" clearable style="width: 300px" />
             </el-form-item>
             <el-form-item label="日期范围">
-              <el-date-picker v-model="searchForm.start_date" type="datetime" placeholder="开始日期时间" format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+              <el-date-picker v-model="searchForm.start_date" type="datetime" placeholder="开始日期时间"
+                format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
               <span class="date-separator">至</span>
-              <el-date-picker v-model="searchForm.end_date" type="datetime" placeholder="结束日期时间" format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+              <el-date-picker v-model="searchForm.end_date" type="datetime" placeholder="结束日期时间"
+                format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="getModelList">搜索</el-button>

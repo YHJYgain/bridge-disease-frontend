@@ -27,7 +27,7 @@ const currentEditMedia = ref(null)
 const searchForm = ref({
   keyword: '',
   start_date: '',
-  end_date: ''
+  end_date: '',
 })
 
 // 分页相关（默认每页 4 条）
@@ -39,13 +39,13 @@ const total = ref(0)
 const uploadForm = ref({
   description: '',
   type: 'image',
-  file: null
+  file: null,
 })
 
 // 编辑媒体表单
 const editForm = ref({
   media_id: null,
-  description: ''
+  description: '',
 })
 
 // 获取媒体列表
@@ -58,7 +58,7 @@ const getMediaList = async () => {
       userInfo.value,
       currentPage.value,
       pageSize.value,
-      true // 强制刷新，确保获取最新数据
+      true, // 强制刷新，确保获取最新数据
     )
 
     if (error) {
@@ -68,37 +68,40 @@ const getMediaList = async () => {
     console.info('【获取媒体列表响应数据】', { medias, total: totalCount })
 
     // 处理媒体列表数据，获取用户的详细信息
-    const processedMedias = [];
+    const processedMedias = []
     for (const media of medias) {
       // 创建媒体记录的副本
-      const processedMedia = { ...media };
+      const processedMedia = { ...media }
 
       // 获取用户详情
       if (media.owner_id) {
-        const { user, error: userError } = await getUserDetail(media.owner_id);
+        const { user, error: userError } = await getUserDetail(media.owner_id)
         if (user && !userError) {
-          processedMedia.owner_username = user.username;
+          processedMedia.owner_username = user.username
         }
       }
 
-      processedMedias.push(processedMedia);
+      processedMedias.push(processedMedia)
     }
 
     // 应用搜索过滤
-    let filteredMedias = processedMedias;
+    let filteredMedias = processedMedias
+
+    // 判断是否有筛选条件
+    const hasFilters = searchForm.value.keyword || searchForm.value.start_date || searchForm.value.end_date
 
     // 关键词搜索（模糊搜索多个字段）
     if (searchForm.value.keyword) {
-      const keyword = searchForm.value.keyword.toLowerCase();
+      const keyword = searchForm.value.keyword.toLowerCase()
       filteredMedias = filteredMedias.filter(media => {
         // 确保每个字段在比较前转换为字符串并转为小写
-        const mediaId = media.media_id ? media.media_id.toString().toLowerCase() : '';
-        const mediaName = media.media_name ? media.media_name.toLowerCase() : '';
-        const description = media.description ? media.description.toLowerCase() : '';
-        const fileType = media.file_type ? media.file_type.toLowerCase() : '';
-        const ownerId = media.owner_id ? media.owner_id.toString().toLowerCase() : '';
-        const ownerName = media.owner_username ? media.owner_username.toLowerCase() : '';
-        
+        const mediaId = media.media_id ? media.media_id.toString().toLowerCase() : ''
+        const mediaName = media.media_name ? media.media_name.toLowerCase() : ''
+        const description = media.description ? media.description.toLowerCase() : ''
+        const fileType = media.file_type ? media.file_type.toLowerCase() : ''
+        const ownerId = media.owner_id ? media.owner_id.toString().toLowerCase() : ''
+        const ownerName = media.owner_username ? media.owner_username.toLowerCase() : ''
+
         // 检查每个字段是否包含关键词
         return (
           mediaId.includes(keyword) ||
@@ -107,37 +110,37 @@ const getMediaList = async () => {
           fileType.includes(keyword) ||
           ownerId.includes(keyword) ||
           ownerName.includes(keyword)
-        );
-      });
+        )
+      })
     }
 
     // 日期范围过滤
     if (searchForm.value.start_date) {
-      const startDate = new Date(searchForm.value.start_date);
+      const startDate = new Date(searchForm.value.start_date)
       // 直接使用用户选择的完整时间（包含时分秒）
       filteredMedias = filteredMedias.filter(media => {
-        const mediaDate = new Date(media.updated_at);
-        const adjustedMediaDate = new Date(mediaDate.getTime() - 8 * 60 * 60 * 1000);
-        return adjustedMediaDate >= startDate;
-      });
+        const mediaDate = new Date(media.updated_at)
+        const adjustedMediaDate = new Date(mediaDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedMediaDate >= startDate
+      })
     }
     if (searchForm.value.end_date) {
-      const endDate = new Date(searchForm.value.end_date);
+      const endDate = new Date(searchForm.value.end_date)
       // 直接使用用户选择的完整时间（包含时分秒）
       filteredMedias = filteredMedias.filter(media => {
-        const mediaDate = new Date(media.updated_at);
-        const adjustedMediaDate = new Date(mediaDate.getTime() - 8 * 60 * 60 * 1000);
-        return adjustedMediaDate <= endDate;
-      });
+        const mediaDate = new Date(media.updated_at)
+        const adjustedMediaDate = new Date(mediaDate.getTime() - 8 * 60 * 60 * 1000)
+        return adjustedMediaDate <= endDate
+      })
     }
 
     mediaList.value = filteredMedias
-    total.value = filteredMedias.length
+    total.value = hasFilters ? filteredMedias.length : totalCount
   } catch (error) {
     console.error('【获取媒体列表错误】', error)
     ElMessage.error({
       message: '【获取媒体列表错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     resourceStore.mediaLoading = false
@@ -147,34 +150,34 @@ const getMediaList = async () => {
 // 根据文件类型返回标签类型
 const getTagType = (fileType) => {
   // 图片类型的扩展名
-  const imageTypes = ['png', 'jpg', 'jpeg'];
+  const imageTypes = ['png', 'jpg', 'jpeg']
   if (imageTypes.includes(fileType.toLowerCase())) {
-    return 'primary'; // 图片显示 primary 类型标签
+    return 'primary' // 图片显示 primary 类型标签
   }
 
   // 视频类型的扩展名
-  const videoTypes = ['mp4'];
+  const videoTypes = ['mp4']
   if (videoTypes.includes(fileType.toLowerCase())) {
-    return 'warning'; // 视频显示 warning 类型标签
+    return 'warning' // 视频显示 warning 类型标签
   }
 
   // 其他类型返回 info 标签
-  return 'info';
+  return 'info'
 }
 
 // 根据文件类型返回标签文本
 const getFileTypeLabel = (fileType) => {
-  const imageTypes = ['png', 'jpg', 'jpeg'];
+  const imageTypes = ['png', 'jpg', 'jpeg']
   if (imageTypes.includes(fileType.toLowerCase())) {
-    return '图片'; // 图片
+    return '图片' // 图片
   }
 
-  const videoTypes = ['mp4'];
+  const videoTypes = ['mp4']
   if (videoTypes.includes(fileType.toLowerCase())) {
-    return '视频'; // 视频
+    return '视频' // 视频
   }
 
-  return '未知'; // 默认返回未知类型
+  return '未知' // 默认返回未知类型
 }
 
 // 格式化日期时间
@@ -185,31 +188,31 @@ const dataTimeFormatter = (row, column) => {
 // 文件类型筛选选项
 const fileTypeFilters = [
   { text: '图片', value: 'image' },
-  { text: '视频', value: 'video' }
+  { text: '视频', value: 'video' },
 ]
 
 // 文件类型筛选方法
 const filterFileType = (value, row) => {
   if (value === 'image') {
-    const imageTypes = ['png', 'jpg', 'jpeg'];
-    return imageTypes.includes(row.file_type.toLowerCase());
+    const imageTypes = ['png', 'jpg', 'jpeg']
+    return imageTypes.includes(row.file_type.toLowerCase())
   } else if (value === 'video') {
-    const videoTypes = ['mp4'];
-    return videoTypes.includes(row.file_type.toLowerCase());
+    const videoTypes = ['mp4']
+    return videoTypes.includes(row.file_type.toLowerCase())
   }
-  return true;
+  return true
 }
 
 // 用户筛选方法
 const filterOwner = (value, row) => {
-  return row.owner_username === value;
+  return row.owner_username === value
 }
 
 // 获取所有用户名作为筛选选项
 const ownerFilters = computed(() => {
   // 从媒体列表中提取不重复的用户名
-  const uniqueOwners = [...new Set(mediaList.value.map(item => item.owner_username).filter(Boolean))];
-  return uniqueOwners.map(owner => ({ text: owner, value: owner }));
+  const uniqueOwners = [...new Set(mediaList.value.map(item => item.owner_username).filter(Boolean))]
+  return uniqueOwners.map(owner => ({ text: owner, value: owner }))
 })
 
 // 自定义文件上传验证规则
@@ -244,7 +247,7 @@ const handleMediaFileChange = (file) => {
     if (!fileType || !['image/png', 'image/jpg', 'image/jpeg'].includes(fileType)) {
       ElMessage.error({
         message: '【媒体文件选择失败】图片格式不正确，请上传 png/jpg/jpeg 格式',
-        duration: 5000
+        duration: 5000,
       })
       return false
     }
@@ -252,7 +255,7 @@ const handleMediaFileChange = (file) => {
     if (!fileType || !['video/mp4'].includes(fileType)) {
       ElMessage.error({
         message: '【媒体文件选择失败】视频格式不正确，请上传 mp4 格式',
-        duration: 5000
+        duration: 5000,
       })
       return false
     }
@@ -266,7 +269,10 @@ const handleMediaFileChange = (file) => {
 // 上传媒体
 const uploadMedia = async () => {
   if (!uploadMediaFormRef.value) {
-    ElMessage.error('【上传媒体错误】表单实例不存在')
+    ElMessage.error({
+      message: '【上传媒体错误】表单实例不存在',
+      duration: 5000,
+    })
     return
   }
 
@@ -284,7 +290,7 @@ const uploadMedia = async () => {
     console.info('【上传媒体表单数据】', {
       media_file: uploadForm.value.file,
       description: uploadForm.value.description,
-      type: uploadForm.value.type
+      type: uploadForm.value.type,
     })
 
     // 发送上传请求
@@ -296,7 +302,7 @@ const uploadMedia = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【上传媒体成功】',
-        duration: 3000
+        duration: 3000,
       })
       uploadMediaDialogVisible.value = false
       resetForm('upload')
@@ -307,7 +313,7 @@ const uploadMedia = async () => {
     console.error('【上传媒体错误】', error)
     ElMessage.error({
       message: '【上传媒体错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     loading.value = false
@@ -330,7 +336,10 @@ const openEditMediaDialog = (media) => {
 // 编辑媒体
 const updateMediaDescription = async () => {
   if (!editMediaFormRef.value) {
-    ElMessage.error('【编辑媒体错误】表单实例不存在')
+    ElMessage.error({
+      message: '【编辑媒体错误】表单实例不存在',
+      duration: 5000,
+    })
     return
   }
 
@@ -355,7 +364,7 @@ const updateMediaDescription = async () => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【编辑媒体成功】',
-        duration: 3000
+        duration: 3000,
       })
       editMediaDialogVisible.value = false
       resetForm('edit')
@@ -366,7 +375,7 @@ const updateMediaDescription = async () => {
     console.error('【编辑媒体错误】', error)
     ElMessage.error({
       message: '【编辑媒体错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     loading.value = false
@@ -384,7 +393,7 @@ const deleteMedia = async (id) => {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
-      }
+      },
     )
 
     loading.value = true
@@ -398,7 +407,7 @@ const deleteMedia = async (id) => {
     if (data && operation && operation.status === 'SUCCESS') {
       ElMessage.success({
         message: '【删除媒体成功】',
-        duration: 3000
+        duration: 3000,
       })
       getMediaList() // 重新获取列表
     }
@@ -411,7 +420,7 @@ const deleteMedia = async (id) => {
     console.error('【删除媒体错误】', error)
     ElMessage.error({
       message: '【删除媒体错误】' + (error?.message || '请重试'),
-      duration: 5000
+      duration: 5000,
     })
   } finally {
     loading.value = false
@@ -424,7 +433,7 @@ const resetForm = (formType = 'upload') => {
     uploadForm.value = {
       description: '',
       type: 'image',
-      file: null
+      file: null,
     }
 
     // 如果表单引用存在，重置验证状态
@@ -436,7 +445,7 @@ const resetForm = (formType = 'upload') => {
   if (formType === 'edit' || formType === 'all') {
     editForm.value = {
       media_id: null,
-      description: ''
+      description: '',
     }
     currentEditMedia.value = null
 
@@ -452,7 +461,7 @@ const resetSearchForm = () => {
   searchForm.value = {
     keyword: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
   }
   getMediaList()
 }
@@ -509,11 +518,11 @@ onMounted(() => {
               <el-input v-model="searchForm.keyword" placeholder="搜索ID/名称/描述/用户等" clearable style="width: 300px" />
             </el-form-item>
             <el-form-item label="日期范围">
-              <el-date-picker v-model="searchForm.start_date" type="datetime" placeholder="开始日期时间" format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+              <el-date-picker v-model="searchForm.start_date" type="datetime" placeholder="开始日期时间"
+                format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
               <span class="date-separator">至</span>
-              <el-date-picker v-model="searchForm.end_date" type="datetime" placeholder="结束日期时间" format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
+              <el-date-picker v-model="searchForm.end_date" type="datetime" placeholder="结束日期时间"
+                format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" clearable style="width: 200px" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="getMediaList">搜索</el-button>
