@@ -210,7 +210,7 @@ const handleRegister = async () => {
       <div v-if="!registerSuccess">
         <el-form ref="formRef"
           :model="{ username, email, password, confirmPassword, first_name, last_name, phone, avatar_file }"
-          :rules="formRules" class="register-form" status-icon @submit.prevent="handleRegister">
+          :rules="formRules" class="register-form" status-icon @submit.prevent="handleRegister" @keyup.enter="handleRegister">
           <el-form-item prop="avatar_file" class="avatar-upload">
             <p class="upload-label">头像上传（可选）</p>
             <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"

@@ -742,7 +742,7 @@ onMounted(() => {
         <span class="dialog-footer">
           <el-button @click="uploadDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="uploadModel" :loading="loading">
-            上传
+            部署
           </el-button>
         </span>
       </template>

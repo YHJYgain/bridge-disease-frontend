@@ -110,7 +110,10 @@ onMounted(() => {
     <ParticleBackground />
 
     <div class="login-card">
-      <h1>桥梁病害检测与分割系统</h1>
+      <div class="title-container">
+        <img src="/bridge-disease.svg" alt="系统图标" class="system-logo" />
+        <h1>桥梁病害检测与分割系统</h1>
+      </div>
       <el-form ref="formRef" :model="{ username_or_email, password }" :rules="formRules" class="login-form" status-icon
         @submit.prevent="handleLogin" @keyup.enter="handleLogin">
         <el-form-item prop="username_or_email">
@@ -176,13 +179,28 @@ onMounted(() => {
   }
 }
 
+.title-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.system-logo {
+  width: 45px;
+  height: 45px;
+  margin-right: 10px;
+  margin-top: 5px;
+}
+
 h1 {
   color: white;
   text-align: center;
-  margin-bottom: 30px;
   font-size: 2em;
   font-weight: 300;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  line-height: 40px;
 }
 
 .login-form {
