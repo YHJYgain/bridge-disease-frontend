@@ -92,8 +92,6 @@ npm run build
 
 ```
 .
-├── .vscode/              # VS Code 配置
-│   └── extensions.json   # 推荐扩展
 ├── docs/                 # 项目文档
 │   ├── 3.3.1_用例图.md    # 用例图文档
 │   ├── 3.3.2_状态图.md    # 状态图文档
@@ -101,7 +99,6 @@ npm run build
 │   └── 3.3.4_系统架构图.md # 系统架构图文档
 ├── public/               # 静态资源
 │   └── bridge-disease.svg # 项目图标
-├── scripts/              # 脚本目录（预留）
 ├── src/                  # 源代码
 │   ├── assets/           # 资源文件
 │   ├── components/       # 公共组件
