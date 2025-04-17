@@ -137,7 +137,7 @@ const getUserList = async () => {
     }
 
     userList.value = filteredUsers
-    total.value = hasFilters ? filteredUsers.length : totalCount
+    total.value = hasFilters ? filteredUsers.length : totalUsers
   } catch (error) {
     console.error('【获取用户列表错误】', error)
     ElMessage.error({

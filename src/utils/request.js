@@ -3,7 +3,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '../router'
 
 const request = axios.create({
-  baseURL: 'https://composed-unicorn-honestly.ngrok-free.app',
+  baseURL: 'http://127.0.0.1:5000',
   timeout: 600000,
 })
 
