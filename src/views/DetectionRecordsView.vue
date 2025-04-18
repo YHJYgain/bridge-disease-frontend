@@ -55,42 +55,8 @@ const getDetectionRecords = async () => {
 
     console.info('【获取检测分割记录响应数据】', { detections, total: totalCount })
 
-    // 处理检测记录数据，获取模型、媒体和用户的详细信息
-    const processedDetections = []
-    for (const detection of detections) {
-      // 创建检测记录的副本
-      const processedDetection = { ...detection }
-
-      // 获取模型详情
-      if (detection.model_id) {
-        const { model, error: modelError } = await getModelDetail(detection.model_id)
-        if (model && !modelError) {
-          processedDetection.model_name = model.model_name
-        }
-      }
-
-      // 获取媒体详情
-      if (detection.media_id) {
-        const { media, error: mediaError } = await getMediaDetail(detection.media_id)
-        if (media && !mediaError) {
-          processedDetection.media_name = media.media_name
-          processedDetection.media_type = media.file_type // 保存媒体类型信息
-        }
-      }
-
-      // 获取用户详情
-      if (detection.owner_id) {
-        const { user, error: userError } = await getUserDetail(detection.owner_id)
-        if (user && !userError) {
-          processedDetection.owner_username = user.username
-        }
-      }
-
-      processedDetections.push(processedDetection)
-    }
-
     // 应用搜索过滤
-    let filteredDetections = processedDetections
+    let filteredDetections = detections
 
     // 判断是否有筛选条件
     const hasFilters = searchForm.value.keyword || searchForm.value.start_date || searchForm.value.end_date

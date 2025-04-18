@@ -67,25 +67,8 @@ const getMediaList = async () => {
 
     console.info('【获取媒体列表响应数据】', { medias, total: totalCount })
 
-    // 处理媒体列表数据，获取用户的详细信息
-    const processedMedias = []
-    for (const media of medias) {
-      // 创建媒体记录的副本
-      const processedMedia = { ...media }
-
-      // 获取用户详情
-      if (media.owner_id) {
-        const { user, error: userError } = await getUserDetail(media.owner_id)
-        if (user && !userError) {
-          processedMedia.owner_username = user.username
-        }
-      }
-
-      processedMedias.push(processedMedia)
-    }
-
     // 应用搜索过滤
-    let filteredMedias = processedMedias
+    let filteredMedias = medias
 
     // 判断是否有筛选条件
     const hasFilters = searchForm.value.keyword || searchForm.value.start_date || searchForm.value.end_date

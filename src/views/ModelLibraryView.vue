@@ -93,25 +93,8 @@ const getModelList = async () => {
 
     console.info('【获取模型列表响应数据】', { models, total: totalCount })
 
-    // 处理模型列表数据，获取用户的详细信息
-    const processedModels = []
-    for (const model of models) {
-      // 创建模型记录的副本
-      const processedModel = { ...model }
-
-      // 获取用户详情
-      if (model.owner_id) {
-        const { user, error: userError } = await getUserDetail(model.owner_id)
-        if (user && !userError) {
-          processedModel.owner_username = user.username
-        }
-      }
-
-      processedModels.push(processedModel)
-    }
-
     // 应用搜索过滤
-    let filteredModels = processedModels
+    let filteredModels = models
 
     // 判断是否有筛选条件
     const hasFilters = searchForm.value.keyword || searchForm.value.start_date || searchForm.value.end_date

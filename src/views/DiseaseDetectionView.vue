@@ -288,7 +288,7 @@ const submitDetectionTask = async () => {
       const chunk = decoder.decode(value, { stream: true })
 
       // 处理接收到的数据块（可能包含多个 JSON 对象，每行一个）
-      // 使用更健壮的方式分割数据，确保每行都是完整的JSON
+      // 使用更健壮的方式分割数据，确保每行都是完整的 JSON
       const lines = chunk.split('\n').filter(line => line.trim())
 
       let buffer = ''

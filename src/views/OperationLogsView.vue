@@ -51,25 +51,8 @@ const getOperationLogs = async () => {
 
     console.info('【获取操作日志响应数据】', { operations, total: totalCount })
 
-    // 处理操作日志数据，获取用户的详细信息
-    const processedOperations = []
-    for (const operation of operations) {
-      // 创建操作记录的副本
-      const processedOperation = { ...operation }
-
-      // 获取用户详情
-      if (operation.owner_id) {
-        const { user, error: userError } = await getUserDetail(operation.owner_id)
-        if (user && !userError) {
-          processedOperation.owner_username = user.username
-        }
-      }
-
-      processedOperations.push(processedOperation)
-    }
-
     // 应用搜索过滤
-    let filteredOperations = processedOperations
+    let filteredOperations = operations
 
     // 判断是否有筛选条件
     const hasFilters = searchForm.value.keyword || searchForm.value.start_date || searchForm.value.end_date
