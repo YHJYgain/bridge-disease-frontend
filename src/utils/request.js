@@ -3,8 +3,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '../router'
 
 const request = axios.create({
-  baseURL: 'http://127.0.0.1:5000',
+  baseURL: 'https://composed-unicorn-honestly.ngrok-free.app',
   timeout: 600000,
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+  },
 })
 
 // 是否正在刷新 token

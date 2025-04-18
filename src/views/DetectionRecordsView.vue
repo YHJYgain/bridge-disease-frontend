@@ -249,7 +249,6 @@ const ownerUsernameFilters = computed(() => {
 const viewDetectionDetail = (detection) => {
   currentDetection.value = detection
   detailDialogVisible.value = true
-  console.info('【查看病害指标详情】', detection)
 }
 
 // 关闭详情对话框
