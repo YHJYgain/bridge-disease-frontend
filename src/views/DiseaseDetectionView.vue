@@ -307,6 +307,7 @@ const submitDetectionTask = async () => {
           // 验证 JSON 格式是否完整
           try {
             const data = JSON.parse(jsonStr)
+            console.log('【检测分割】接收到数据块:', data)
 
             // 验证必要字段
             if (!data.type) {
