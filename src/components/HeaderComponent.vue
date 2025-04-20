@@ -56,7 +56,7 @@ const handleLogout = async () => {
     <div class="user-info" v-if="userInfo && !loading">
       <el-dropdown trigger="click">
         <div class="user-avatar-container">
-          <el-avatar :size="40" :src="userInfo.avatar_path ? `${requestBaseURL}/${userInfo.avatar_path}` : ''">
+          <el-avatar :size="40" :src="userInfo.avatar_path ? `${requestBaseURL}/file/${userInfo.avatar_path}` : ''">
             <el-icon>
               <User />
             </el-icon>

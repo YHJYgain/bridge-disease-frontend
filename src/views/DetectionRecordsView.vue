@@ -481,11 +481,11 @@ onMounted(() => {
                 <!-- 图片结果 -->
                 <el-image
                   v-if="scope.row.result_path && ['png', 'jpg', 'jpeg'].includes(scope.row.media_type?.toLowerCase() || '')"
-                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/${scope.row.result_path}`"
-                  :preview-src-list="[`${requestBaseURL}/${scope.row.result_path}`]" fit="contain" />
+                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/file/${scope.row.result_path}`"
+                  :preview-src-list="[`${requestBaseURL}/file/${scope.row.result_path}`]" fit="contain" />
                 <!-- 视频结果 -->
                 <video v-else-if="scope.row.result_path && ['mp4'].includes(scope.row.media_type?.toLowerCase() || '')"
-                  style="width: 140px; height: 140px" controls :src="`${requestBaseURL}/${scope.row.result_path}`">
+                  style="width: 140px; height: 140px" controls :src="`${requestBaseURL}/file/${scope.row.result_path}`">
                   您的浏览器不支持视频播放
                 </video>
                 <!-- 无结果 -->

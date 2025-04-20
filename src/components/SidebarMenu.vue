@@ -101,7 +101,7 @@ const navigateTo = (path) => {
 <style scoped>
 .sidebar-menu {
   height: 100%;
-  width: 18vh;
+  width: 100%;
   background: linear-gradient(180deg, #3478c8 0%, #2b7de1 100%);
   transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;

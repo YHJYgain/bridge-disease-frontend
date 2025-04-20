@@ -345,7 +345,7 @@ const editAvatarPreviewUrl = computed(() => {
   if (editUserForm.value.avatar_file) {
     return URL.createObjectURL(editUserForm.value.avatar_file)
   }
-  return selectedUser.value?.avatar_path ? `${requestBaseURL}/${selectedUser.value.avatar_path}` : ''
+  return selectedUser.value?.avatar_path ? `${requestBaseURL}/file/${selectedUser.value.avatar_path}` : ''
 })
 
 // 处理添加用户头像上传
@@ -813,7 +813,7 @@ onMounted(() => {
             </el-table-column>
             <el-table-column prop="avatar_path" label="头像" width="109">
               <template #default="scope">
-                <el-avatar :size="85" :src="scope.row.avatar_path ? `${requestBaseURL}/${scope.row.avatar_path}` : ''">
+                <el-avatar :size="85" :src="scope.row.avatar_path ? `${requestBaseURL}/file/${scope.row.avatar_path}` : ''">
                   <el-icon :size="20">
                     <User />
                   </el-icon>

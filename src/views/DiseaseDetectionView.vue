@@ -163,7 +163,7 @@ watch(selectedModelId, watchSelectedModel)
 watch(selectedMediaId, watchSelectedMedia)
 
 const mediaPreviewURL = computed(() => {
-  return selectedMedia ? `${requestBaseURL}/${selectedMedia.value.media_path}` : ''
+  return selectedMedia ? `${requestBaseURL}/file/${selectedMedia.value.media_path}` : ''
 })
 
 // 取消检测分割实时结果展现

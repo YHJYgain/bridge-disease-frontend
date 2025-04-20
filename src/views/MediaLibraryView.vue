@@ -305,7 +305,7 @@ const uploadMedia = async () => {
 
 // 下载媒体文件
 const downloadMedia = (file_path) => {
-  window.open(`${requestBaseURL}/${file_path}`, '_blank')
+  window.open(`${requestBaseURL}/file/${file_path}`, '_blank')
 }
 
 // 打开编辑媒体对话框
@@ -529,11 +529,11 @@ onMounted(() => {
               <template #default="scope">
                 <!-- 图片预览 -->
                 <el-image v-if="['png', 'jpg', 'jpeg'].includes(scope.row.file_type.toLowerCase())"
-                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/${scope.row.media_path}`"
-                  :preview-src-list="[`${requestBaseURL}/${scope.row.media_path}`]" fit="contain" />
+                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/file/${scope.row.media_path}`"
+                  :preview-src-list="[`${requestBaseURL}/file/${scope.row.media_path}`]" fit="contain" />
                 <!-- 视频预览 -->
                 <video v-else-if="['mp4'].includes(scope.row.file_type.toLowerCase())"
-                  style="width: 140px; height: 140px" :src="`${requestBaseURL}/${scope.row.media_path}`"
+                  style="width: 140px; height: 140px" :src="`${requestBaseURL}/file/${scope.row.media_path}`"
                   controls></video>
                 <!-- 其他类型文件 -->
                 <el-tag v-else :type="'info'">其他文件</el-tag>
@@ -642,11 +642,11 @@ onMounted(() => {
             <!-- 图片预览 -->
             <el-image
               v-if="currentEditMedia && ['png', 'jpg', 'jpeg'].includes(currentEditMedia.file_type?.toLowerCase())"
-              style="width: 200px; max-height: 200px" :src="`${requestBaseURL}/${currentEditMedia.media_path}`"
-              fit="contain" :preview-src-list="[`${requestBaseURL}/${currentEditMedia.media_path}`]" />
+              style="width: 200px; max-height: 200px" :src="`${requestBaseURL}/file/${currentEditMedia.media_path}`"
+              fit="contain" :preview-src-list="[`${requestBaseURL}/file/${currentEditMedia.media_path}`]" />
             <!-- 视频预览 -->
             <video v-else-if="currentEditMedia && ['mp4'].includes(currentEditMedia.file_type?.toLowerCase())"
-              style="width: 200px; max-height: 200px" :src="`${requestBaseURL}/${currentEditMedia.media_path}`"
+              style="width: 200px; max-height: 200px" :src="`${requestBaseURL}/file/${currentEditMedia.media_path}`"
               controls></video>
           </div>
         </el-form-item>

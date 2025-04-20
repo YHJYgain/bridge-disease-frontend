@@ -319,7 +319,7 @@ const uploadModel = async () => {
 
 // 下载模型
 const downloadModel = (file_path) => {
-  window.open(`${requestBaseURL}/${file_path}`, '_blank')
+  window.open(`${requestBaseURL}/file/${file_path}`, '_blank')
 }
 
 // 编辑模型表单验证规则

@@ -148,7 +148,7 @@ const avatarPreviewUrl = computed(() => {
   if (updateForm.value.avatar_file) {
     return URL.createObjectURL(updateForm.value.avatar_file)
   }
-  return userInfo.value?.avatar_path ? `${requestBaseURL}/${userInfo.value.avatar_path}` : ''
+  return userInfo.value?.avatar_path ? `${requestBaseURL}/file/${userInfo.value.avatar_path}` : ''
 })
 
 const handleAvatarChange = (file) => {
@@ -400,7 +400,7 @@ onMounted(() => {
       <div v-else-if="userInfo" class="user-profile">
         <div class="profile-header">
           <div class="avatar-container">
-            <el-avatar :size="100" :src="userInfo.avatar_path ? `${requestBaseURL}/${userInfo.avatar_path}` : ''">
+            <el-avatar :size="100" :src="userInfo.avatar_path ? `${requestBaseURL}/file/${userInfo.avatar_path}` : ''">
               <el-icon :size="40">
                 <User />
               </el-icon>
