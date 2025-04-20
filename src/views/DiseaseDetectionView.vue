@@ -25,6 +25,7 @@ const detectionStatus = ref('准备中') // 准备中、检测中、已完成、
 const detectionController = ref(null) // AbortController
 const detectionResult = ref(null) // 最终检测结果
 const frameDuration = ref(0) // 当前帧处理时长（ms）
+let buffer = '' // 用于存储不完整的 JSON 数据
 
 // 步骤条相关
 const activeStep = ref(0)
@@ -285,99 +286,79 @@ const submitDetectionTask = async () => {
       }
 
       // 解码二进制数据为文本
-      const chunk = decoder.decode(value, { stream: true })
+      let chunk = decoder.decode(value, { stream: true })
 
-      // 处理接收到的数据块（可能包含多个 JSON 对象，每行一个）
-      // 使用更健壮的方式分割数据，确保每行都是完整的 JSON
-      const lines = chunk.split('\n').filter(line => line.trim())
+      // 如果有缓冲数据，先合并
+      if (buffer) {
+        chunk = buffer + chunk
+      }
 
-      let buffer = ''
-      for (let i = 0; i < lines.length; i++) {
-        try {
-          // 尝试处理当前行
-          const line = lines[i]
-          let jsonStr = line
+      try {
+        // 尝试解析JSON
+        const data = JSON.parse(chunk)
+        
+        // 成功解析 JSON 后，清空缓冲区
+        buffer = ''
 
-          // 如果有缓冲数据，先合并
-          if (buffer) {
-            jsonStr = buffer + line
-            buffer = '' // 重置缓冲区
-          }
-
-          // 验证 JSON 格式是否完整
-          try {
-            console.log('【检测分割】尝试解析 JSON:', jsonStr)
-            const data = JSON.parse(jsonStr)
-            console.log('【检测分割】接收到数据块:', data)
-
-            // 验证必要字段
-            if (!data.type) {
-              console.warn('【检测分割】接收到无效数据格式:', jsonStr)
-              continue
-            }
-
-            // 根据消息类型处理
-            if (data.type === 'START') {
-              console.log('【检测分割】检测开始')
-              // 处理已有检测记录的情况
-              if (data.existing_detection) {
-                ElMessage.info({
-                  message: '【检测分割】正在更新相同媒体的检测分割记录',
-                  duration: 4000,
-                })
-                // 在对话框中显示更新标记
-                detectionStatus.value = '检测中（更新）'
-              }
-            } else if (data.type === 'FRAME') {
-              // 验证帧数据的完整性
-              if (data.frame_index === undefined) {
-                console.warn('【检测分割】帧索引缺失')
-                continue
-              }
-
-              // 验证图像数据
-              if (!data.frame_image) {
-                console.warn('【检测分割】帧图像数据缺失')
-                continue
-              }
-
-              // 更新当前帧
-              frameIndex.value = data.frame_index + 1
-              currentFrameImage.value = `data:image/jpeg;base64,${data.frame_image}`
-              frameDuration.value = data.frame_detection_duration ? data.frame_detection_duration.toFixed(2) : 0
-
-              // 更新进度
-              detectionProgress.value = Math.min(Math.round((frameIndex.value / totalFrames.value) * 100), 99)
-            } else if (data.type === 'END') {
-              // 检测完成
-              detectionProgress.value = 100
-              detectionStatus.value = '已完成'
-              detectionResult.value = data.new_detection
-
-              ElMessage.success({
-                message: '【检测分割成功】',
-                duration: 3000,
-              })
-
-              // 延迟关闭对话框，让用户看到 100% 的进度
-              setTimeout(() => {
-                handleDetectionComplete(data.existing_detection)
-              }, 1500)
-            }
-          } catch (parseError) {
-            // JSON 解析失败，可能是不完整的数据
-            // 将当前行添加到缓冲区，等待下一行数据
-            buffer += line
-
-            // 如果是最后一行且缓冲区不为空，记录错误
-            if (i === lines.length - 1 && buffer) {
-              console.warn('【检测分割】接收到不完整的 JSON 数据，已缓存', line)
-            }
-          }
-        } catch (error) {
-          console.error('【检测分割】处理数据时出错:', error)
-          buffer = '' // 重置缓冲区，防止错误累积
+        // 验证必要字段
+        if (!data.type) {
+          console.warn('【检测分割】接收到无效数据格式:', chunk)
+          return
         }
+
+        // 根据消息类型处理
+        if (data.type === 'START') {
+          console.log('【检测分割】检测开始')
+          // 处理已有检测记录的情况
+          if (data.existing_detection) {
+            ElMessage.info({
+              message: '【检测分割】正在更新相同媒体的检测分割记录',
+              duration: 4000,
+            })
+            // 在对话框中显示更新标记
+            detectionStatus.value = '检测中（更新）'
+          }
+        } else if (data.type === 'FRAME') {
+          // 验证帧数据的完整性
+          if (data.frame_index === undefined) {
+            console.warn('【检测分割】帧索引缺失')
+            return
+          }
+
+          // 验证图像数据
+          if (!data.frame_image) {
+            console.warn('【检测分割】帧图像数据缺失')
+            return
+          }
+
+          // 更新当前帧
+          frameIndex.value = data.frame_index + 1
+          currentFrameImage.value = `data:image/jpeg;base64,${data.frame_image}`
+          frameDuration.value = data.frame_detection_duration ? data.frame_detection_duration.toFixed(2) : 0
+
+          // 更新进度
+          detectionProgress.value = Math.min(Math.round((frameIndex.value / totalFrames.value) * 100), 99)
+        } else if (data.type === 'END') {
+          // 检测完成
+          detectionProgress.value = 100
+          detectionStatus.value = '已完成'
+          detectionResult.value = data.new_detection
+
+          ElMessage.success({
+            message: '【检测分割成功】',
+            duration: 3000,
+          })
+
+          // 延迟关闭对话框，让用户看到 100% 的进度
+          setTimeout(() => {
+            handleDetectionComplete(data.existing_detection)
+          }, 1500)
+        }
+      } catch (parseError) {
+        // JSON 解析失败，可能是不完整的数据
+        // 将当前数据块添加到缓冲区，等待下一次数据到达
+        buffer = chunk
+        console.warn('【检测分割】接收到不完整的 JSON 数据，已缓存:', buffer)
       }
     }
   } catch (error) {
