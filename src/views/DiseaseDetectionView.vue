@@ -296,6 +296,7 @@ const submitDetectionTask = async () => {
       try {
         // 尝试解析JSON
         const data = JSON.parse(chunk)
+        console.log('【检测分割】接收到数据:', data)
         
         // 成功解析 JSON 后，清空缓冲区
         buffer = ''
