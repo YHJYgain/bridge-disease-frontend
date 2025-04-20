@@ -203,6 +203,64 @@ const handleDetectionComplete = (existing_detection) => {
   router.push('/detection-records')
 }
 
+// 处理检测数据的函数
+function processDetectionData(data) {
+  // 验证必要字段
+  if (!data.type) {
+    console.warn('【检测分割】接收到无效数据格式')
+    return
+  }
+
+  // 根据消息类型处理
+  if (data.type === 'START') {
+    console.log('【检测分割】检测开始')
+    // 处理已有检测记录的情况
+    if (data.existing_detection) {
+      ElMessage.info({
+        message: '【检测分割】正在更新相同媒体的检测分割记录',
+        duration: 4000,
+      })
+      // 在对话框中显示更新标记
+      detectionStatus.value = '检测中（更新）'
+    }
+  } else if (data.type === 'FRAME') {
+    // 验证帧数据的完整性
+    if (data.frame_index === undefined) {
+      console.warn('【检测分割】帧索引缺失')
+      return
+    }
+
+    // 验证图像数据
+    if (!data.frame_image) {
+      console.warn('【检测分割】帧图像数据缺失')
+      return
+    }
+
+    // 更新当前帧
+    frameIndex.value = data.frame_index + 1
+    currentFrameImage.value = `data:image/jpeg;base64,${data.frame_image}`
+    frameDuration.value = data.frame_detection_duration ? data.frame_detection_duration.toFixed(2) : 0
+
+    // 更新进度
+    detectionProgress.value = Math.min(Math.round((frameIndex.value / totalFrames.value) * 100), 99)
+  } else if (data.type === 'END') {
+    // 检测完成
+    detectionProgress.value = 100
+    detectionStatus.value = '已完成'
+    detectionResult.value = data.new_detection
+
+    ElMessage.success({
+      message: '【检测分割成功】',
+      duration: 3000,
+    })
+
+    // 延迟关闭对话框，让用户看到 100% 的进度
+    setTimeout(() => {
+      handleDetectionComplete(data.existing_detection)
+    }, 1500)
+  }
+}
+
 // 检测分割
 const submitDetectionTask = async () => {
   if (!selectedModelId.value) {
@@ -294,66 +352,85 @@ const submitDetectionTask = async () => {
       }
 
       try {
-        // 尝试解析JSON
-        const data = JSON.parse(chunk)
-        console.log('【检测分割】接收到数据:', data)
-        
-        // 成功解析 JSON 后，清空缓冲区
-        buffer = ''
+        // 处理可能包含多个 JSON 对象的情况
+        let remainingChunk = chunk
+        let jsonStartIndex = 0
+        let jsonEndIndex = 0
+        let validJsonFound = false
 
-        // 验证必要字段
-        if (!data.type) {
-          console.warn('【检测分割】接收到无效数据格式:', chunk)
-          return
+        // 循环处理所有可能的 JSON 对象
+        while (remainingChunk.length > 0) {
+          try {
+            // 尝试解析当前剩余的 chunk
+            const data = JSON.parse(remainingChunk)
+            console.log('【检测分割】接收并解析到 JSON 数据:', data)
+
+            // 成功解析整个 JSON 后，处理数据
+            processDetectionData(data)
+
+            // 清空当前处理的内容
+            remainingChunk = ''
+            validJsonFound = true
+          } catch (innerError) {
+            // 如果解析失败，可能是不完整的 JSON 或包含多个 JSON
+            // 尝试找到第一个完整的 JSON 对象
+            try {
+              // 查找可能的 JSON 对象边界
+              jsonStartIndex = remainingChunk.indexOf('{')
+              if (jsonStartIndex === -1) {
+                // 没有找到 JSON 开始标记，保存整个 chunk 到 buffer
+                break
+              }
+
+              // 从开始位置查找匹配的结束括号
+              let openBraces = 0
+              let foundComplete = false
+
+              for (let i = jsonStartIndex; i < remainingChunk.length; i++) {
+                if (remainingChunk[i] === '{') openBraces++
+                if (remainingChunk[i] === '}') openBraces--
+
+                if (openBraces === 0 && i > jsonStartIndex) {
+                  // 找到了完整的 JSON 对象
+                  jsonEndIndex = i + 1
+                  const jsonStr = remainingChunk.substring(jsonStartIndex, jsonEndIndex)
+
+                  try {
+                    const data = JSON.parse(jsonStr)
+                    console.log('【检测分割】解析到完整 JSON:', data)
+
+                    // 处理数据
+                    processDetectionData(data)
+
+                    // 更新剩余的 chunk
+                    remainingChunk = remainingChunk.substring(jsonEndIndex)
+                    validJsonFound = true
+                    foundComplete = true
+                    break
+                  } catch (jsonError) {
+                    // 看似完整但解析失败，继续寻找
+                    console.warn('【检测分割】看似完整但解析失败的 JSON 片段:', jsonStr)
+                  }
+                }
+              }
+
+              // 如果没有找到完整的 JSON，退出循环
+              if (!foundComplete) break
+            } catch (searchError) {
+              console.warn('【检测分割】查找 JSON 边界时出错:', searchError)
+              break
+            }
+          }
         }
 
-        // 根据消息类型处理
-        if (data.type === 'START') {
-          console.log('【检测分割】检测开始')
-          // 处理已有检测记录的情况
-          if (data.existing_detection) {
-            ElMessage.info({
-              message: '【检测分割】正在更新相同媒体的检测分割记录',
-              duration: 4000,
-            })
-            // 在对话框中显示更新标记
-            detectionStatus.value = '检测中（更新）'
+        // 更新 buffer 为剩余未处理的内容
+        if (remainingChunk.length > 0) {
+          buffer = remainingChunk
+          if (!validJsonFound) {
+            console.warn('【检测分割】接收到不完整的 JSON 数据，已缓存')
           }
-        } else if (data.type === 'FRAME') {
-          // 验证帧数据的完整性
-          if (data.frame_index === undefined) {
-            console.warn('【检测分割】帧索引缺失')
-            return
-          }
-
-          // 验证图像数据
-          if (!data.frame_image) {
-            console.warn('【检测分割】帧图像数据缺失')
-            return
-          }
-
-          // 更新当前帧
-          frameIndex.value = data.frame_index + 1
-          currentFrameImage.value = `data:image/jpeg;base64,${data.frame_image}`
-          frameDuration.value = data.frame_detection_duration ? data.frame_detection_duration.toFixed(2) : 0
-
-          // 更新进度
-          detectionProgress.value = Math.min(Math.round((frameIndex.value / totalFrames.value) * 100), 99)
-        } else if (data.type === 'END') {
-          // 检测完成
-          detectionProgress.value = 100
-          detectionStatus.value = '已完成'
-          detectionResult.value = data.new_detection
-
-          ElMessage.success({
-            message: '【检测分割成功】',
-            duration: 3000,
-          })
-
-          // 延迟关闭对话框，让用户看到 100% 的进度
-          setTimeout(() => {
-            handleDetectionComplete(data.existing_detection)
-          }, 1500)
+        } else {
+          buffer = ''
         }
       } catch (parseError) {
         // JSON 解析失败，可能是不完整的数据
