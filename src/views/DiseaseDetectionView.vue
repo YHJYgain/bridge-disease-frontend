@@ -306,6 +306,7 @@ const submitDetectionTask = async () => {
 
           // 验证 JSON 格式是否完整
           try {
+            console.log('【检测分割】尝试解析 JSON:', jsonStr)
             const data = JSON.parse(jsonStr)
             console.log('【检测分割】接收到数据块:', data)
 
@@ -317,7 +318,7 @@ const submitDetectionTask = async () => {
 
             // 根据消息类型处理
             if (data.type === 'START') {
-              console.log('【检测分割】检测开始', data)
+              console.log('【检测分割】检测开始')
               // 处理已有检测记录的情况
               if (data.existing_detection) {
                 ElMessage.info({
@@ -370,7 +371,7 @@ const submitDetectionTask = async () => {
 
             // 如果是最后一行且缓冲区不为空，记录错误
             if (i === lines.length - 1 && buffer) {
-              console.warn('【检测分割】接收到不完整的 JSON 数据，已缓存')
+              console.warn('【检测分割】接收到不完整的 JSON 数据，已缓存', line)
             }
           }
         } catch (error) {
