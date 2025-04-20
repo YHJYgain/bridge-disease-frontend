@@ -316,7 +316,7 @@ const submitDetectionTask = async () => {
 
             // 根据消息类型处理
             if (data.type === 'START') {
-              console.log('【检测分割】检测开始')
+              console.log('【检测分割】检测开始', data)
               // 处理已有检测记录的情况
               if (data.existing_detection) {
                 ElMessage.info({
