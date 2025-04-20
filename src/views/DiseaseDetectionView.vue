@@ -358,7 +358,7 @@ const submitDetectionTask = async () => {
         // JSON 解析失败，可能是不完整的数据
         // 将当前数据块添加到缓冲区，等待下一次数据到达
         buffer = chunk
-        console.warn('【检测分割】接收到不完整的 JSON 数据，已缓存:', buffer)
+        console.warn('【检测分割】接收到不完整的 JSON 数据，已缓存')
       }
     }
   } catch (error) {
