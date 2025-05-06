@@ -154,7 +154,6 @@ onMounted(() => {
   background: rgba(var(--el-color-primary-rgb), 0.1);
   padding: 10px 15px;
   border-radius: 8px;
-  width: 100%;
   transition: all 0.3s ease;
 }
 
