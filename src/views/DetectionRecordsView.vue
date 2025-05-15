@@ -529,7 +529,7 @@ onMounted(() => {
           <el-descriptions-item label="病害面积（像素）" :span="1">{{ currentDetection.disease_area }}</el-descriptions-item>
           <el-descriptions-item label="形状复杂度（0~1）" :span="1">{{ currentDetection.shape_complexity
           }}</el-descriptions-item>
-          <el-descriptions-item label="纹理粗糙度（0~65025）" :span="1">{{ currentDetection.texture_roughness
+          <el-descriptions-item label="纹理粗糙度（0~1020）" :span="1">{{ currentDetection.texture_roughness
           }}</el-descriptions-item>
           <el-descriptions-item label="裂缝宽度（像素）" :span="1">{{ currentDetection.crack_width }}</el-descriptions-item>
           <el-descriptions-item label="平均色调（0~179）" :span="1">{{ currentDetection.avg_hue }}</el-descriptions-item>
