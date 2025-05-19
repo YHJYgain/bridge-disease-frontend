@@ -29,9 +29,9 @@ const searchForm = ref({
   end_date: '',
 })
 
-// 分页相关（默认每页 10 条）
+// 分页相关（默认每页 8 条）
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(8)
 const total = ref(0)
 
 // 判断用户角色
@@ -595,9 +595,9 @@ onMounted(() => {
           <el-table :data="modelList" style="width: 100%" v-loading="resourceStore.modelLoading.value">
             <el-table-column prop="model_id" label="ID" width="63" sortable />
             <el-table-column prop="model_name" label="名称" sortable show-overflow-tooltip />
-            <el-table-column prop="disease_category" label="病害类别" sortable show-overflow-tooltip
+            <el-table-column prop="disease_category" label="病害类别" width="118" sortable show-overflow-tooltip
               :filters="diseaseCategoryFilters" :filter-method="filterDiseaseCategory" filter-placement="bottom" />
-            <el-table-column prop="augmentation" label="数据增强方式" sortable show-overflow-tooltip
+            <el-table-column prop="augmentation" label="数据增强方式" width="146" sortable show-overflow-tooltip
               :filters="augmentationFilters" :filter-method="filterAugmentation" filter-placement="bottom" />
             <el-table-column prop="f1_score" label="f1_score（F1 分数）" width="182" sortable />
             <el-table-column prop="fitness_score" label="fitness_score（适应度分数）" width="237" sortable />
@@ -913,8 +913,7 @@ onMounted(() => {
 }
 
 .search-form {
-  margin-bottom: 20px;
-  padding: 15px;
+  padding: 10px;
   background-color: #f8f9fa;
   border-radius: 4px;
   display: flex;

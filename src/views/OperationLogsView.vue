@@ -18,7 +18,7 @@ const operationLogs = ref([])
 
 // 分页相关
 const currentPage = ref(1)
-const pageSize = ref(12)
+const pageSize = ref(8)
 const total = ref(0)
 
 // 判断用户角色
@@ -533,10 +533,12 @@ onMounted(() => {
 }
 
 .search-form {
-  margin-bottom: 20px;
-  padding: 15px;
+  padding: 10px;
   background-color: #f8f9fa;
   border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .pagination-container {
@@ -548,11 +550,5 @@ onMounted(() => {
 .date-separator {
   margin: 0 5px;
   line-height: 32px;
-}
-
-.search-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
 }
 </style>

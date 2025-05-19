@@ -317,7 +317,6 @@ const submitDetectionTask = async () => {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        'ngrok-skip-browser-warning': 'true'
       },
       body: JSON.stringify({
         media_id: selectedMediaId.value,
@@ -361,7 +360,7 @@ const submitDetectionTask = async () => {
         // 循环处理所有可能的 JSON 对象
         while (remainingChunk.length > 0) {
           try {
-            // 尝试解析当前剩余的 chunk
+            // 尝试解析当前的 chunk
             const data = JSON.parse(remainingChunk)
             console.log('【检测分割】接收并解析到 JSON 数据:', data)
 
@@ -402,7 +401,7 @@ const submitDetectionTask = async () => {
                     // 处理数据
                     processDetectionData(data)
 
-                    // 更新剩余的 chunk
+                    // 更新 chunk
                     remainingChunk = remainingChunk.substring(jsonEndIndex)
                     validJsonFound = true
                     foundComplete = true
@@ -529,7 +528,7 @@ onBeforeUnmount(() => {
 
               <!-- 显示选中模型的详细信息 -->
               <div v-if="selectedModel" class="model-info-card">
-                <h4>模型信息</h4>
+                <h3>模型信息</h3>
                 <div class="model-info-grid">
                   <div class="info-item">
                     <span class="info-label">模型名称：</span>
@@ -579,7 +578,7 @@ onBeforeUnmount(() => {
 
               <!-- 媒体预览 -->
               <div v-if="selectedMediaId" class="media-preview">
-                <h4>媒体预览</h4>
+                <h3>媒体预览</h3>
                 <div class="preview-container">
                   <el-image v-if="['png', 'jpg', 'jpeg'].includes(selectedMedia.file_type.toLowerCase())"
                     :src="mediaPreviewURL" fit="contain" class="preview-image" :preview-src-list="[mediaPreviewURL]">
@@ -636,7 +635,7 @@ onBeforeUnmount(() => {
 
               <!-- 媒体预览 -->
               <div v-if="selectedMediaId" class="media-preview">
-                <h4>媒体预览</h4>
+                <h3>媒体预览</h3>
                 <div class="preview-container">
                   <el-image v-if="['png', 'jpg', 'jpeg'].includes(selectedMedia.file_type.toLowerCase())"
                     :src="mediaPreviewURL" fit="contain" class="preview-image" :preview-src-list="[mediaPreviewURL]">
@@ -799,11 +798,6 @@ onBeforeUnmount(() => {
   font-size: 12px;
 }
 
-/* 步骤条样式 */
-.detection-steps {
-  margin: 30px 0 40px;
-}
-
 /* 自定义步骤条样式，使其更加醒目 */
 .detection-steps :deep(.el-step__icon) {
   width: 40px;
@@ -837,7 +831,6 @@ onBeforeUnmount(() => {
 
 .step-container h3 {
   margin-top: 0;
-  margin-bottom: 20px;
   font-size: 17px;
   font-weight: 500;
   color: #303133;
@@ -878,13 +871,13 @@ onBeforeUnmount(() => {
 }
 
 .info-label {
-  font-size: 13px;
+  font-size: 16px;
   color: #606266;
   margin-bottom: 4px;
 }
 
 .info-value {
-  font-size: 14px;
+  font-size: 17px;
   color: #303133;
   font-weight: 500;
 }
@@ -913,15 +906,15 @@ onBeforeUnmount(() => {
 }
 
 .preview-image {
-  max-width: 13%;
-  max-height: 13%;
+  max-width: 12%;
+  max-height: 12%;
   margin: 10px;
   object-fit: contain;
 }
 
 .preview-video {
-  max-width: 16%;
-  max-height: 16%;
+  max-width: 15%;
+  max-height: 15%;
   margin: 10px;
   object-fit: contain;
 }

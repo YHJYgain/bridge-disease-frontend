@@ -588,7 +588,6 @@ onBeforeUnmount(() => {
 }
 
 .statistics-card {
-  margin-bottom: 20px;
   border-radius: 12px;
 }
 
@@ -601,14 +600,13 @@ onBeforeUnmount(() => {
 
 .info-card {
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   background-color: #f5f7fa;
 }
 
 .info-title {
-  font-size: 14px;
+  font-size: 17px;
   color: #606266;
-  margin-bottom: 10px;
 }
 
 .info-value {
@@ -619,6 +617,6 @@ onBeforeUnmount(() => {
 
 .chart-container {
   margin-bottom: 20px;
-  height: 27.71vh;
+  height: 22vh;
 }
 </style>

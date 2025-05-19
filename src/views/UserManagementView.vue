@@ -1069,8 +1069,7 @@ onMounted(() => {
 }
 
 .search-form {
-  margin-bottom: 20px;
-  padding: 15px;
+  padding: 10px;
   background-color: #f8f9fa;
   border-radius: 4px;
   display: flex;

@@ -31,9 +31,9 @@ const isAdmin = computed(() => userInfo.value?.role === 'ADMIN')
 const isDeveloper = computed(() => userInfo.value?.role === 'DEVELOPER')
 const isAdminOrDeveloper = computed(() => isAdmin.value || isDeveloper.value)
 
-// 分页相关（默认每页 4 条）
+// 分页相关（默认每页 3 条）
 const currentPage = ref(1)
-const pageSize = ref(4)
+const pageSize = ref(3)
 const total = ref(0)
 
 // 获取检测分割记录
@@ -457,8 +457,8 @@ onMounted(() => {
 
           <el-table :data="detectionList" style="width: 100%" v-loading="resourceStore.detectionLoading.value">
             <el-table-column prop="detection_id" label="ID" width="63" />
-            <el-table-column prop="model_name" label="使用模型" sortable show-overflow-tooltip />
-            <el-table-column prop="media_name" label="检测媒体" sortable show-overflow-tooltip />
+            <el-table-column prop="model_name" label="使用模型" width="104" sortable show-overflow-tooltip />
+            <el-table-column prop="media_name" label="检测媒体" width="104" sortable show-overflow-tooltip />
             <el-table-column prop="status" label="任务状态" width="118" sortable :filters="statusFilters"
               :filter-method="filterStatus">
               <template #default="scope">
@@ -476,16 +476,16 @@ onMounted(() => {
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="检测分割结果">
+            <el-table-column label="检测分割结果" width="230">
               <template #default="scope">
                 <!-- 图片结果 -->
                 <el-image
                   v-if="scope.row.result_path && ['png', 'jpg', 'jpeg'].includes(scope.row.media_type?.toLowerCase() || '')"
-                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/file/${scope.row.result_path}`"
+                  style="width: 50%; height: 50%" :src="`${requestBaseURL}/file/${scope.row.result_path}`"
                   :preview-src-list="[`${requestBaseURL}/file/${scope.row.result_path}`]" fit="contain" />
                 <!-- 视频结果 -->
                 <video v-else-if="scope.row.result_path && ['mp4'].includes(scope.row.media_type?.toLowerCase() || '')"
-                  style="width: 140px; height: 140px" controls :src="`${requestBaseURL}/file/${scope.row.result_path}`">
+                  style="width: 100%; height: 50%" controls :src="`${requestBaseURL}/file/${scope.row.result_path}`">
                   您的浏览器不支持视频播放
                 </video>
                 <!-- 无结果 -->
@@ -670,8 +670,7 @@ onMounted(() => {
 
 /* 搜索表单样式 */
 .search-form {
-  margin-bottom: 20px;
-  padding: 15px;
+  padding: 10px;
   background-color: #f8f9fa;
   border-radius: 4px;
   display: flex;
@@ -684,13 +683,3 @@ onMounted(() => {
   line-height: 32px;
 }
 </style>
-
-// 重置搜索表单
-const resetSearchForm = () => {
-  searchForm.value = {
-    keyword: '',
-    start_date: '',
-    end_date: ''
-  }
-  getDetectionRecords()
-}

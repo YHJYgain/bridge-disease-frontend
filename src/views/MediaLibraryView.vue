@@ -30,9 +30,9 @@ const searchForm = ref({
   end_date: '',
 })
 
-// 分页相关（默认每页 4 条）
+// 分页相关（默认每页 3 条）
 const currentPage = ref(1)
-const pageSize = ref(4)
+const pageSize = ref(3)
 const total = ref(0)
 
 // 上传媒体表单
@@ -525,15 +525,15 @@ onMounted(() => {
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="预览">
+            <el-table-column label="预览" width="230">
               <template #default="scope">
                 <!-- 图片预览 -->
                 <el-image v-if="['png', 'jpg', 'jpeg'].includes(scope.row.file_type.toLowerCase())"
-                  style="width: 97px; height: 97px" :src="`${requestBaseURL}/file/${scope.row.media_path}`"
+                  style="width: 50%; height: 50%" :src="`${requestBaseURL}/file/${scope.row.media_path}`"
                   :preview-src-list="[`${requestBaseURL}/file/${scope.row.media_path}`]" fit="contain" />
                 <!-- 视频预览 -->
                 <video v-else-if="['mp4'].includes(scope.row.file_type.toLowerCase())"
-                  style="width: 140px; height: 140px" :src="`${requestBaseURL}/file/${scope.row.media_path}`"
+                  style="width: 100%; height: 50%" :src="`${requestBaseURL}/file/${scope.row.media_path}`"
                   controls></video>
                 <!-- 其他类型文件 -->
                 <el-tag v-else :type="'info'">其他文件</el-tag>
@@ -737,8 +737,7 @@ onMounted(() => {
 }
 
 .search-form {
-  margin-bottom: 20px;
-  padding: 15px;
+  padding: 10px;
   background-color: #f8f9fa;
   border-radius: 4px;
   display: flex;

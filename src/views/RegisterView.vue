@@ -212,7 +212,6 @@ const handleRegister = async () => {
           :model="{ username, email, password, confirmPassword, first_name, last_name, phone, avatar_file }"
           :rules="formRules" class="register-form" status-icon @submit.prevent="handleRegister" @keyup.enter="handleRegister">
           <el-form-item prop="avatar_file" class="avatar-upload">
-            <p class="upload-label">头像上传（可选）</p>
             <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
               accept="image/png, image/jpg, image/jpeg" :on-change="handleAvatarChange" :auto-upload="false"
               :show-file-list="false">
@@ -234,13 +233,14 @@ const handleRegister = async () => {
             <el-input v-model="email" placeholder="邮箱" :prefix-icon="Message" />
           </el-form-item>
 
-          <el-form-item prop="password">
-            <el-input v-model="password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
-          </el-form-item>
-
-          <el-form-item prop="confirmPassword">
-            <el-input v-model="confirmPassword" type="password" placeholder="确认密码" :prefix-icon="Lock" show-password />
-          </el-form-item>
+          <div class="name-group">
+            <el-form-item prop="password" class="name-item">
+              <el-input v-model="password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
+            </el-form-item>
+            <el-form-item prop="confirmPassword" class="name-item">
+              <el-input v-model="confirmPassword" type="password" placeholder="确认密码" :prefix-icon="Lock" show-password />
+            </el-form-item>
+          </div>
 
           <div class="name-group">
             <el-form-item prop="last_name" class="name-item">
@@ -296,7 +296,7 @@ const handleRegister = async () => {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 20px;
-  padding: 30px;
+  padding: 25px;
   width: 100%;
   max-width: 470px;
   box-sizing: border-box;
@@ -319,7 +319,6 @@ const handleRegister = async () => {
 h1 {
   color: white;
   text-align: center;
-  margin-bottom: 30px;
   font-size: 1.5em;
   font-weight: 300;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -328,7 +327,7 @@ h1 {
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
   width: 100%;
 }
 
@@ -553,12 +552,6 @@ h1 {
 
 .avatar-upload {
   margin-top: 10px;
-}
-
-.upload-label {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  margin-bottom: 8px;
 }
 
 .avatar-uploader {
