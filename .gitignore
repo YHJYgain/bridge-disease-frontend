@@ -1,4 +1,4 @@
-# Logs
+# 日志文件
 logs
 *.log
 npm-debug.log*
@@ -7,24 +7,30 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# 依赖包和缓存
 node_modules
+*.tsbuildinfo
+
+# 临时文件 & 系统文件
 .DS_Store
+*.local
+
+# 构建产物
 dist
 dist-ssr
 coverage
-*.local
 
+# 测试工具输出
 /cypress/videos/
 /cypress/screenshots/
 
-# Editor directories and files
+# 编辑器和 IDE 的配置
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-*.tsbuildinfo
