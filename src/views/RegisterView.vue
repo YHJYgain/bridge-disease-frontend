@@ -210,7 +210,8 @@ const handleRegister = async () => {
       <div v-if="!registerSuccess">
         <el-form ref="formRef"
           :model="{ username, email, password, confirmPassword, first_name, last_name, phone, avatar_file }"
-          :rules="formRules" class="register-form" status-icon @submit.prevent="handleRegister" @keyup.enter="handleRegister">
+          :rules="formRules" class="register-form" status-icon @submit.prevent="handleRegister"
+          @keyup.enter="handleRegister">
           <el-form-item prop="avatar_file" class="avatar-upload">
             <el-upload class="avatar-uploader" action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
               accept="image/png, image/jpg, image/jpeg" :on-change="handleAvatarChange" :auto-upload="false"
@@ -233,12 +234,13 @@ const handleRegister = async () => {
             <el-input v-model="email" placeholder="邮箱" :prefix-icon="Message" />
           </el-form-item>
 
-          <div class="name-group">
-            <el-form-item prop="password" class="name-item">
+          <div class="password-group">
+            <el-form-item prop="password" class="password-item">
               <el-input v-model="password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
             </el-form-item>
-            <el-form-item prop="confirmPassword" class="name-item">
-              <el-input v-model="confirmPassword" type="password" placeholder="确认密码" :prefix-icon="Lock" show-password />
+            <el-form-item prop="confirmPassword" class="password-item">
+              <el-input v-model="confirmPassword" type="password" placeholder="确认密码" :prefix-icon="Lock"
+                show-password />
             </el-form-item>
           </div>
 
@@ -540,13 +542,15 @@ h1 {
   padding: 10px 25px;
 }
 
-.name-group {
+.name-group,
+.password-group {
   display: flex;
   gap: 10px;
   width: 100%;
 }
 
-.name-item {
+.name-item,
+.password-item {
   flex: 1;
 }
 
