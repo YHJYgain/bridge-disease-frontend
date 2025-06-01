@@ -63,14 +63,14 @@ const request = axios.create({
 可以使用以下两种方式之一启动开发服务器：
 
 ```bash
-npm run dev
+npm run serve
 ```
 
 或者直接双击项目根目录下的`start.bat`批处理文件：
 
 ```bash
 # 双击运行 start.bat 文件
-# 该批处理文件会自动执行 npm run dev 命令并在完成后暂停窗口
+# 该批处理文件会自动执行 npm run serve 命令并在完成后暂停窗口
 ```
 
 5. 构建生产版本
